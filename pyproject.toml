@@ -1,0 +1,15 @@
+[project]
+name = "kamihi"
+version = "0.1.0"
+description = "Framework for building Telegram bots in Python"
+license = "MIT"
+readme = "README.md"
+authors = [
+    { name = "kiinami", email = "kinami@posteo.net" }
+]
+requires-python = ">=3.12"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
