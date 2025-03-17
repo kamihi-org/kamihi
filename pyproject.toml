@@ -13,3 +13,56 @@ dependencies = []
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.1.0",
+    "ruff>=0.11.0",
+]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 120
+exclude = []
+extend-exclude = []
+fix = true
+
+[tool.ruff.lint]
+select = [
+    "D",   # pydocstyle, for docstrings
+    "I",   # isort, for sorting imports
+    "B",   # flake8-bugbear, finds common bugs and design issues.
+    "C4",  # flake8-comprehensions, checks for unnecessary list/set/dict comprehensions.
+    "SIM", # flake8-simplify, recommends code simplifications.
+    "ARG", # flake8-unused-arguments, detects unused function arguments.
+    "ANN", # flake8-annotations, checks for missing type annotations.
+    "Q",   # flake8-quotes, enforces consistent string quote usage
+    "TID", # flake8-tidy-imports, checks for unused imports and unused variables
+    "FIX", # flake8-fixme, checks for FIXME, TODO, XXX
+    "T20", # flake8-print, checks for print statements
+    "LOG", # flake8-logging, detect logging issues
+    "PT",  # flake8-pytest-style, pytest styling rules
+    "UP",  # pyupgrade (already default), upgrades Python syntax
+    "PERF", # Perflint, checks for performance issues
+    "TRY", # tryceratops, try/except block rules
+    "DTZ", # flake8-datetimez, datetime and timezone rules
+    "RSE", # flake8-raise, checks for common issues with raise
+    "RET", # flake8-return, checks for common issues with return
+    "ASYNC", # flake8-async, async related rules
+    "SLF", # flake8-self, checks for common issues with self
+    "BLE", # flake8-blind-except, checks for blind except: statements
+    "FBT", # flake8-boolean-trap, checks for common boolean traps
+    "A", # flake8-builtins, builtin shadowing rules
+    "COM", # flake8-commas, trailing comma rules
+    "EM", # flake8-errmsg, error message rules
+    "ISC", # flake8-implicit-str-concat, implicit string concatenation rules
+    "G", # flake8-logging-format, logging format rules
+    "PTH", # flake8-use-pathlib, pathlib usage rules
+    "FLY", # flynt, f-string rules
+    "C90", # mccabe, complexity checks
+    "N", # pep8-naming, naming conventions
+]
+ignore = [
+    "D203",
+    "D212",
+]
