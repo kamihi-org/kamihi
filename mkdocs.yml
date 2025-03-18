@@ -1,15 +1,56 @@
 site_name: Kamihi documentation
+site_url: https://kamihi-dev.github.io/kamihi/
+site_description: |
+  Documentation for Kamihi, a Python framework for rapid Telegram bot development and management
+site_author: kiinami
+repo_url: https://github.com/kamihi-dev/kamihi
+repo_name: kamihi-dev/kamihi
 
 nav:
   - Home: index.md
   #  - Tutorials:
   #  - "How-to guides":
-  - Reference:
-      - "API Reference": reference/api.md
-#  - "Explanation":
+  #  - "Explanation":
 
 theme:
   name: material
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
 
 plugins:
   - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - src/kamihi
+          options:
+            docstring_style: "google"
+            filters: ["!^_"]
+            heading_level: 1
+            merge_init_into_class: true
+            parameter_headings: true
+            separate_signature: true
+            show_root_heading: true
+            show_signature_annotations: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            summary: true
+  - api-autonav:
+      modules: [ 'src/kamihi' ]
+
+extra:
+  generator: false
+  version:
+    provider: mike
