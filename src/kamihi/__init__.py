@@ -18,10 +18,10 @@ def hello(name: str) -> str:
         "Hello from Kamihi, Bob!"
 
     Args:
-        name (str): The name of the user.
+        name: The name of the user.
 
     Returns:
-        str: The greeting message.
+        The greeting message.
 
     """
     return f"Hello from Kamihi, {name}!"
