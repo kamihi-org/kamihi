@@ -1,0 +1,1 @@
+{"config":{"lang":["en"],"separator":"[\\s\\-]+","pipeline":["stopWordFilter"]},"docs":[{"location":"","title":"The Kamihi Books","text":"<p>Documentation for the Kamihi framework.</p> <p>Kamihi is a Python framework for creating and managing Telegram bots.</p>"}]}
