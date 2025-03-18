@@ -10,9 +10,7 @@ nav:
   - Home: index.md
   #  - Tutorials:
   #  - "How-to guides":
-  - Reference:
-      - "API Reference": reference/api.md
-#  - "Explanation":
+  #  - "Explanation":
 
 theme:
   name: material
@@ -32,6 +30,25 @@ theme:
 
 plugins:
   - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - src/kamihi
+          options:
+            docstring_style: "google"
+            filters: ["!^_"]
+            heading_level: 1
+            merge_init_into_class: true
+            parameter_headings: true
+            separate_signature: true
+            show_root_heading: true
+            show_signature_annotations: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            summary: true
+  - api-autonav:
+      modules: [ 'src/kamihi' ]
 
 extra:
   generator: false
