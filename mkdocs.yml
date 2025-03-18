@@ -1,0 +1,15 @@
+site_name: Kamihi documentation
+
+nav:
+  - Home: index.md
+  #  - Tutorials:
+  #  - "How-to guides":
+  - Reference:
+      - "API Reference": reference/api.md
+#  - "Explanation":
+
+theme:
+  name: material
+
+plugins:
+  - search
