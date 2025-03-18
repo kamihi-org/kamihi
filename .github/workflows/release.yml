@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     name: "Bump version and create changelog with commitizen"
     outputs:
-      REVISION: ${{ steps.create_revision.outputs.REVISION }}
+      REVISION: ${{ env.REVISION }}
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -37,15 +37,18 @@ jobs:
     steps:
       - name: Check out
         uses: actions/checkout@v4
-      - name: Configure Git Credentials
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+        with:
+          token: "${{ secrets.PAT }}"
+          fetch-depth: 0
       - name: Install uv
         uses: astral-sh/setup-uv@v5
       - name: Install dependencies
         run: uv sync --group docs
       - name: Build site and deploy
         run: uv run mike deploy --push --update-aliases ${{ needs.bump-version.outputs.REVISION }} latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
       - name: Set latest
         run: uv run mike set-default --push latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
