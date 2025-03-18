@@ -11,6 +11,12 @@ def hello(name: str) -> str:
     """
     Say hello to the user.
 
+    Examples:
+        >>> hello("Alice")
+        "Hello from Kamihi, Alice!"
+        >>> hello("Bob")
+        "Hello from Kamihi, Bob!"
+
     Args:
         name (str): The name of the user.
 
