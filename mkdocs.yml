@@ -50,6 +50,20 @@ plugins:
   - api-autonav:
       modules: [ 'src/kamihi' ]
 
+markdown_extensions:
+  - abbr
+  - admonition
+  - footnotes
+  - toc:
+      permalink: ⚓︎
+  - tables
+  - pymdownx.betterem
+  - pymdownx.blocks.caption
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
 extra:
   generator: false
   version:

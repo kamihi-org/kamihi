@@ -26,6 +26,7 @@ docs = [
     "mkdocs-api-autonav>=0.2.1",
     "mkdocs-material>=9.6.9",
     "mkdocstrings[python]>=0.29.0",
+    "pymdown-extensions>=10.14.3",
 ]
 
 [tool.ruff]

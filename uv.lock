@@ -247,6 +247,7 @@ docs = [
     { name = "mkdocs-api-autonav" },
     { name = "mkdocs-material" },
     { name = "mkdocstrings", extra = ["python"] },
+    { name = "pymdown-extensions" },
 ]
 
 [package.metadata]
@@ -263,6 +264,7 @@ docs = [
     { name = "mkdocs-api-autonav", specifier = ">=0.2.1" },
     { name = "mkdocs-material", specifier = ">=9.6.9" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.29.0" },
+    { name = "pymdown-extensions", specifier = ">=10.14.3" },
 ]
 
 [[package]]
