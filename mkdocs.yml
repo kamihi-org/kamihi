@@ -13,6 +13,7 @@ watch:
 
 nav:
   - Home: index.md
+  - Changelog: changelog.md
   #  - Tutorials:
   #  - "How-to guides":
   #  - "Explanation":
