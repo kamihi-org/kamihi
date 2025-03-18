@@ -41,22 +41,11 @@ jobs:
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.x
-      - name: Cache dependencies
-        run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
-      - name: Restore cache
-        uses: actions/cache@v4
-        with:
-          key: mkdocs-material-${{ env.cache_id }}
-          path: .cache
-          restore-keys: |
-            mkdocs-material-
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
       - name: Install dependencies
-        run: pip install mkdocs-material mike
+        run: uv sync --group docs
       - name: Build site and deploy
-        run: mike deploy --push --update-aliases ${{ needs.bump-version.outputs.REVISION }} latest
+        run: uv run mike deploy --push --update-aliases ${{ needs.bump-version.outputs.REVISION }} latest
       - name: Set latest
-        run: mike set-default --push latest
+        run: uv run mike set-default --push latest
