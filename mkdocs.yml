@@ -20,6 +20,7 @@ nav:
 
 theme:
   name: material
+  logo: https://api.iconify.design/flowbite:paper-plane-solid.svg?color=%23FFFFFF
   features:
     - navigation.instant
     - navigation.instant.progress
