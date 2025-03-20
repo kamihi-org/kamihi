@@ -14,7 +14,3 @@ Attributes:
 """
 
 __version__ = "0.1.1"
-
-from kamihi.base.logging import configure_logging
-
-configure_logging()
