@@ -14,3 +14,7 @@ Attributes:
 """
 
 __version__ = "0.1.1"
+
+from kamihi.bot import Bot as _Bot
+
+bot = _Bot()
