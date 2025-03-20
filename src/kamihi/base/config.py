@@ -8,7 +8,7 @@ License:
     MIT
 
 Attributes:
-    settings (KamihiSettings): Global instance of settings.
+    _settings (KamihiSettings): Global instance of settings.
 
 """
 
@@ -34,7 +34,7 @@ class KamihiSettings(BaseSettings):
 
 
 # Global instance of settings
-settings = KamihiSettings()
+_settings = KamihiSettings()
 
 
 def get_settings() -> KamihiSettings:
@@ -48,4 +48,4 @@ def get_settings() -> KamihiSettings:
        KamihiSettings: The current settings object.
 
     """
-    return settings
+    return _settings
