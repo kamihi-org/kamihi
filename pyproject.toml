@@ -12,7 +12,6 @@ dependencies = [
     "apprise>=1.9.2",
     "loguru>=0.7.3",
     "pydantic>=2.10.6",
-    "pydantic-settings>=2.8.1",
 ]
 
 [build-system]
