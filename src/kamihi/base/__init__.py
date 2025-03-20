@@ -7,5 +7,3 @@ License:
     MIT
 
 """
-
-from .config import get_settings
