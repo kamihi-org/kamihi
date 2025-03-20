@@ -17,9 +17,12 @@ class KamihiSettings(BaseSettings):
     Defines the configuration schema for the Kamihi framework.
 
     Attributes:
+        alert_urls: List of Apprise URLs for sending alerts through notification services.
         model_config (SettingsConfigDict): Configuration dictionary for environment settings.
 
     """
+
+    alert_urls: list[str] = []
 
     model_config = SettingsConfigDict(
         env_prefix="KAMIHI_",
