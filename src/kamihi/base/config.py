@@ -7,9 +7,6 @@ environment variables and/or a `.env` file. They must begin with the prefix `KAM
 License:
     MIT
 
-Attributes:
-    _settings (KamihiSettings): Global instance of settings.
-
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
