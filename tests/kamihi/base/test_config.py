@@ -6,10 +6,6 @@ License:
 
 """
 
-import os
-
-import pytest
-
 from kamihi.base.config import KamihiSettings, get_settings
 
 
