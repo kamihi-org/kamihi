@@ -22,8 +22,6 @@ class KamihiSettings(BaseSettings):
 
     """
 
-    alert_urls: list[str] = []
-
     model_config = SettingsConfigDict(
         env_prefix="KAMIHI_",
         env_file=".env",
@@ -31,21 +29,3 @@ class KamihiSettings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
-
-
-# Global instance of settings
-_settings = KamihiSettings()
-
-
-def get_settings() -> KamihiSettings:
-    """
-    Get the current settings.
-
-    This function returns the current settings object, which can be used
-    to access or modify configuration options.
-
-    Returns:
-       KamihiSettings: The current settings object.
-
-    """
-    return _settings
