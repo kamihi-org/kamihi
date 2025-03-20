@@ -2,37 +2,32 @@
 Module for sending alerts to notification services.
 
 This module provides functions for sending alerts to notification services
-using the Apprise library. The notification services are configured in the
-settings module.
+using the Apprise library.
 
 License:
     MIT
-
-Examples:
-    >>> from kamihi.base.manual_send import get_notifier
-    >>> notifier = get_notifier()
-    >>> notifier.notify(title="Test", body="This is a test message.")
 
 """
 
 import apprise
 
-from .config import get_settings
 
-_settings = get_settings()
-_notifier = apprise.Apprise()
-_notifier.add(_settings.alert_urls)
-
-
-def get_notifier() -> apprise.Apprise:
+class ManualSender(apprise.Apprise):
     """
-    Get the current notifier.
+    Class for sending alerts to notification services.
 
-    This function returns the current notifier object, which can be used
-    to send alerts through notification services.
-
-    Returns:
-        apprise.Apprise: The current notifier object.
+    This class extends the Apprise library to provide a simple interface for
+    sending alerts to various notification services using Apprise URLs.
 
     """
-    return _notifier
+
+    def __init__(self, urls: list[str]) -> None:
+        """
+        Manual sender.
+
+        Args:
+            urls: List of Apprise URLs for sending alerts through notification services.
+
+        """
+        super().__init__()
+        self.add(urls)
