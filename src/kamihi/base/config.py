@@ -9,7 +9,26 @@ License:
 
 """
 
+from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class LogSettings(BaseModel):
+    """
+    Defines the logging configuration schema.
+
+    Attributes:
+        log_level (str): The logging level for the application.
+
+    """
+
+    log_level: str = Field(default="INFO", pattern=r"^(TRACE|DEBUG|INFO|SUCCESS|WARNING|ERROR|CRITICAL)$")
+    stdout_enable: bool = Field(default=True)
+    stderr_enable: bool = Field(default=True)
+    file_enable: bool = Field(default=False)
+    file_path: str = Field(default="kamihi.log")
+    notification_enable: bool = Field(default=True)
+    notification_urls: list[str] = Field(default_factory=list)
 
 
 class KamihiSettings(BaseSettings):
@@ -20,6 +39,8 @@ class KamihiSettings(BaseSettings):
         model_config (SettingsConfigDict): Configuration dictionary for environment settings.
 
     """
+
+    log: LogSettings = Field(default_factory=LogSettings)
 
     model_config = SettingsConfigDict(
         env_prefix="KAMIHI_",
