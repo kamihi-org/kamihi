@@ -23,13 +23,18 @@ class LogSettings(BaseModel):
         stdout_enable (bool): Enable or disable stdout logging.
         stdout_level (str): Log level for stdout logging.
         stdout_serialize (bool): Enable or disable serialization for stdout logging.
+
         stderr_enable (bool): Enable or disable stderr logging.
         stderr_level (str): Log level for stderr logging.
         stderr_serialize (bool): Enable or disable serialization for stderr logging.
+
         file_enable (bool): Enable or disable file logging.
         file_level (str): Log level for file logging.
         file_path (str): Path to the log file.
         file_serialize (bool): Enable or disable serialization for file logging.
+        file_rotation (str): Rotation policy for the log file.
+        file_retention (str): Retention policy for the log file.
+
         notification_enable (bool): Enable or disable notification logging.
         notification_level (str): Log level for notification logging.
         notification_urls (list[str]): List of URLs for notification services.
@@ -48,6 +53,8 @@ class LogSettings(BaseModel):
     file_level: str = Field(default="DEBUG", pattern=_LEVEL_PATTERN)
     file_path: str = Field(default="kamihi.log")
     file_serialize: bool = Field(default=False)
+    file_rotation: str = Field(default="1 MB")
+    file_retention: str = Field(default="7 days")
 
     notification_enable: bool = Field(default=False)
     notification_level: str = Field(default="SUCCESS", pattern=_LEVEL_PATTERN)
