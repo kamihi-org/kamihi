@@ -1,17 +1,18 @@
 """
-TODO: one-line module description.
+Logging configuration module.
 
-TODO: Additional details about the module, its purpose, and any necessary
-background information. Explain what functions or classes are included.
+This module provides functions to configure logging for the Kamihi framework.
 
 License:
     MIT
 
 Examples:
-    [Examples of how to use the module/classes/functions]
-
-Attributes:
-    [List any relevant module-level attributes with types and descriptions]
+    >>> from kamihi.base.logging import configure_logging
+    >>> from kamihi.base.config import LogSettings
+    >>> from loguru import logger
+    >>> settings = LogSettings()
+    >>> configure_logging(logger, settings)
+    >>> logger.info("This is an info message.")
 
 """
 
