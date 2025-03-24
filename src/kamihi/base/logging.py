@@ -42,7 +42,7 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
     if settings.stdout_enable:
         logger.add(
             sys.stdout,
-            level=settings.log_level,
+            level=settings.stdout_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
             "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
@@ -52,7 +52,7 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
     if settings.stderr_enable:
         logger.add(
             sys.stderr,
-            level=settings.log_level,
+            level=settings.stderr_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
             "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
@@ -62,7 +62,7 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
     if settings.file_enable:
         logger.add(
             settings.file_path,
-            level=settings.log_level,
+            level=settings.file_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
             "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
@@ -73,7 +73,7 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
         manual_sender = ManualSender(settings.notification_urls)
         logger.add(
             manual_sender.notify,
-            level=settings.log_level,
+            level=settings.notification_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
             "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
