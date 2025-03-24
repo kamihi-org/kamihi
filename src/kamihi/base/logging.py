@@ -17,47 +17,64 @@ Attributes:
 
 import sys
 
+from config import LogSettings
 
-def configure_logging() -> None:
+from kamihi.base.manual_send import ManualSender
+
+
+def configure_logging(settings: LogSettings) -> None:
     """
     Configure logging for the module.
 
     This function sets up the logging configuration for the module, including
     log level and format.
 
+    Args:
+        settings: The logging settings to configure.
+
     """
     from loguru import logger
 
     logger.remove()
-    handlers = {
-        "console": {
-            "sink": sys.stderr,
-            "level": "INFO",
-            "format": "<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
+
+    if settings.stdout_enable:
+        logger.add(
+            sys.stdout,
+            level=settings.log_level,
+            format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
-            "<cyan>{module}:{function}:{line}</cyan> | "
+            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
             "<level>{message}</level>",
-        },
-        "file": {
-            "sink": "kamihi.log",
-            "level": "DEBUG",
-            "serialize": True,
-            "rotation": "1 MB",
-            "retention": "10 days",
-            "compression": "zip",
-            "format": "<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
+        )
+
+    if settings.stderr_enable:
+        logger.add(
+            sys.stderr,
+            level=settings.log_level,
+            format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
-            "<cyan>{module}:{function}:{line}</cyan> | "
+            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
             "<level>{message}</level>",
-        },
-        "message": {
-            "sink": "apprise",
-            "level": "SUCCESS",
-            "format": "<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
+        )
+
+    if settings.file_enable:
+        logger.add(
+            settings.file_path,
+            level=settings.log_level,
+            format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
-            "<cyan>{module}:{function}:{line}</cyan> | "
+            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
             "<level>{message}</level>",
-            "filter": {"apprise": False},
-        },
-    }
-    logger.configure(handlers=list(handlers.values()))
+        )
+
+    if settings.notification_enable:
+        manual_sender = ManualSender(settings.notification_urls)
+        logger.add(
+            manual_sender.notify,
+            level=settings.log_level,
+            format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
+            "<level>{level: <8}</level> | "
+            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+            "<level>{message}</level>",
+            filter={"apprise": False},
+        )
