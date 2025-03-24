@@ -70,6 +70,8 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
             "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
             "<level>{message}</level>",
             serialize=settings.file_serialize,
+            rotation=settings.file_rotation,
+            retention=settings.file_retention,
         )
 
     if settings.notification_enable:
