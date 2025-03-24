@@ -22,9 +22,9 @@ class LogSettings(BaseModel):
 
     """
 
-    log_level: str = Field(default="INFO", pattern=r"^(TRACE|DEBUG|INFO|SUCCESS|WARNING|ERROR|CRITICAL)$")
+    log_level: str = Field(default="DEBUG", pattern=r"^(TRACE|DEBUG|INFO|SUCCESS|WARNING|ERROR|CRITICAL)$")
     stdout_enable: bool = Field(default=True)
-    stderr_enable: bool = Field(default=True)
+    stderr_enable: bool = Field(default=False)
     file_enable: bool = Field(default=False)
     file_path: str = Field(default="kamihi.log")
     notification_enable: bool = Field(default=True)
