@@ -12,6 +12,8 @@ License:
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+_LEVEL_PATTERN = r"^(TRACE|DEBUG|INFO|SUCCESS|WARNING|ERROR|CRITICAL)$"
+
 
 class LogSettings(BaseModel):
     """
@@ -22,12 +24,15 @@ class LogSettings(BaseModel):
 
     """
 
-    log_level: str = Field(default="DEBUG", pattern=r"^(TRACE|DEBUG|INFO|SUCCESS|WARNING|ERROR|CRITICAL)$")
     stdout_enable: bool = Field(default=True)
+    stdout_level: str = Field(default="INFO", pattern=_LEVEL_PATTERN)
     stderr_enable: bool = Field(default=False)
+    stderr_level: str = Field(default="ERROR", pattern=_LEVEL_PATTERN)
     file_enable: bool = Field(default=False)
+    file_level: str = Field(default="DEBUG", pattern=_LEVEL_PATTERN)
     file_path: str = Field(default="kamihi.log")
-    notification_enable: bool = Field(default=True)
+    notification_enable: bool = Field(default=False)
+    notification_level: str = Field(default="SUCCESS", pattern=_LEVEL_PATTERN)
     notification_urls: list[str] = Field(default_factory=list)
 
 
