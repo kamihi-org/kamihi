@@ -15,14 +15,17 @@ Attributes:
 
 """
 
+from __future__ import annotations
+
 import sys
 
-from config import LogSettings
+import loguru
 
+from kamihi.base.config import LogSettings
 from kamihi.base.manual_send import ManualSender
 
 
-def configure_logging(settings: LogSettings) -> None:
+def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
     """
     Configure logging for the module.
 
@@ -30,11 +33,10 @@ def configure_logging(settings: LogSettings) -> None:
     log level and format.
 
     Args:
+        logger: The logger instance to configure.
         settings: The logging settings to configure.
 
     """
-    from loguru import logger
-
     logger.remove()
 
     if settings.stdout_enable:

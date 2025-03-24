@@ -15,22 +15,41 @@ Attributes:
 
 """
 
+from time import sleep
+from typing import Any
+
+from loguru import logger
+
 from kamihi.base.config import KamihiSettings
+from kamihi.base.logging import configure_logging
 
 
 class Bot:
     """Bot class for Kamihi."""
 
-    _settings: KamihiSettings = KamihiSettings()
+    settings: KamihiSettings
 
-    def __init__(self) -> None:
-        """Initialize the Bot class."""
-        pass
+    def __init__(self, **kwargs: dict[str, Any]) -> None:
+        """
+        Initialize the Bot class.
+
+        Args:
+            **kwargs: Additional keyword arguments for settings.
+
+        """
+        self.settings = KamihiSettings(**kwargs)
 
     def set_settings(self, settings: KamihiSettings) -> None:
         """Set the settings for the bot."""
-        self._settings = settings
+        self.settings = settings
 
     def start(self) -> None:
         """Start the bot."""
-        pass
+        configure_logging(logger, self.settings.log)
+
+        logger.info("Starting bot...")
+
+        while True:
+            # Placeholder for bot's main loop
+            logger.debug("Bot is running...")
+            sleep(1)
