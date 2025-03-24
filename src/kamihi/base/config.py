@@ -9,10 +9,22 @@ License:
 
 """
 
-from pydantic import BaseModel
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class KamihiSettings(BaseModel):
-    """Defines the configuration schema for the Kamihi framework."""
+class KamihiSettings(BaseSettings):
+    """
+    Defines the configuration schema for the Kamihi framework.
 
-    pass
+    Attributes:
+        model_config (SettingsConfigDict): Configuration dictionary for environment settings.
+
+    """
+
+    model_config = SettingsConfigDict(
+        env_prefix="KAMIHI_",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
