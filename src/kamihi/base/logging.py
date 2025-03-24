@@ -47,6 +47,7 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
             "<level>{level: <8}</level> | "
             "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
             "<level>{message}</level>",
+            serialize=settings.stdout_serialize,
         )
 
     if settings.stderr_enable:
@@ -57,6 +58,7 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
             "<level>{level: <8}</level> | "
             "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
             "<level>{message}</level>",
+            serialize=settings.stderr_serialize,
         )
 
     if settings.file_enable:
@@ -67,6 +69,7 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
             "<level>{level: <8}</level> | "
             "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
             "<level>{message}</level>",
+            serialize=settings.file_serialize,
         )
 
     if settings.notification_enable:

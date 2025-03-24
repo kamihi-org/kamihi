@@ -20,17 +20,35 @@ class LogSettings(BaseModel):
     Defines the logging configuration schema.
 
     Attributes:
-        log_level (str): The logging level for the application.
+        stdout_enable (bool): Enable or disable stdout logging.
+        stdout_level (str): Log level for stdout logging.
+        stdout_serialize (bool): Enable or disable serialization for stdout logging.
+        stderr_enable (bool): Enable or disable stderr logging.
+        stderr_level (str): Log level for stderr logging.
+        stderr_serialize (bool): Enable or disable serialization for stderr logging.
+        file_enable (bool): Enable or disable file logging.
+        file_level (str): Log level for file logging.
+        file_path (str): Path to the log file.
+        file_serialize (bool): Enable or disable serialization for file logging.
+        notification_enable (bool): Enable or disable notification logging.
+        notification_level (str): Log level for notification logging.
+        notification_urls (list[str]): List of URLs for notification services.
 
     """
 
     stdout_enable: bool = Field(default=True)
     stdout_level: str = Field(default="INFO", pattern=_LEVEL_PATTERN)
+    stdout_serialize: bool = Field(default=False)
+
     stderr_enable: bool = Field(default=False)
     stderr_level: str = Field(default="ERROR", pattern=_LEVEL_PATTERN)
+    stderr_serialize: bool = Field(default=False)
+
     file_enable: bool = Field(default=False)
     file_level: str = Field(default="DEBUG", pattern=_LEVEL_PATTERN)
     file_path: str = Field(default="kamihi.log")
+    file_serialize: bool = Field(default=False)
+
     notification_enable: bool = Field(default=False)
     notification_level: str = Field(default="SUCCESS", pattern=_LEVEL_PATTERN)
     notification_urls: list[str] = Field(default_factory=list)
