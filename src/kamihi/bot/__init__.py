@@ -1,17 +1,11 @@
 """
-TODO: one-line module description.
+Bot module for Kamihi.
 
-TODO: Additional details about the module, its purpose, and any necessary
-background information. Explain what functions or classes are included.
+This module provides the primary interface for the Kamihi framework, allowing
+for the creation and management of Telegram bots.
 
 License:
     MIT
-
-Examples:
-    [Examples of how to use the module/classes/functions]
-
-Attributes:
-    [List any relevant module-level attributes with types and descriptions]
 
 """
 

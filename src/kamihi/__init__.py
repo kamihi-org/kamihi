@@ -1,15 +1,18 @@
 """
-Kamihi is a Python framework for creating Telegram bots.
+Kamihi is a Python framework for creating and managing Telegram bots.
 
-This is a long description. It should be multiple lines and give an overview
-of the package functionality. It should also mention the key features and
-advantages of the package.
+Examples:
+    >>> from kamihi import bot
+    >>> bot.start()
 
 License:
     MIT
 
 Attributes:
     __version__ (str): The version of the package.
+    bot (Bot): The bot instance for the Kamihi framework. Preferable to using the
+        Bot class directly, as it ensures that the bot is properly configured and
+        managed by the framework.
 
 """
 
@@ -18,5 +21,3 @@ __version__ = "0.1.1"
 from kamihi.bot import Bot as _Bot
 
 bot = _Bot()
-
-bot.start()

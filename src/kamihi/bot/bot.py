@@ -1,17 +1,21 @@
 """
-TODO: one-line module description.
+Bot module for Kamihi.
 
-TODO: Additional details about the module, its purpose, and any necessary
-background information. Explain what functions or classes are included.
+This module provides the primary interface for the Kamihi framework, allowing
+for the creation and management of Telegram bots.
+
+The framework already provides a bot instance, which can be accessed using the
+`bot` variable. This instance is already configured with default settings and
+can be used to start the bot. The managed instance is preferable to using the
+`Bot` class directly, as it ensures that the bot is properly configured and
+managed by the framework.
 
 License:
     MIT
 
 Examples:
-    [Examples of how to use the module/classes/functions]
-
-Attributes:
-    [List any relevant module-level attributes with types and descriptions]
+    >>> from kamihi import bot
+    >>> bot.start()
 
 """
 
@@ -25,7 +29,19 @@ from kamihi.base.logging import configure_logging
 
 
 class Bot:
-    """Bot class for Kamihi."""
+    """
+    Bot class for Kamihi.
+
+    The framework already provides a bot instance, which can be accessed using the
+    `bot` variable. This instance is already configured with default settings and
+    can be used to start the bot. The managed instance is preferable to using the
+    `Bot` class directly, as it ensures that the bot is properly configured and
+    managed by the framework.
+
+    Attributes:
+        settings (KamihiSettings): The settings for the bot.
+
+    """
 
     settings: KamihiSettings
 
