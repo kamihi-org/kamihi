@@ -18,6 +18,8 @@ build-backend = "hatchling.build"
 dev = [
     "commitizen>=4.4.1",
     "pre-commit>=4.1.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.0.0",
     "ruff>=0.11.0",
 ]
 docs = [
@@ -92,3 +94,7 @@ update_changelog_on_bump = true
 version_files = [
     "src/kamihi/__init__.py:__version__",
 ]
+
+[tool.pytest.ini_options]
+addopts = "--cov=src --cov-report=xml --cov-report=term-missing"
+testpaths = ["tests/kamihi"]
