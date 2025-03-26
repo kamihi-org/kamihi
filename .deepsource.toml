@@ -18,7 +18,7 @@ name = "docker"
 [[transformers]]
 name = "ruff"
 
-#test_patterns = ["test/**"]
+test_patterns = ["test/**"]
 
-#[[analyzers]]
-#name = "test-coverage"
+[[analyzers]]
+name = "test-coverage"
