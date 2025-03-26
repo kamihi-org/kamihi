@@ -71,12 +71,17 @@ select = [
     "FLY", # flynt, f-string rules
     "C90", # mccabe, complexity checks
     "N", # pep8-naming, naming conventions
+    "CPY", # flake8-copyright, copyright checks
 ]
 ignore = [
     "D203",
     "D212",
     "COM812",
 ]
+preview = true
+
+[tool.ruff.lint.flake8-copyright]
+notice-rgx = "License:\\s*MIT"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
