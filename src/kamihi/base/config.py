@@ -123,9 +123,9 @@ class KamihiSettings(BaseSettings):
 
         """
         return (
+            init_settings,
             env_settings,
             dotenv_settings,
             YamlConfigSettingsSource(settings_cls, yaml_file=os.getenv("KAMIHI_CONFIG_FILE", "kamihi.yaml")),
-            init_settings,
             file_secret_settings,
         )
