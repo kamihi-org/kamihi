@@ -354,7 +354,9 @@ def test_log_level_configuration(mock_logger, handler_type, level_param, level_v
             configure_logging(mock_logger, settings)
 
             # Verify notification level
-            notification_call = next(call for call in mock_add.call_args_list if call.args[0] == mock_sender.notify)
+            matching_calls = [call for call in mock_add.call_args_list if call.args[0] == mock_sender.notify]
+            assert matching_calls, "No call to mock_add with mock_sender.notify was found"
+            notification_call = matching_calls[0]
             assert notification_call.kwargs["level"] == level_value
     else:
         with patch.object(mock_logger, "add") as mock_add:
@@ -362,8 +364,12 @@ def test_log_level_configuration(mock_logger, handler_type, level_param, level_v
             configure_logging(mock_logger, settings)
 
             # Verify level
-            handler_call = next(call for call in mock_add.call_args_list if call.args and call.args[0] == handler_arg)
-            assert handler_call.kwargs["level"] == level_value
+            matching_calls = [call for call in mock_add.call_args_list if call.args and call.args[0] == handler_arg]
+            assert matching_calls, f"No call with handler_arg {handler_arg} found in mock_add.call_args_list"
+            handler_call = matching_calls[0]
+            assert handler_call.kwargs["level"] == level_value, (
+                f"Expected level {level_value}, got {handler_call.kwargs['level']}"
+            )
 
 
 @pytest.mark.parametrize(
@@ -397,5 +403,9 @@ def test_serialize_configuration(mock_logger, handler_type, serialize_param, ser
         configure_logging(mock_logger, settings)
 
         # Verify serialization setting
-        handler_call = next(call for call in mock_add.call_args_list if call.args and call.args[0] == handler_arg)
-        assert handler_call.kwargs["serialize"] is serialize_value
+        matching_calls = [call for call in mock_add.call_args_list if call.args and call.args[0] == handler_arg]
+        assert matching_calls, f"No call with handler_arg {handler_arg} found in mock_add.call_args_list"
+        handler_call = matching_calls[0]
+        assert handler_call.kwargs["serialize"] == serialize_value, (
+            f"Expected serialize value {serialize_value}, got {handler_call.kwargs['level']}"
+        )
