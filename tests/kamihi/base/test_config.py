@@ -57,17 +57,15 @@ log:
 def test_parameters_have_valid_values():
     """Test that validation catches invalid parameter values."""
     # Test with an invalid log level (must match pattern)
-    with patch.dict(os.environ, {"KAMIHI_LOG__STDOUT_LEVEL": "INVALID_LEVEL"}):
-        with pytest.raises(ValidationError):
-            KamihiSettings()
+    with patch.dict(os.environ, {"KAMIHI_LOG__STDOUT_LEVEL": "INVALID_LEVEL"}), pytest.raises(ValidationError):
+        KamihiSettings()
 
 
 def test_parameters_have_correct_types():
     """Test that validation catches incorrect parameter types."""
     # Test with a boolean field given a non-boolean value
-    with patch.dict(os.environ, {"KAMIHI_LOG__STDOUT_ENABLE": "not_a_boolean"}):
-        with pytest.raises(ValidationError):
-            KamihiSettings()
+    with patch.dict(os.environ, {"KAMIHI_LOG__STDOUT_ENABLE": "not_a_boolean"}), pytest.raises(ValidationError):
+        KamihiSettings()
 
 
 def test_config_custom_location_via_env():
