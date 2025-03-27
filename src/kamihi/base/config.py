@@ -9,6 +9,8 @@ License:
 
 """
 
+import os
+
 from pydantic import BaseModel, Field
 from pydantic_settings import (
     BaseSettings,
@@ -85,7 +87,7 @@ class KamihiSettings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
         env_nested_delimiter="__",
-        yaml_file="kamihi.yml",
+        yaml_file=os.getenv("KAMIHI_CONFIG_FILE", "kamihi.yaml"),
     )
 
     @classmethod
