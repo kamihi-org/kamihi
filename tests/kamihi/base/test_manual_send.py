@@ -60,7 +60,7 @@ def test_send_notification(mock_notify):
 def test_add_method_called_with_urls(mock_add):
     # Test that the constructor passes URLs to add
     urls = ["mailto://user:password@example.com"]
-    sender = ManualSender(urls)
+    ManualSender(urls)
 
     # Verify add was called with the correct URLs
     mock_add.assert_called_once_with(urls)
