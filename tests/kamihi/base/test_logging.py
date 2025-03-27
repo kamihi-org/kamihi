@@ -9,199 +9,191 @@ License:
 import sys
 from unittest.mock import MagicMock, patch
 
+import pytest
 from loguru import logger
 
 from kamihi.base.config import LogSettings
 from kamihi.base.logging import configure_logging
 
 
-def test_initialization_removes_existing_handlers():
+@pytest.fixture
+def mock_logger():
+    """
+    Fixture to provide a mock logger instance.
+    """
+    return logger.bind()
+
+
+def test_initialization_removes_existing_handlers(mock_logger):
     # Setup
-    test_logger = logger.bind()
     settings = LogSettings()
 
-    with patch.object(test_logger, "remove") as mock_remove:
+    with patch.object(mock_logger, "remove") as mock_remove:
         # Execute
-        configure_logging(test_logger, settings)
+        configure_logging(mock_logger, settings)
 
         # Verify
         mock_remove.assert_called_once()
 
 
-def test_stdout_handler_added_when_enabled():
+@pytest.mark.parametrize(
+    "handler_type, enable_param, handler_value, check_function",
+    [
+        ("stdout", "stdout_enable", sys.stdout, lambda call, val: call.args[0] == val),
+        ("stderr", "stderr_enable", sys.stderr, lambda call, val: call.args[0] == val),
+        ("file", "file_enable", "test.log", lambda call, val: call.args[0] == val),
+        (
+            "notification",
+            "notification_enable",
+            None,  # Special case handled in test
+            None,  # Special case handled in test
+        ),
+    ],
+)
+def test_handler_configuration(mock_logger, handler_type, enable_param, handler_value, check_function):
+    # Test when handler is enabled
+    settings_kwargs = {enable_param: True}
+
+    # Special handling for file and notification
+    if handler_type == "file":
+        settings_kwargs["file_path"] = handler_value
+    elif handler_type == "notification":
+        settings_kwargs["notification_urls"] = ["discord://webhook_id/webhook_token"]
+
+    settings = LogSettings(**settings_kwargs)
+
+    if handler_type == "notification":
+        with (
+            patch("kamihi.base.logging.ManualSender", autospec=True) as mock_sender_class,
+            patch.object(mock_logger, "add") as mock_add,
+        ):
+            mock_sender = MagicMock()
+            mock_sender_class.return_value = mock_sender
+
+            # Execute
+            configure_logging(mock_logger, settings)
+
+            # Verify
+            mock_sender_class.assert_called_once_with(settings.notification_urls)
+            assert any(call.args[0] == mock_sender.notify for call in mock_add.call_args_list)
+    else:
+        with patch.object(mock_logger, "add") as mock_add:
+            # Execute
+            configure_logging(mock_logger, settings)
+
+            # Verify
+            assert any(check_function(call, handler_value) for call in mock_add.call_args_list)
+
+    # Test when handler is disabled
+    settings_kwargs = {enable_param: False}
+    settings = LogSettings(**settings_kwargs)
+
+    if handler_type == "notification":
+        with (
+            patch("kamihi.base.manual_send.ManualSender") as mock_sender_class,
+            patch.object(mock_logger, "add") as mock_add,
+        ):
+            # Execute
+            configure_logging(mock_logger, settings)
+
+            # Verify
+            mock_sender_class.assert_not_called()
+    else:
+        with patch.object(mock_logger, "add") as mock_add:
+            # Execute
+            configure_logging(mock_logger, settings)
+
+            # Verify
+            if handler_type == "file":
+                assert not any(call.args[0] == handler_value for call in mock_add.call_args_list if len(call.args) > 0)
+            else:
+                assert not any(check_function(call, handler_value) for call in mock_add.call_args_list)
+
+
+@pytest.mark.parametrize(
+    "handler_type, level_param, level_value, handler_arg",
+    [
+        ("stdout", "stdout_level", "INFO", sys.stdout),
+        ("stderr", "stderr_level", "ERROR", sys.stderr),
+        ("file", "file_level", "DEBUG", "test.log"),
+        ("notification", "notification_level", "CRITICAL", None),
+    ],
+)
+def test_log_level_configuration(mock_logger, handler_type, level_param, level_value, handler_arg):
     # Setup
-    test_logger = logger.bind()
-    settings = LogSettings(stdout_enable=True)
+    settings_kwargs = {
+        "stdout_enable": False,
+        "stderr_enable": False,
+        "file_enable": False,
+        "notification_enable": False,
+        level_param: level_value,
+    }
 
-    with patch.object(test_logger, "add") as mock_add:
-        # Execute
-        configure_logging(test_logger, settings)
+    # Enable specific handler being tested
+    enable_param = f"{handler_type}_enable"
+    settings_kwargs[enable_param] = True
 
-        # Verify
-        assert any(call.args[0] == sys.stdout for call in mock_add.call_args_list)
+    if handler_type == "file":
+        settings_kwargs["file_path"] = handler_arg
+    elif handler_type == "notification":
+        settings_kwargs["notification_urls"] = ["discord://webhook_id/webhook_token"]
+
+    settings = LogSettings(**settings_kwargs)
+
+    if handler_type == "notification":
+        with (
+            patch("kamihi.base.logging.ManualSender", autospec=True) as mock_sender_class,
+            patch.object(mock_logger, "add") as mock_add,
+        ):
+            mock_sender = MagicMock()
+            mock_sender_class.return_value = mock_sender
+
+            # Execute
+            configure_logging(mock_logger, settings)
+
+            # Verify notification level
+            notification_call = next(call for call in mock_add.call_args_list if call.args[0] == mock_sender.notify)
+            assert notification_call.kwargs["level"] == level_value
+    else:
+        with patch.object(mock_logger, "add") as mock_add:
+            # Execute
+            configure_logging(mock_logger, settings)
+
+            # Verify level
+            handler_call = next(call for call in mock_add.call_args_list if call.args and call.args[0] == handler_arg)
+            assert handler_call.kwargs["level"] == level_value
 
 
-def test_stdout_handler_not_added_when_disabled():
+@pytest.mark.parametrize(
+    "handler_type, serialize_param, serialize_value, handler_arg",
+    [
+        ("stdout", "stdout_serialize", True, sys.stdout),
+        ("stderr", "stderr_serialize", False, sys.stderr),
+        ("file", "file_serialize", True, "test.log"),
+    ],
+)
+def test_serialize_configuration(mock_logger, handler_type, serialize_param, serialize_value, handler_arg):
     # Setup
-    test_logger = logger.bind()
-    settings = LogSettings(stdout_enable=False)
+    settings_kwargs = {
+        "stdout_enable": False,
+        "stderr_enable": False,
+        "file_enable": False,
+        serialize_param: serialize_value,
+    }
 
-    with patch.object(test_logger, "add") as mock_add:
+    # Enable specific handler being tested
+    enable_param = f"{handler_type}_enable"
+    settings_kwargs[enable_param] = True
+
+    if handler_type == "file":
+        settings_kwargs["file_path"] = handler_arg
+
+    settings = LogSettings(**settings_kwargs)
+
+    with patch.object(mock_logger, "add") as mock_add:
         # Execute
-        configure_logging(test_logger, settings)
+        configure_logging(mock_logger, settings)
 
-        # Verify
-        assert not any(call.args[0] == sys.stdout for call in mock_add.call_args_list)
-
-
-def test_stderr_handler_added_when_enabled():
-    # Setup
-    test_logger = logger.bind()
-    settings = LogSettings(stderr_enable=True)
-
-    with patch.object(test_logger, "add") as mock_add:
-        # Execute
-        configure_logging(test_logger, settings)
-
-        # Verify
-        assert any(call.args[0] == sys.stderr for call in mock_add.call_args_list)
-
-
-def test_stderr_handler_not_added_when_disabled():
-    # Setup
-    test_logger = logger.bind()
-    settings = LogSettings(stderr_enable=False)
-
-    with patch.object(test_logger, "add") as mock_add:
-        # Execute
-        configure_logging(test_logger, settings)
-
-        # Verify
-        assert not any(call.args[0] == sys.stderr for call in mock_add.call_args_list)
-
-
-def test_file_handler_added_when_enabled():
-    # Setup
-    test_logger = logger.bind()
-    settings = LogSettings(file_enable=True, file_path="test.log")
-
-    with patch.object(test_logger, "add") as mock_add:
-        # Execute
-        configure_logging(test_logger, settings)
-
-        # Verify
-        assert any(call.args[0] == settings.file_path for call in mock_add.call_args_list)
-
-
-def test_file_handler_not_added_when_disabled():
-    # Setup
-    test_logger = logger.bind()
-    settings = LogSettings(file_enable=False)
-
-    with patch.object(test_logger, "add") as mock_add:
-        # Execute
-        configure_logging(test_logger, settings)
-
-        # Verify
-        assert not any(call.args[0] == settings.file_path for call in mock_add.call_args_list if len(call.args) > 0)
-
-
-def test_notification_handler_added_when_enabled():
-    # Setup
-    test_logger = logger.bind()
-    urls = ["discord://webhook_id/webhook_token"]
-    settings = LogSettings(notification_enable=True, notification_urls=urls)
-
-    with (
-        patch("kamihi.base.logging.ManualSender", autospec=True) as mock_sender_class,
-        patch.object(test_logger, "add") as mock_add,
-    ):
-        mock_sender = MagicMock()
-        mock_sender_class.return_value = mock_sender
-
-        # Execute
-        configure_logging(test_logger, settings)
-
-        # Verify
-        mock_sender_class.assert_called_once_with(urls)
-        assert any(call.args[0] == mock_sender.notify for call in mock_add.call_args_list)
-
-
-def test_notification_handler_not_added_when_disabled():
-    # Setup
-    test_logger = logger.bind()
-    settings = LogSettings(notification_enable=False)
-
-    with (
-        patch("kamihi.base.manual_send.ManualSender") as mock_sender_class,
-        patch.object(test_logger, "add") as mock_add,
-    ):
-        mock_sender = MagicMock()
-        mock_sender_class.return_value = mock_sender
-
-        # Execute
-        configure_logging(test_logger, settings)
-
-        # Verify
-        mock_sender_class.assert_not_called()
-
-
-def test_configuration_applies_correct_log_levels():
-    # Setup
-    test_logger = logger.bind()
-    settings = LogSettings(
-        stdout_enable=True,
-        stdout_level="INFO",
-        stderr_enable=True,
-        stderr_level="ERROR",
-        file_enable=True,
-        file_level="DEBUG",
-        file_path="test.log",
-        notification_enable=True,
-        notification_level="CRITICAL",
-    )
-
-    with patch.object(test_logger, "add") as mock_add:
-        # Execute
-        configure_logging(test_logger, settings)
-
-        # Verify levels for each handler
-        calls = mock_add.call_args_list
-        stdout_call = next(call for call in calls if call.args and call.args[0] == sys.stdout)
-        stderr_call = next(call for call in calls if call.args and call.args[0] == sys.stderr)
-        file_call = next(call for call in calls if call.args and call.args[0] == settings.file_path)
-
-        assert stdout_call.kwargs["level"] == "INFO"
-        assert stderr_call.kwargs["level"] == "ERROR"
-        assert file_call.kwargs["level"] == "DEBUG"
-
-        # The notification call is harder to identify directly, but we can check it exists
-        assert any("level" in call.kwargs and call.kwargs["level"] == "CRITICAL" for call in calls)
-
-
-def test_configuration_applies_serialize_settings():
-    # Setup
-    test_logger = logger.bind()
-    settings = LogSettings(
-        stdout_enable=True,
-        stdout_serialize=True,
-        stderr_enable=True,
-        stderr_serialize=False,
-        file_enable=True,
-        file_serialize=True,
-        file_path="test.log",
-    )
-
-    with patch.object(test_logger, "add") as mock_add:
-        # Execute
-        configure_logging(test_logger, settings)
-
-        # Verify serialize settings
-        calls = mock_add.call_args_list
-        stdout_call = next(call for call in calls if call.args and call.args[0] == sys.stdout)
-        stderr_call = next(call for call in calls if call.args and call.args[0] == sys.stderr)
-        file_call = next(call for call in calls if call.args and call.args[0] == settings.file_path)
-
-        assert stdout_call.kwargs["serialize"] is True
-        assert stderr_call.kwargs["serialize"] is False
-        assert file_call.kwargs["serialize"] is True
+        # Verify serialization setting
+        handler_call = next(call for call in mock_add.call_args_list if call.args and call.args[0] == handler_arg)
+        assert handler_call.kwargs["serialize"] is serialize_value
