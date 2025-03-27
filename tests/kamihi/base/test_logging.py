@@ -6,7 +6,10 @@ License:
 
 """
 
+import os
 import sys
+import tempfile
+import time
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -22,6 +25,205 @@ def mock_logger():
     Fixture to provide a mock logger instance.
     """
     return logger.bind()
+
+
+def test_log_message_recorded(mock_logger):
+    """
+    Test that log messages are correctly recorded with the appropriate severity level.
+
+    This test verifies the requirement that when a developer adds a log message,
+    the system correctly records it with the appropriate severity level.
+    """
+    # Create a temporary file for logging
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        temp_path = temp_file.name
+
+    try:
+        # Setup with file logging enabled
+        settings = LogSettings(
+            stdout_enable=False, stderr_enable=False, file_enable=True, file_path=temp_path, file_level="DEBUG"
+        )
+
+        # Configure logging
+        configure_logging(mock_logger, settings)
+
+        # Log messages at different severity levels
+        test_messages = {
+            "debug": "Debug test message",
+            "info": "Info test message",
+            "warning": "Warning test message",
+            "error": "Error test message",
+            "critical": "Critical test message",
+        }
+
+        for level_name, message in test_messages.items():
+            level_method = getattr(mock_logger, level_name)
+            level_method(message)
+
+        # Give a moment for file writing to complete
+        time.sleep(0.1)
+
+        # Read the log file
+        with open(temp_path, "r") as f:
+            log_content = f.read()
+
+        # Verify each message was recorded with correct severity
+        expected_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        for level, message in zip(expected_levels, test_messages.values()):
+            assert level in log_content and message in log_content
+
+    finally:
+        # Clean up
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
+
+
+def test_log_levels(mock_logger):
+    """
+    Test that log messages are filtered according to the configured severity level.
+
+    This test verifies that when configuring a specific log level, only messages
+    at that level or higher are recorded, while lower-level messages are filtered out.
+    """
+    # Create a temporary file for logging
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        temp_path = temp_file.name
+
+    try:
+        # Setup with file logging enabled and INFO level
+        settings = LogSettings(
+            stdout_enable=False,
+            stderr_enable=False,
+            file_enable=True,
+            file_path=temp_path,
+            file_level="INFO",  # Only INFO and above should be recorded
+        )
+
+        # Configure logging
+        configure_logging(mock_logger, settings)
+
+        # Log messages at different severity levels
+        mock_logger.debug("Debug test message")
+        mock_logger.info("Info test message")
+        mock_logger.warning("Warning test message")
+        mock_logger.error("Error test message")
+        mock_logger.critical("Critical test message")
+
+        # Give a moment for file writing to complete
+        time.sleep(0.1)
+
+        # Read the log file
+        with open(temp_path, "r") as f:
+            log_content = f.read()
+
+        # Verify messages were filtered correctly
+        assert "Debug test message" not in log_content  # Should be filtered out
+        assert "Info test message" in log_content
+        assert "Warning test message" in log_content
+        assert "Error test message" in log_content
+        assert "Critical test message" in log_content
+
+    finally:
+        # Clean up
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
+
+
+def test_log_message_serialized(mock_logger):
+    """
+    Test that log messages are serialized in JSON format when serialization is enabled.
+
+    This test verifies that when serialization is enabled, the system stores logs
+    in a standardized format (JSON) that allows for subsequent analysis and processing.
+    """
+    # Create a temporary file for logging
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        temp_path = temp_file.name
+
+    try:
+        # Setup with file logging enabled and serialization enabled
+        settings = LogSettings(
+            stdout_enable=False,
+            stderr_enable=False,
+            file_enable=True,
+            file_path=temp_path,
+            file_level="INFO",
+            file_serialize=True,  # Enable serialization
+        )
+
+        # Configure logging
+        configure_logging(mock_logger, settings)
+
+        # Log a test message
+        test_message = "This is a test message for serialization"
+        mock_logger.info(test_message)
+
+        # Give a moment for file writing to complete
+        time.sleep(0.1)
+
+        # Read the log file
+        with open(temp_path, "r") as f:
+            log_content = f.read().strip()
+
+        # Verify the content is valid JSON
+        import json
+
+        log_record = json.loads(log_content)
+
+        # Verify the JSON contains our message
+        assert test_message in log_record["text"]
+
+        # Verify other expected fields in the JSON structure
+        assert "time" in log_record["record"].keys()
+        assert "level" in log_record["record"].keys()
+        assert "name" in log_record["record"].keys()
+
+    finally:
+        # Clean up
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
+
+
+def test_log_rotation(mock_logger):
+    """
+    Test that log files are automatically rotated when they reach size/age limits.
+
+    This test verifies that when logs reach their configured maximum size or age,
+    the system automatically rotates them to prevent filesystem saturation and
+    information loss.
+    """
+    # Create a temporary directory for log files
+    with tempfile.TemporaryDirectory() as temp_dir:
+        log_path = os.path.join(temp_dir, "test_rotation.log")
+
+        # Configure logging with small size rotation threshold (1 KB)
+        settings = LogSettings(
+            stdout_enable=False,
+            stderr_enable=False,
+            file_enable=True,
+            file_path=log_path,
+            file_level="INFO",
+            file_rotation="1 KB",  # Rotate after 1 KB
+        )
+
+        configure_logging(mock_logger, settings)
+
+        # Write enough logs to trigger rotation (more than 1 KB)
+        long_message = "X" * 100  # 100 characters
+        for i in range(20):  # Should write >1KB total
+            mock_logger.info(f"{i}: {long_message}")
+
+        # Give time for file operations to complete
+        time.sleep(0.2)
+
+        # Check for rotated log files (should be main log file + at least one rotated file)
+        log_files = [f for f in os.listdir(temp_dir) if f.startswith("test_rotation")]
+
+        # Should have at least 2 files (the current log and at least one rotated log)
+        assert len(log_files) >= 2, f"Expected at least 2 log files, found {len(log_files)}"
+
+        # Verify main log file exists
+        assert os.path.exists(log_path)
 
 
 def test_initialization_removes_existing_handlers(mock_logger):
