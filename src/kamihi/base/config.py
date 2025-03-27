@@ -87,7 +87,7 @@ class KamihiSettings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
         env_nested_delimiter="__",
-        yaml_file=os.getenv("KAMIHI_CONFIG_FILE", "kamihi.yaml"),
+        yaml_file="kamihi.yaml",
     )
 
     @classmethod
@@ -125,7 +125,7 @@ class KamihiSettings(BaseSettings):
         return (
             env_settings,
             dotenv_settings,
-            YamlConfigSettingsSource(settings_cls),
+            YamlConfigSettingsSource(settings_cls, yaml_file=os.getenv("KAMIHI_CONFIG_FILE", "kamihi.yaml")),
             init_settings,
             file_secret_settings,
         )
