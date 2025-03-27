@@ -10,7 +10,12 @@ License:
 """
 
 from pydantic import BaseModel, Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+    YamlConfigSettingsSource,
+)
 
 _LEVEL_PATTERN = r"^(TRACE|DEBUG|INFO|SUCCESS|WARNING|ERROR|CRITICAL)$"
 
@@ -66,6 +71,7 @@ class KamihiSettings(BaseSettings):
     Defines the configuration schema for the Kamihi framework.
 
     Attributes:
+        log (LogSettings): Logging settings.
         model_config (SettingsConfigDict): Configuration dictionary for environment settings.
 
     """
@@ -79,4 +85,45 @@ class KamihiSettings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
         env_nested_delimiter="__",
+        yaml_file="kamihi.yml",
     )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        """
+        Customize the order of settings sources.
+
+        This method allows you to customize the order in which settings sources are
+        loaded. The order of sources is important because it determines which settings
+        take precedence when there are conflicts.
+        The order of sources is as follows:
+            1. Environment variables
+            2. .env file
+            3. YAML file
+            4. Initial settings
+
+        Args:
+            settings_cls: the settings class to customize sources for
+            init_settings: settings from class initialization
+            env_settings: settings from environment variables
+            dotenv_settings: settings from .env file
+            file_secret_settings: settings from file secrets
+
+        Returns:
+            tuple: A tuple containing the customized settings sources in the desired order.
+
+        """
+        return (
+            env_settings,
+            dotenv_settings,
+            YamlConfigSettingsSource(settings_cls),
+            init_settings,
+            file_secret_settings,
+        )
