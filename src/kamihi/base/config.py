@@ -74,6 +74,7 @@ class KamihiSettings(BaseSettings):
 
     Attributes:
         log (LogSettings): Logging settings.
+        autoreload_templates (bool): Enable or disable auto-reloading of templates.
         model_config (SettingsConfigDict): Configuration dictionary for environment settings.
 
     """
