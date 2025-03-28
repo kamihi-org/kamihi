@@ -21,9 +21,7 @@ from kamihi.base.logging import configure_logging
 
 @pytest.fixture
 def mock_logger():
-    """
-    Fixture to provide a mock logger instance.
-    """
+    """Fixture to provide a mock logger instance."""
     return logger.bind()
 
 
@@ -367,9 +365,9 @@ def test_log_level_configuration(mock_logger, handler_type, level_param, level_v
             matching_calls = [call for call in mock_add.call_args_list if call.args and call.args[0] == handler_arg]
             assert matching_calls, f"No call with handler_arg {handler_arg} found in mock_add.call_args_list"
             handler_call = matching_calls[0]
-            assert (
-                handler_call.kwargs["level"] == level_value
-            ), f"Expected level {level_value}, got {handler_call.kwargs['level']}"
+            assert handler_call.kwargs["level"] == level_value, (
+                f"Expected level {level_value}, got {handler_call.kwargs['level']}"
+            )
 
 
 @pytest.mark.parametrize(
@@ -406,6 +404,6 @@ def test_serialize_configuration(mock_logger, handler_type, serialize_param, ser
         matching_calls = [call for call in mock_add.call_args_list if call.args and call.args[0] == handler_arg]
         assert matching_calls, f"No call with handler_arg {handler_arg} found in mock_add.call_args_list"
         handler_call = matching_calls[0]
-        assert (
-            handler_call.kwargs["serialize"] == serialize_value
-        ), f"Expected serialize value {serialize_value}, got {handler_call.kwargs['level']}"
+        assert handler_call.kwargs["serialize"] == serialize_value, (
+            f"Expected serialize value {serialize_value}, got {handler_call.kwargs['level']}"
+        )
