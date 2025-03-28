@@ -13,12 +13,12 @@ License:
 MIT
 
 Examples:
->>> from pathlib import Path
->>> from kamihi.templates import Templates
->>> templates = Templates()
->>> templates.add_directory("notifications", Path("templates/notifications"))
->>> templates.load()
->>> content = templates.render("notifications/welcome.md", name="User")
+    >>> from pathlib import Path
+    >>> from kamihi.templates import Templates
+    >>> templates = Templates()
+    >>> templates.add_directory("notifications", Path("templates/notifications"))
+    >>> templates.load()
+    >>> content = templates.render("notifications/welcome.md", name="User")
 
 """
 
