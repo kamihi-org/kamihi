@@ -306,10 +306,11 @@ wheels = [
 
 [[package]]
 name = "kamihi"
-version = "0.1.1"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "apprise" },
+    { name = "jinja2" },
     { name = "loguru" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
@@ -336,6 +337,7 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "apprise", specifier = ">=1.9.2" },
+    { name = "jinja2", specifier = ">=3.1.6" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pydantic-settings", specifier = ">=2.8.1" },
