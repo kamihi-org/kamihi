@@ -79,6 +79,7 @@ class KamihiSettings(BaseSettings):
     """
 
     log: LogSettings = Field(default_factory=LogSettings)
+    autoreload_templates: bool = Field(default=True)
 
     model_config = SettingsConfigDict(
         env_prefix="KAMIHI_",
