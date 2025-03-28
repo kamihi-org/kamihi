@@ -10,16 +10,20 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
     name: "Run tests"
+    runs-on: ubuntu-latest
+
     steps:
       - name: Check out
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Install uv
+      - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
         run: |
