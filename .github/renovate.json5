@@ -8,5 +8,8 @@
   },
   reviewers: [
     "kiinami"
+  ],
+  labels: [
+    "type:task"
   ]
 }
