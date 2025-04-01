@@ -74,11 +74,13 @@ class KamihiSettings(BaseSettings):
 
     Attributes:
         log (LogSettings): Logging settings.
+        autoreload_templates (bool): Enable or disable auto-reloading of templates.
         model_config (SettingsConfigDict): Configuration dictionary for environment settings.
 
     """
 
     log: LogSettings = Field(default_factory=LogSettings)
+    autoreload_templates: bool = Field(default=True)
 
     model_config = SettingsConfigDict(
         env_prefix="KAMIHI_",

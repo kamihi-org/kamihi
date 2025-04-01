@@ -26,6 +26,7 @@ from loguru import logger
 
 from kamihi.base.config import KamihiSettings
 from kamihi.base.logging import configure_logging
+from kamihi.templates import Templates
 
 
 class Bot:
@@ -44,6 +45,7 @@ class Bot:
     """
 
     settings: KamihiSettings
+    templates: Templates
 
     def __init__(self, **kwargs: dict[str, Any]) -> None:
         """
@@ -54,6 +56,7 @@ class Bot:
 
         """
         self.settings = KamihiSettings(**kwargs)
+        self.templates = Templates(self.settings.autoreload_templates)
 
     def set_settings(self, settings: KamihiSettings) -> None:
         """Set the settings for the bot."""
