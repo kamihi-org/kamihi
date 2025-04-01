@@ -1,6 +1,6 @@
 [project]
 name = "kamihi"
-version = "0.2.0"
+version = "0.3.0"
 description = "Framework for building Telegram bots in Python"
 license = "MIT"
 readme = "README.md"
