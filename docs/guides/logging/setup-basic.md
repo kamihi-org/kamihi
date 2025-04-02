@@ -1,5 +1,7 @@
 This guide shows you how to configure and use basic logging in your Kamihi application.
 
+If you need to capture application activity for debugging or monitoring, configure logging as described below.
+
 ## Configuring console logging
 
 Console logging to `stdout` is enabled by default. You can configure it in several ways:
@@ -76,28 +78,3 @@ If you need to store logs in a file:
         file_level="DEBUG"
     )
     ```
-
-## Using logging in your code
-
-After configuring logging, you can use it in your application:
-
-```python
-from loguru import logger
-
-# Log messages at different levels
-logger.debug("Detailed information for debugging")
-logger.info("General information about program execution")
-logger.success("An operation completed successfully")
-logger.warning("Something unexpected happened")
-logger.error("A problem occurred")
-logger.critical("A serious problem that might stop the program")
-
-# Log an exception with traceback
-try:
-    1 / 0
-except Exception as e:
-    logger.exception(f"An error occurred: {e}")
-
-# Add context to your logs
-logger.bind(user_id="12345").info("User completed an action")
-```
