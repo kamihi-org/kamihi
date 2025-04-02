@@ -13,15 +13,28 @@ watch:
 
 nav:
   - Home: index.md
-  - Changelog: changelog.md
-  #  - Tutorials:
-  #  - "How-to guides":
+  - Getting started:
+      - Installation: tutorials/installation.md
+  - Guides:
+      - Logging:
+          - Set up basic logging: guides/logging/setup-basic.md
+          - Configure log rotation and retention: guides/logging/configure-rotation-retention.md
+          - Configure structured logging: guides/logging/configure-structured.md
+          - Configure notifications: guides/logging/configure-notifications.md
+      - Configuration:
+          - Load configuration from a file: guides/config/load-file.md
+          - Load configuration from environment variables: guides/config/load-environment.md
+          - Set configuration values programmatically: guides/config/load-prog.md
   #  - "Explanation":
+  - Changelog: changelog.md
 
 theme:
   name: material
   logo: https://api.iconify.design/flowbite:paper-plane-solid.svg?color=%23FFFFFF
   features:
+    - content.code.annotate
+    - content.code.copy
+    - content.code.select
     - navigation.instant
     - navigation.instant.progress
     - navigation.tracking
@@ -58,6 +71,10 @@ plugins:
       modules: [ 'src/kamihi' ]
   - mkdocs-typer2:
       pretty: true
+  - termynal:
+      prompt_literal_start:
+        - "$"
+        - ">"
 
 markdown_extensions:
   - abbr
@@ -68,11 +85,14 @@ markdown_extensions:
   - tables
   - pymdownx.betterem
   - pymdownx.blocks.caption
+  - pymdownx.inlinehilite
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.details
 
 extra:
   generator: false
