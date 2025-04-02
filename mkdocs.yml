@@ -21,6 +21,10 @@ nav:
           - Configure log rotation and retention: guides/logging/configure-rotation-retention.md
           - Configure structured logging: guides/logging/configure-structured.md
           - Configure notifications: guides/logging/configure-notifications.md
+      - Configuration:
+          - Load configuration from a file: guides/config/load-file.md
+          - Load configuration from environment variables: guides/config/load-environment.md
+          - Set configuration values programmatically: guides/config/load-prog.md
   #  - "Explanation":
   - Changelog: changelog.md
 
