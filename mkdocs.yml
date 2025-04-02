@@ -15,7 +15,6 @@ nav:
   - Home: index.md
   - Getting started:
       - Installation: tutorials/installation.md
-      - Configuration: tutorials/configuration.md
   - Guides:
       - Logging:
           - Set up basic logging: guides/logging/setup-basic.md
