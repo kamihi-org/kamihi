@@ -16,7 +16,9 @@ nav:
   - Getting started:
       - Installation: tutorials/installation.md
       - Configuration: tutorials/configuration.md
-  #  - "How-to guides":
+  - Guides:
+      - Logging:
+          - Set up basic logging: guides/logging/setup-basic.md
   #  - "Explanation":
   - Changelog: changelog.md
 
