@@ -13,15 +13,20 @@ watch:
 
 nav:
   - Home: index.md
-  - Changelog: changelog.md
-  #  - Tutorials:
+  - Getting started:
+      - Installation: tutorials/installation.md
+      - Configuration: tutorials/configuration.md
   #  - "How-to guides":
   #  - "Explanation":
+  - Changelog: changelog.md
 
 theme:
   name: material
   logo: https://api.iconify.design/flowbite:paper-plane-solid.svg?color=%23FFFFFF
   features:
+    - content.code.annotate
+    - content.code.copy
+    - content.code.select
     - navigation.instant
     - navigation.instant.progress
     - navigation.tracking
@@ -73,6 +78,8 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.details
 
 extra:
   generator: false
