@@ -13,25 +13,25 @@
         <meta name="author" content="kiinami">
       
       
-        <link rel="canonical" href="https://kamihi-dev.github.io/kamihi/0.3.0/changelog/">
+        <link rel="canonical" href="https://kamihi-dev.github.io/kamihi/0.3.0/guides/config/load-file/">
       
       
-        <link rel="prev" href="../guides/config/load-prog/">
+        <link rel="prev" href="../../logging/configure-notifications/">
       
       
-        <link rel="next" href="../reference/kamihi/">
+        <link rel="next" href="../load-environment/">
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.9">
     
     
       
-        <title>Changelog - Kamihi documentation</title>
+        <title>Load configuration from a file - Kamihi documentation</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.4af4bdda.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.4af4bdda.min.css">
       
       
 
@@ -50,11 +50,11 @@
       
     
     
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../termynal.css">
+      <link rel="stylesheet" href="../../../termynal.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -73,7 +73,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#030-2025-04-01" class="md-skip">
+        <a href="#prerequisites" class="md-skip">
           Skip to content
         </a>
       
@@ -93,7 +93,7 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="Kamihi documentation" class="md-header__button md-logo" aria-label="Kamihi documentation" data-md-component="logo">
+    <a href="../../.." title="Kamihi documentation" class="md-header__button md-logo" aria-label="Kamihi documentation" data-md-component="logo">
       
   <img src="https://api.iconify.design/flowbite:paper-plane-solid.svg?color=%23FFFFFF" alt="logo">
 
@@ -112,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Changelog
+              Load configuration from a file
             
           </span>
         </div>
@@ -189,7 +189,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../../.." class="md-tabs__link">
         
   
     
@@ -208,7 +208,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../tutorials/installation/" class="md-tabs__link">
+        <a href="../../../tutorials/installation/" class="md-tabs__link">
           
   
     
@@ -224,17 +224,21 @@
         
   
   
+    
+  
   
     
     
       
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../guides/logging/setup-basic/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../logging/setup-basic/" class="md-tabs__link">
           
   
     
@@ -253,11 +257,9 @@
         
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../../../changelog/" class="md-tabs__link">
         
   
     
@@ -282,7 +284,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../reference/kamihi/" class="md-tabs__link">
+        <a href="../../../reference/kamihi/" class="md-tabs__link">
           
   
     
@@ -326,7 +328,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Kamihi documentation" class="md-nav__button md-logo" aria-label="Kamihi documentation" data-md-component="logo">
+    <a href="../../.." title="Kamihi documentation" class="md-nav__button md-logo" aria-label="Kamihi documentation" data-md-component="logo">
       
   <img src="https://api.iconify.design/flowbite:paper-plane-solid.svg?color=%23FFFFFF" alt="logo">
 
@@ -355,7 +357,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -421,7 +423,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorials/installation/" class="md-nav__link">
+      <a href="../../../tutorials/installation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -447,8 +449,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -459,19 +463,22 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -483,7 +490,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Guides
@@ -512,17 +519,20 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1" >
         
           
-          <label class="md-nav__link" for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_1" id="__nav_3_1_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -548,7 +558,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/logging/setup-basic/" class="md-nav__link">
+      <a href="../../logging/setup-basic/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -570,7 +580,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/logging/configure-rotation-retention/" class="md-nav__link">
+      <a href="../../logging/configure-rotation-retention/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -592,7 +602,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/logging/configure-structured/" class="md-nav__link">
+      <a href="../../logging/configure-structured/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -614,7 +624,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/logging/configure-notifications/" class="md-nav__link">
+      <a href="../../logging/configure-notifications/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -641,8 +651,10 @@
                 
   
   
+    
   
   
+  
     
     
       
@@ -656,18 +668,21 @@
     
       
       
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" >
         
           
-          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -679,7 +694,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3_2">
             <span class="md-nav__icon md-icon"></span>
             Configuration
@@ -690,10 +705,29 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../guides/config/load-file/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Load configuration from a file
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -703,6 +737,60 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-basics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration basics
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Steps
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Notes
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -715,7 +803,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/config/load-environment/" class="md-nav__link">
+      <a href="../load-environment/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -737,7 +825,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/config/load-prog/" class="md-nav__link">
+      <a href="../load-prog/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -771,29 +859,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Changelog
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../../changelog/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -803,129 +872,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#030-2025-04-01" class="md-nav__link">
-    <span class="md-ellipsis">
-      0.3.0 (2025-04-01)
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="0.3.0 (2025-04-01)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#feat" class="md-nav__link">
-    <span class="md-ellipsis">
-      Feat
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#020-2025-03-28" class="md-nav__link">
-    <span class="md-ellipsis">
-      0.2.0 (2025-03-28)
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="0.2.0 (2025-03-28)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#feat_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      Feat
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#011-2025-03-19" class="md-nav__link">
-    <span class="md-ellipsis">
-      0.1.1 (2025-03-19)
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="0.1.1 (2025-03-19)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#refactor" class="md-nav__link">
-    <span class="md-ellipsis">
-      Refactor
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#010-2025-03-18" class="md-nav__link">
-    <span class="md-ellipsis">
-      0.1.0 (2025-03-18)
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="0.1.0 (2025-03-18)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#feat_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      Feat
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#fix" class="md-nav__link">
-    <span class="md-ellipsis">
-      Fix
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1011,7 +957,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../reference/kamihi/" class="md-nav__link ">
+            <a href="../../../reference/kamihi/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1074,7 +1020,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../reference/kamihi/base/" class="md-nav__link ">
+            <a href="../../../reference/kamihi/base/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1108,7 +1054,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/kamihi/base/config/" class="md-nav__link">
+      <a href="../../../reference/kamihi/base/config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1130,7 +1076,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/kamihi/base/logging/" class="md-nav__link">
+      <a href="../../../reference/kamihi/base/logging/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1152,7 +1098,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/kamihi/base/manual_send/" class="md-nav__link">
+      <a href="../../../reference/kamihi/base/manual_send/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1207,7 +1153,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../reference/kamihi/bot/" class="md-nav__link ">
+            <a href="../../../reference/kamihi/bot/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1241,7 +1187,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/kamihi/bot/bot/" class="md-nav__link">
+      <a href="../../../reference/kamihi/bot/bot/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1296,7 +1242,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../reference/kamihi/templates/" class="md-nav__link ">
+            <a href="../../../reference/kamihi/templates/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1330,7 +1276,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/kamihi/templates/templates/" class="md-nav__link">
+      <a href="../../../reference/kamihi/templates/templates/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1393,107 +1339,38 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#030-2025-04-01" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
-      0.3.0 (2025-04-01)
+      Prerequisites
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="0.3.0 (2025-04-01)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#feat" class="md-nav__link">
-    <span class="md-ellipsis">
-      Feat
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#020-2025-03-28" class="md-nav__link">
+  <a href="#configuration-basics" class="md-nav__link">
     <span class="md-ellipsis">
-      0.2.0 (2025-03-28)
+      Configuration basics
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="0.2.0 (2025-03-28)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#feat_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      Feat
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#011-2025-03-19" class="md-nav__link">
+  <a href="#steps" class="md-nav__link">
     <span class="md-ellipsis">
-      0.1.1 (2025-03-19)
+      Steps
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="0.1.1 (2025-03-19)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#refactor" class="md-nav__link">
-    <span class="md-ellipsis">
-      Refactor
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#010-2025-03-18" class="md-nav__link">
+  <a href="#notes" class="md-nav__link">
     <span class="md-ellipsis">
-      0.1.0 (2025-03-18)
+      Notes
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="0.1.0 (2025-03-18)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#feat_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      Feat
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#fix" class="md-nav__link">
-    <span class="md-ellipsis">
-      Fix
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1516,32 +1393,58 @@
   
 
 
-  <h1>Changelog</h1>
+  <h1>Load configuration from a file</h1>
 
-<h2 id="030-2025-04-01">0.3.0 (2025-04-01)<a class="headerlink" href="#030-2025-04-01" title="Permanent link">⚓︎</a></h2>
-<h3 id="feat">Feat<a class="headerlink" href="#feat" title="Permanent link">⚓︎</a></h3>
+<p>This guide explains how to load configuration settings for your Kamihi application from a file. Using a configuration file allows you to easily manage and modify settings without altering your code.</p>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">⚓︎</a></h2>
 <ul>
-<li><strong>templates</strong>: added (#14)</li>
+<li>A Kamihi project.</li>
+<li>A basic understanding of Kamihi's configuration system.</li>
 </ul>
-<h2 id="020-2025-03-28">0.2.0 (2025-03-28)<a class="headerlink" href="#020-2025-03-28" title="Permanent link">⚓︎</a></h2>
-<h3 id="feat_1">Feat<a class="headerlink" href="#feat_1" title="Permanent link">⚓︎</a></h3>
+<h2 id="configuration-basics">Configuration basics<a class="headerlink" href="#configuration-basics" title="Permanent link">⚓︎</a></h2>
+<p>Kamihi supports loading configuration from YAML files. By default, it looks for a file named <code>kamihi.yaml</code> in the same directory as your application. You can also specify a custom file path using the <code>KAMIHI_CONFIG_FILE</code> environment variable.</p>
+<p>The configuration file should contain settings that correspond to the attributes defined in your <code>KamihiSettings</code> class.</p>
+<h2 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">⚓︎</a></h2>
+<ol>
+<li>
+<p><strong>Create a configuration file:</strong></p>
+<p>Create a file named <code>kamihi.yaml</code> (or choose a different name) in your project directory. Add your desired configuration settings to this file. For example:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">log</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">stdout_level</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DEBUG</span>
+<span class="w">  </span><span class="nt">file_enable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;app.log&quot;</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Specify the configuration file (optional):</strong></p>
+<p>If you are not using the default <code>kamihi.yaml</code> file, set the <code>KAMIHI_CONFIG_FILE</code> environment variable to the path of your configuration file. This can be done in your shell or in a <code>.env</code> file:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Environment variable</label><label for="__tabbed_1_2"><code>.env</code> file</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">KAMIHI_CONFIG_FILE</span><span class="o">=</span>/path/to/your/config.yaml
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>KAMIHI_CONFIG_FILE=/path/to/your/config.yaml
+</code></pre></div>
+</div>
+</div>
+</div>
+</li>
+<li>
+<p><strong>Load the settings:</strong></p>
+<p>When your Kamihi application starts, it will automatically load the configuration from the specified file (or the default <code>kamihi.yaml</code> if no environment variable is set).  You can then access these settings through <code>bot.settings</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">kamihi</span><span class="w"> </span><span class="kn">import</span> <span class="n">bot</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">bot</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">stdout_level</span><span class="p">)</span>  <span class="c1"># Output: DEBUG</span>
+</code></pre></div>
+</li>
+</ol>
+<h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">⚓︎</a></h2>
 <ul>
-<li><strong>base</strong>: added (#5)</li>
-</ul>
-<h2 id="011-2025-03-19">0.1.1 (2025-03-19)<a class="headerlink" href="#011-2025-03-19" title="Permanent link">⚓︎</a></h2>
-<h3 id="refactor">Refactor<a class="headerlink" href="#refactor" title="Permanent link">⚓︎</a></h3>
-<ul>
-<li>using new file header</li>
-</ul>
-<h2 id="010-2025-03-18">0.1.0 (2025-03-18)<a class="headerlink" href="#010-2025-03-18" title="Permanent link">⚓︎</a></h2>
-<h3 id="feat_2">Feat<a class="headerlink" href="#feat_2" title="Permanent link">⚓︎</a></h3>
-<ul>
-<li>added pre-commit and ruff</li>
-<li>initial project setup</li>
-</ul>
-<h3 id="fix">Fix<a class="headerlink" href="#fix" title="Permanent link">⚓︎</a></h3>
-<ul>
-<li>delete boilerplate code</li>
+<li>Settings in the configuration file will override the default values defined in your <code>KamihiSettings</code> class.</li>
+<li>Environment variables (e.g., <code>KAMIHI_LOG__STDOUT_LEVEL</code>) will take precedence over settings in the configuration file.</li>
+<li>If the file specified by <code>KAMIHI_CONFIG_FILE</code> does not exist, Kamihi will fall back to the default <code>kamihi.yaml</code> file, or to the default settings if that file doesn't exist either.</li>
 </ul>
 
 
@@ -1578,7 +1481,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../guides/config/load-prog/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Set configuration values programmatically">
+          <a href="../../logging/configure-notifications/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Configure notifications">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1588,20 +1491,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Set configuration values programmatically
+                Configure notifications
               </div>
             </div>
           </a>
         
         
           
-          <a href="../reference/kamihi/" class="md-footer__link md-footer__link--next" aria-label="Next: kamihi">
+          <a href="../load-environment/" class="md-footer__link md-footer__link--next" aria-label="Next: Load configuration from environment variables">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                kamihi
+                Load configuration from environment variables
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1632,12 +1535,12 @@
       <div class="md-progress" data-md-component="progress" role="progressbar"></div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["content.code.annotate", "content.code.copy", "content.code.select", "navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.annotate", "content.code.copy", "content.code.select", "navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight"], "search": "../../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.c8b220af.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.c8b220af.min.js"></script>
       
-        <script src="../termynal.js"></script>
+        <script src="../../../termynal.js"></script>
       
     
   </body>
