@@ -21,6 +21,7 @@ nav:
           - Set up basic logging: guides/logging/setup-basic.md
           - Configure log rotation and retention: guides/logging/configure-rotation-retention.md
           - Configure structured logging: guides/logging/configure-structured.md
+          - Configure notifications: guides/logging/configure-notifications.md
   #  - "Explanation":
   - Changelog: changelog.md
 
