@@ -19,6 +19,7 @@ nav:
   - Guides:
       - Logging:
           - Set up basic logging: guides/logging/setup-basic.md
+          - Configure log rotation and retention: guides/logging/configure-rotation-retention.md
   #  - "Explanation":
   - Changelog: changelog.md
 
