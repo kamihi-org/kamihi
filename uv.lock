@@ -332,6 +332,7 @@ docs = [
     { name = "mkdocs-typer2" },
     { name = "mkdocstrings", extra = ["python"] },
     { name = "pymdown-extensions" },
+    { name = "termynal" },
 ]
 
 [package.metadata]
@@ -359,6 +360,7 @@ docs = [
     { name = "mkdocs-typer2", specifier = ">=0.1.4" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.29.0" },
     { name = "pymdown-extensions", specifier = ">=10.14.3" },
+    { name = "termynal", specifier = ">=0.13.0" },
 ]
 
 [[package]]
@@ -994,6 +996,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/37/72/88311445fd44c455c7d553e61f95412cf89054308a1aa2434ab835075fc5/termcolor-2.5.0.tar.gz", hash = "sha256:998d8d27da6d48442e8e1f016119076b690d962507531df4890fcd2db2ef8a6f", size = 13057 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7f/be/df630c387a0a054815d60be6a97eb4e8f17385d5d6fe660e1c02750062b4/termcolor-2.5.0-py3-none-any.whl", hash = "sha256:37b17b5fc1e604945c2642c872a3764b5d547a48009871aea3edd3afa180afb8", size = 7755 },
+]
+
+[[package]]
+name = "termynal"
+version = "0.13.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "markdown" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6f/f4/499b6559a8dc8dd9d06fcab1c573d2e9e5c3b5a4ceedc5fef75de9df1776/termynal-0.13.0.tar.gz", hash = "sha256:8d41cc80b03e040398bf57f37a584d06295b5ad82a7add54f1ad000daf537573", size = 174126 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5e/2d/a00bb03c0db99de80944fa522d5fbfdc844b9c5aa45db31e6edb0cb5e02c/termynal-0.13.0-py3-none-any.whl", hash = "sha256:0507eba6d8d96a2b29fddb8ae4d58b07b2a48b9144bda976629de3b9e2a47ced", size = 10620 },
 ]
 
 [[package]]
