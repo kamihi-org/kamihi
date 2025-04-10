@@ -115,7 +115,6 @@ class TelegramClient:
         self._app.add_handler(CommandHandler(valid_commands, callback))
         logger.debug(f"command(s) {', '.join('/' + cmd for cmd in command)} registered")
 
-    @logger.catch(exception=TelegramError, message="Failed to send message")
     async def send_text(self, chat_id: int | str, text: str) -> None:
         """
         Send a text message to the user.
@@ -125,4 +124,8 @@ class TelegramClient:
             text (str): The text message to send.
 
         """
-        await self._app.bot.send_message(chat_id, text)
+        lg = logger.bind(chat_id=chat_id)
+
+        with lg.catch(exception=TelegramError):
+            await self._app.bot.send_message(chat_id, text)
+            lg.debug(f"Message sent")
