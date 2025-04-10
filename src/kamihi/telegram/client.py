@@ -15,13 +15,15 @@ Examples:
 """
 
 import re
-from datetime import tzinfo
 
 from loguru import logger
 from telegram import Update
 from telegram.constants import BotCommandLimit, ParseMode
 from telegram.error import TelegramError
-from telegram.ext import Application, CommandHandler, Defaults
+from telegram.ext import Application, CommandHandler, Defaults, DictPersistence
+
+from kamihi.base.config import KamihiSettings
+from kamihi.telegram.send import send_text
 
 
 async def _post_init(_: Application) -> None:
@@ -44,25 +46,25 @@ class TelegramClient:
 
     _command_regex = re.compile(rf"^[a-z0-9_]{{{BotCommandLimit.MIN_COMMAND},{BotCommandLimit.MAX_COMMAND}}}$")
 
-    def __init__(self, token: str, timezone: tzinfo) -> None:
+    def __init__(self, settings: KamihiSettings) -> None:
         """
         Initialize the Telegram client.
 
         Args:
-            token (str): The Telegram bot token.
-            timezone (tzinfo): The timezone for the bot.
+            settings (KamihiSettings): The settings object.
 
         """
         self._app = Application.builder()
-        self._app.token(token)
+        self._app.token(settings.token)
         self._app.defaults(
             Defaults(
-                tzinfo=timezone,
+                tzinfo=settings.timezone,
                 parse_mode=ParseMode.MARKDOWN_V2,
             )
         )
         self._app.post_init(_post_init)
         self._app.post_shutdown(_post_shutdown)
+        self._app.persistence(DictPersistence(bot_data_json=settings.model_dump_json()))
         self._app = self._app.build()
 
     def run(self) -> None:
@@ -124,8 +126,4 @@ class TelegramClient:
             text (str): The text message to send.
 
         """
-        lg = logger.bind(chat_id=chat_id)
-
-        with lg.catch(exception=TelegramError):
-            await self._app.bot.send_message(chat_id, text)
-            lg.debug(f"Message sent")
+        await send_text(self._app.bot, chat_id, text)

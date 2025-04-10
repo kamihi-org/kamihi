@@ -148,7 +148,7 @@ class KamihiSettings(BaseSettings):
 
     """
 
-    token: str = Field(default="", pattern=r"^\d{9}:[0-9A-Za-z_-]{35}$", validate_default=True)
+    token: str = Field(default="", pattern=r"^\d{9}:[0-9A-Za-z_-]{35}$", validate_default=True, exclude=True)
     timezone: DstTzInfo = Field(default="UTC", validate_default=True)
     autoreload_templates: bool = Field(default=True)
 
