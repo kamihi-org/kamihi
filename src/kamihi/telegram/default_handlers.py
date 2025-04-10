@@ -26,7 +26,7 @@ async def default(update: Update, context: CallbackContext) -> None:
         "Message has no handler, so sending default response"
     )
 
-    text = context.bot_data.get("responses").get("default").get("text")
+    text = context.bot_data.get("responses").get("default_text")
     await reply_text(update, context, text)
 
 
@@ -42,5 +42,5 @@ async def error(update: object | None, context: CallbackContext) -> None:
     logger.opt(exception=context.error).error("An error occurred")
 
     if isinstance(update, Update):
-        text = context.bot_data.get("responses").get("error").get("text")
+        text = context.bot_data.get("responses").get("error_text")
         await reply_text(update, context, text)
