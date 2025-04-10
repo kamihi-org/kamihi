@@ -70,46 +70,6 @@ class LogSettings(BaseModel):
     notification_urls: list[str] = Field(default_factory=list)
 
 
-class GenericResponseSettings(BaseModel):
-    """
-    Defines the generic schema for default response settings.
-
-    Attributes:
-        enable (bool): Enable or disable the response
-        text (str): The response text.
-
-    """
-
-    enable: bool = Field(default=True)
-    text: str = Field()
-
-
-class DefaultResponseSettings(GenericResponseSettings):
-    """
-    Defines the default response settings schema.
-
-    Attributes:
-        enable (bool): Enable or disable the response.
-        text (str): The response text.
-
-    """
-
-    text: str = Field(default="I'm sorry, but I don't know how to respond to that.")
-
-
-class ErrorResponseSettings(GenericResponseSettings):
-    """
-    Defines the error response settings schema.
-
-    Attributes:
-        enable (bool): Enable or disable the response.
-        text (str): The response text.
-
-    """
-
-    text: str = Field(default="An error occurred while processing your request.")
-
-
 class ResponseSettings(BaseModel):
     """
     Defines the response settings schema.
@@ -119,8 +79,9 @@ class ResponseSettings(BaseModel):
 
     """
 
-    default: DefaultResponseSettings = Field(default_factory=DefaultResponseSettings)
-    error: ErrorResponseSettings = Field(default_factory=ErrorResponseSettings)
+    default_enabled: bool = Field(default=True)
+    default_message: str = Field(default="I'm sorry, but I don't know how to respond to that.")
+    error_message: str = Field(default="An error occurred while processing your request. We are working on it.")
 
 
 class KamihiSettings(BaseSettings):
