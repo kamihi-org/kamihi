@@ -8,8 +8,8 @@ License:
 
 Examples:
     >>> from kamihi.telegram.client import TelegramClient
-    >>> from pytz import timezone
-    >>> client = TelegramClient("my_token", timezone("UTC"))
+    >>> from kamihi.base.config import KamihiSettings
+    >>> client = TelegramClient(KamihiSettings())
     >>> client.run()
 
 """
