@@ -31,7 +31,6 @@ from telegram.ext import (
 
 from kamihi.base.config import KamihiSettings
 from kamihi.telegram.default_responses import default, error
-from kamihi.telegram.send import send_text
 
 
 async def _post_init(_: Application) -> None:
@@ -81,16 +80,6 @@ class TelegramClient:
         self._app.add_handler(MessageHandler(filters.ALL, default), group=1000)
         self._app.add_error_handler(error)
 
-    def run(self) -> None:
-        """Run the Telegram bot."""
-        logger.debug("Starting main loop...")
-        self._app.run_polling(allowed_updates=Update.ALL_TYPES)
-
-    async def stop(self) -> None:
-        """Stop the Telegram bot."""
-        logger.debug("Stopping main loop...")
-        await self._app.stop()
-
     def _filter_valid_commands(self, commands: list[str], callback_name: str) -> list[str]:
         """Filter valid commands and log invalid ones."""
         min_len, max_len = BotCommandLimit.MIN_COMMAND, BotCommandLimit.MAX_COMMAND
@@ -131,13 +120,12 @@ class TelegramClient:
         self._app.add_handler(CommandHandler(valid_commands, callback))
         logger.debug(f"command(s) {', '.join('/' + cmd for cmd in command)} registered")
 
-    async def send_text(self, chat_id: int | str, text: str) -> None:
-        """
-        Send a text message to the user.
+    def run(self) -> None:
+        """Run the Telegram bot."""
+        logger.debug("Starting main loop...")
+        self._app.run_polling(allowed_updates=Update.ALL_TYPES)
 
-        Args:
-            chat_id (int | str): The chat ID of the user.
-            text (str): The text message to send.
-
-        """
-        await send_text(self._app.bot, chat_id, text)
+    async def stop(self) -> None:
+        """Stop the Telegram bot."""
+        logger.debug("Stopping main loop...")
+        await self._app.stop()
