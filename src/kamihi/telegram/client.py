@@ -77,7 +77,8 @@ class TelegramClient:
 
         self._app: Application = self._builder.build()
 
-        self._app.add_handler(MessageHandler(filters.ALL, default), group=1000)
+        if settings.responses.default_enabled:
+            self._app.add_handler(MessageHandler(filters.ALL, default), group=1000)
         self._app.add_error_handler(error)
 
     def _filter_valid_commands(self, commands: list[str], callback_name: str) -> list[str]:
