@@ -1,16 +1,128 @@
 """
-TODO: one-line module description.
+Telegram client module.
 
-TODO: Additional details about the module, its purpose, and any necessary
-background information. Explain what functions or classes are included.
+This module provides a Telegram client for sending messages and handling commands.
 
 License:
     MIT
 
 Examples:
-    [Examples of how to use the module/classes/functions]
-
-Attributes:
-    [List any relevant module-level attributes with types and descriptions]
+    >>> from kamihi.telegram.client import TelegramClient
+    >>> from pytz import timezone
+    >>> client = TelegramClient("my_token", timezone("UTC"))
+    >>> client.run()
 
 """
+
+import re
+from datetime import tzinfo
+
+from loguru import logger
+from telegram import Update
+from telegram.constants import BotCommandLimit, ParseMode
+from telegram.error import TelegramError
+from telegram.ext import Application, CommandHandler, Defaults
+
+
+async def _post_init(_: Application) -> None:
+    """Log the start of the bot."""
+    logger.success("Started!")
+
+
+async def _post_shutdown(_: Application) -> None:
+    """Log the shutdown of the bot."""
+    logger.success("Stopped!")
+
+
+class TelegramClient:
+    """
+    Telegram client class.
+
+    This class provides methods to send messages and handle commands.
+
+    """
+
+    _command_regex = re.compile(rf"^[a-z0-9_]{{{BotCommandLimit.MIN_COMMAND},{BotCommandLimit.MAX_COMMAND}}}$")
+
+    def __init__(self, token: str, timezone: tzinfo) -> None:
+        """
+        Initialize the Telegram client.
+
+        Args:
+            token (str): The Telegram bot token.
+            timezone (tzinfo): The timezone for the bot.
+
+        """
+        self._app = Application.builder()
+        self._app.token(token)
+        self._app.defaults(
+            Defaults(
+                tzinfo=timezone,
+                parse_mode=ParseMode.MARKDOWN_V2,
+            )
+        )
+        self._app.post_init(_post_init)
+        self._app.post_shutdown(_post_shutdown)
+        self._app = self._app.build()
+
+    def run(self) -> None:
+        """Run the Telegram bot."""
+        logger.debug("Starting main loop...")
+        self._app.run_polling(allowed_updates=Update.ALL_TYPES)
+
+    async def stop(self) -> None:
+        """Stop the Telegram bot."""
+        logger.debug("Stopping main loop...")
+        await self._app.stop()
+
+    def _filter_valid_commands(self, commands: list[str], callback_name: str) -> list[str]:
+        """Filter valid commands and log invalid ones."""
+        min_len, max_len = BotCommandLimit.MIN_COMMAND, BotCommandLimit.MAX_COMMAND
+        valid_commands = []
+
+        for cmd in commands:
+            if not self._command_regex.match(cmd):
+                logger.warning(
+                    f"Command {cmd} for {callback_name} was discarded: "
+                    f"must be {min_len}-{max_len} chars of lowercase letters, digits and underscores"
+                )
+                continue
+            if cmd in valid_commands:
+                logger.warning(f"Command '{cmd}' for {callback_name} was discarded: already registered")
+                continue
+            valid_commands.append(cmd)
+
+        return valid_commands
+
+    async def register_command(self, command: str | list[str], callback) -> None:  # noqa: ANN001
+        """
+        Register a command handler.
+
+        Args:
+            command (str | list[str]): The command(s) to register.
+            callback: The callback function to handle the command.
+
+        """
+        if isinstance(command, str):
+            command = [command]
+
+        valid_commands = self._filter_valid_commands(command, callback.__name__)
+
+        if not valid_commands:
+            logger.warning(f"No valid commands provided for {callback.__name__}")
+            return
+
+        self._app.add_handler(CommandHandler(valid_commands, callback))
+        logger.debug(f"command(s) {', '.join('/' + cmd for cmd in command)} registered")
+
+    @logger.catch(exception=TelegramError, message="Failed to send message")
+    async def send_text(self, chat_id: int | str, text: str) -> None:
+        """
+        Send a text message to the user.
+
+        Args:
+            chat_id (int | str): The chat ID of the user.
+            text (str): The text message to send.
+
+        """
+        await self._app.bot.send_message(chat_id, text)
