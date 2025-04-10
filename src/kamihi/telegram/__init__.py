@@ -1,16 +1,13 @@
 """
-TODO: one-line module description.
+Telegram module for Kamihi.
 
-TODO: Additional details about the module, its purpose, and any necessary
-background information. Explain what functions or classes are included.
+This module provides the communication with the Telegram API
 
 License:
     MIT
 
-Examples:
-    [Examples of how to use the module/classes/functions]
-
-Attributes:
-    [List any relevant module-level attributes with types and descriptions]
-
 """
+
+from kamihi.telegram.client import TelegramClient
+
+__all__ = ["TelegramClient"]
