@@ -11,13 +11,15 @@ License:
 
 import os
 
-from pydantic import BaseModel, Field
+import pytz
+from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
     YamlConfigSettingsSource,
 )
+from pytz.tzinfo import DstTzInfo
 
 _LEVEL_PATTERN = r"^(TRACE|DEBUG|INFO|SUCCESS|WARNING|ERROR|CRITICAL)$"
 
@@ -68,6 +70,73 @@ class LogSettings(BaseModel):
     notification_urls: list[str] = Field(default_factory=list)
 
 
+class GenericResponseSettings(BaseModel):
+    """
+    Defines the generic schema for default response settings.
+
+    Attributes:
+        enable (bool): Enable or disable the response
+        text (str): The response text.
+
+    """
+
+    enable: bool = Field(default=True)
+    text: str = Field()
+
+
+class DefaultResponseSettings(GenericResponseSettings):
+    """
+    Defines the default response settings schema.
+
+    Attributes:
+        enable (bool): Enable or disable the response.
+        text (str): The response text.
+
+    """
+
+    text: str = Field(default="I'm sorry, but I don't know how to respond to that.")
+
+
+class UnknownCommandResponseSettings(GenericResponseSettings):
+    """
+    Defines the unknown command response settings schema.
+
+    Attributes:
+        enable (bool): Enable or disable the response.
+        text (str): The response text.
+
+    """
+
+    text: str = Field(default="Unknown command. Please try again.")
+
+
+class ErrorResponseSettings(GenericResponseSettings):
+    """
+    Defines the error response settings schema.
+
+    Attributes:
+        enable (bool): Enable or disable the response.
+        text (str): The response text.
+
+    """
+
+    text: str = Field(default="An error occurred while processing your request.")
+
+
+class ResponseSettings(BaseModel):
+    """
+    Defines the response settings schema.
+
+    Attributes:
+        default (DefaultResponseSettings): Default response settings.
+
+    """
+
+    default: DefaultResponseSettings = Field(default_factory=DefaultResponseSettings)
+    unknown_command: UnknownCommandResponseSettings = Field(default_factory=UnknownCommandResponseSettings)
+    error: ErrorResponseSettings = Field(default_factory=ErrorResponseSettings)
+
+
 class KamihiSettings(BaseSettings):
     """
     Defines the configuration schema for the Kamihi framework.
@@ -79,8 +148,34 @@ class KamihiSettings(BaseSettings):
 
     """
 
-    log: LogSettings = Field(default_factory=LogSettings)
+    token: str = Field(default="", pattern=r"^\d{9}:[0-9A-Za-z_-]{35}$", validate_default=True)
+    timezone: DstTzInfo = Field(default="UTC", validate_default=True)
     autoreload_templates: bool = Field(default=True)
+
+    log: LogSettings = Field(default_factory=LogSettings)
+    responses: ResponseSettings = Field(default_factory=ResponseSettings)
+
+    @classmethod
+    @field_validator("timezone")
+    def validate_timezone(cls, value: str) -> DstTzInfo:
+        """
+        Validate the timezone value.
+
+        Args:
+            value (str): The timezone value to validate.
+
+        Returns:
+            str: The validated timezone value.
+
+        Raises:
+            ValueError: If the timezone is invalid.
+
+        """
+        if value not in pytz.all_timezones:
+            msg = f"Invalid timezone: {value}"
+            raise ValueError(msg)
+
+        return pytz.timezone(value)
 
     model_config = SettingsConfigDict(
         env_prefix="KAMIHI_",
