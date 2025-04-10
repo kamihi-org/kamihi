@@ -1,23 +1,15 @@
 """
-TODO: one-line module description.
-
-TODO: Additional details about the module, its purpose, and any necessary
-background information. Explain what functions or classes are included.
+Send functions for Telegram.
 
 License:
     MIT
 
-Examples:
-    [Examples of how to use the module/classes/functions]
-
-Attributes:
-    [List any relevant module-level attributes with types and descriptions]
-
 """
 
 from loguru import logger
-from telegram import Bot, Message
+from telegram import Bot, Message, Update
 from telegram.error import TelegramError
+from telegram.ext import CallbackContext
 
 
 async def send_text(
@@ -52,3 +44,22 @@ async def send_text(
         )
         lg.debug(f"Message sent", message=reply)
         return reply
+
+
+async def reply_text(update: Update, context: CallbackContext, text: str) -> None:
+    """
+    Reply to a message update.
+
+    Convenience method to send a text message in response to an update.
+
+    Args:
+        update: the update object
+        context: the context object
+        text: the text to send
+
+    """
+    bot = context.bot
+    chat_id = update.effective_message.chat_id
+    message_id = update.effective_message.message_id
+
+    await send_text(bot, chat_id, text, message_id)

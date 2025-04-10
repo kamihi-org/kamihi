@@ -30,7 +30,7 @@ from telegram.ext import (
 )
 
 from kamihi.base.config import KamihiSettings
-from kamihi.telegram.default_responses import default, error
+from kamihi.telegram.default_handlers import default, error
 
 
 async def _post_init(_: Application) -> None:
