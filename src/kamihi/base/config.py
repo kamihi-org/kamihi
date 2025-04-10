@@ -97,19 +97,6 @@ class DefaultResponseSettings(GenericResponseSettings):
     text: str = Field(default="I'm sorry, but I don't know how to respond to that.")
 
 
-class UnknownCommandResponseSettings(GenericResponseSettings):
-    """
-    Defines the unknown command response settings schema.
-
-    Attributes:
-        enable (bool): Enable or disable the response.
-        text (str): The response text.
-
-    """
-
-    text: str = Field(default="Unknown command. Please try again.")
-
-
 class ErrorResponseSettings(GenericResponseSettings):
     """
     Defines the error response settings schema.
@@ -133,7 +120,6 @@ class ResponseSettings(BaseModel):
     """
 
     default: DefaultResponseSettings = Field(default_factory=DefaultResponseSettings)
-    unknown_command: UnknownCommandResponseSettings = Field(default_factory=UnknownCommandResponseSettings)
     error: ErrorResponseSettings = Field(default_factory=ErrorResponseSettings)
 
 

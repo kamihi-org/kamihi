@@ -19,10 +19,18 @@ import re
 from loguru import logger
 from telegram import Update
 from telegram.constants import BotCommandLimit, ParseMode
-from telegram.error import TelegramError
-from telegram.ext import Application, CommandHandler, Defaults, DictPersistence
+from telegram.ext import (
+    Application,
+    ApplicationBuilder,
+    CommandHandler,
+    Defaults,
+    DictPersistence,
+    MessageHandler,
+    filters,
+)
 
 from kamihi.base.config import KamihiSettings
+from kamihi.telegram.default_responses import default, error
 from kamihi.telegram.send import send_text
 
 
@@ -44,6 +52,8 @@ class TelegramClient:
 
     """
 
+    _builder: ApplicationBuilder
+    _app: Application
     _command_regex = re.compile(rf"^[a-z0-9_]{{{BotCommandLimit.MIN_COMMAND},{BotCommandLimit.MAX_COMMAND}}}$")
 
     def __init__(self, settings: KamihiSettings) -> None:
@@ -54,18 +64,22 @@ class TelegramClient:
             settings (KamihiSettings): The settings object.
 
         """
-        self._app = Application.builder()
-        self._app.token(settings.token)
-        self._app.defaults(
+        self._builder = Application.builder()
+        self._builder.token(settings.token)
+        self._builder.defaults(
             Defaults(
                 tzinfo=settings.timezone,
                 parse_mode=ParseMode.MARKDOWN_V2,
             )
         )
-        self._app.post_init(_post_init)
-        self._app.post_shutdown(_post_shutdown)
-        self._app.persistence(DictPersistence(bot_data_json=settings.model_dump_json()))
-        self._app = self._app.build()
+        self._builder.post_init(_post_init)
+        self._builder.post_shutdown(_post_shutdown)
+        self._builder.persistence(DictPersistence(bot_data_json=settings.model_dump_json()))
+
+        self._app: Application = self._builder.build()
+
+        self._app.add_handler(MessageHandler(filters.ALL, default), group=1000)
+        self._app.add_error_handler(error)
 
     def run(self) -> None:
         """Run the Telegram bot."""
