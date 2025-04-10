@@ -87,6 +87,8 @@ ignore = [
     "D203",
     "D212",
     "COM812",
+    "EM101",
+    "TRY003",
 ]
 preview = true
 
