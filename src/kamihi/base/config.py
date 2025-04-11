@@ -95,7 +95,7 @@ class KamihiSettings(BaseSettings):
 
     """
 
-    token: str = Field(default="", pattern=r"^\d{9}:[0-9A-Za-z_-]{35}$", exclude=True)
+    token: str | None = Field(default=None, pattern=r"^\d{9}:[0-9A-Za-z_-]{35}$", exclude=True)
     timezone: str = Field(default="UTC", validate_default=True)
     autoreload_templates: bool = Field(default=True)
 
