@@ -95,8 +95,8 @@ class KamihiSettings(BaseSettings):
 
     """
 
-    token: str = Field(default="", pattern=r"^\d{9}:[0-9A-Za-z_-]{35}$", validate_default=True, exclude=True)
-    timezone: DstTzInfo = Field(default="UTC", validate_default=True)
+    token: str = Field(default="", pattern=r"^\d{9}:[0-9A-Za-z_-]{35}$", exclude=True)
+    timezone: str = Field(default="UTC", validate_default=True)
     autoreload_templates: bool = Field(default=True)
 
     log: LogSettings = Field(default_factory=LogSettings)
@@ -104,7 +104,7 @@ class KamihiSettings(BaseSettings):
 
     @classmethod
     @field_validator("timezone")
-    def validate_timezone(cls, value: str) -> DstTzInfo:
+    def validate_timezone(cls, value: str) -> str:
         """
         Validate the timezone value.
 
@@ -122,7 +122,18 @@ class KamihiSettings(BaseSettings):
             msg = f"Invalid timezone: {value}"
             raise ValueError(msg)
 
-        return pytz.timezone(value)
+        return value
+
+    @property
+    def timezone_obj(self) -> DstTzInfo:
+        """
+        Get the timezone object.
+
+        Returns:
+            DstTzInfo: The timezone object.
+
+        """
+        return pytz.timezone(self.timezone)
 
     model_config = SettingsConfigDict(
         env_prefix="KAMIHI_",

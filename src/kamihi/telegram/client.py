@@ -67,7 +67,7 @@ class TelegramClient:
         self._builder.token(settings.token)
         self._builder.defaults(
             Defaults(
-                tzinfo=settings.timezone,
+                tzinfo=settings.timezone_obj,
                 parse_mode=ParseMode.MARKDOWN_V2,
             )
         )
