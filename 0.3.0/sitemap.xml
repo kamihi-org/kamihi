@@ -2,78 +2,78 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/changelog/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/guides/config/load-environment/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/guides/config/load-file/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/guides/config/load-prog/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/guides/logging/configure-notifications/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/guides/logging/configure-rotation-retention/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/guides/logging/configure-structured/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/guides/logging/setup-basic/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/tutorials/installation/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/reference/kamihi/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/reference/kamihi/base/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/reference/kamihi/base/config/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/reference/kamihi/base/logging/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/reference/kamihi/base/manual_send/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/reference/kamihi/bot/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/reference/kamihi/bot/bot/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/reference/kamihi/templates/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
     <url>
          <loc>https://kamihi-dev.github.io/kamihi/0.3.0/reference/kamihi/templates/templates/</loc>
-         <lastmod>2025-04-07</lastmod>
+         <lastmod>2025-04-14</lastmod>
     </url>
 </urlset>
