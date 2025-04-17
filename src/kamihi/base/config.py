@@ -102,8 +102,8 @@ class KamihiSettings(BaseSettings):
     log: LogSettings = Field(default_factory=LogSettings)
     responses: ResponseSettings = Field(default_factory=ResponseSettings)
 
-    @classmethod
     @field_validator("timezone")
+    @classmethod
     def validate_timezone(cls, value: str) -> str:
         """
         Validate the timezone value.
