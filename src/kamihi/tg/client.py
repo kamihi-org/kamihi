@@ -54,6 +54,7 @@ class TelegramClient:
     _builder: ApplicationBuilder
     _app: Application
     _command_regex = re.compile(rf"^[a-z0-9_]{{{BotCommandLimit.MIN_COMMAND},{BotCommandLimit.MAX_COMMAND}}}$")
+    _registered_commands: set[str] = set()
 
     def __init__(self, settings: KamihiSettings) -> None:
         """
@@ -93,7 +94,7 @@ class TelegramClient:
                     f"must be {min_len}-{max_len} chars of lowercase letters, digits and underscores"
                 )
                 continue
-            if cmd in valid_commands:
+            if cmd in valid_commands or cmd in self._registered_commands:
                 logger.warning(f"Command '{cmd}' for {callback_name} was discarded: already registered")
                 continue
             valid_commands.append(cmd)
@@ -119,6 +120,7 @@ class TelegramClient:
             return
 
         self._app.add_handler(CommandHandler(valid_commands, callback))
+        self._registered_commands.update(valid_commands)
         logger.debug(f"command(s) {', '.join('/' + cmd for cmd in command)} registered")
 
     def run(self) -> None:
