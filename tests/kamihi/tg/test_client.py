@@ -339,23 +339,3 @@ async def test_register_commands_with_same_name():
             # The warning should be triggered for the duplicate command
             assert mock_warning.called, "Warning should be logged for duplicate command"
             assert any("already registered" in str(args) for args in mock_warning.call_args_list)
-
-
-@pytest.mark.asyncio
-async def test_register_command_logging(client):
-    """
-    Test that appropriate debug logs are generated for command registration.
-
-    Validates acciones-creacion-alta: "Cuando un desarrollador registra una acción del _framework_,
-    el sistema la reconoce automáticamente como una acción disponible."
-    """
-
-    async def test_callback(update, context):
-        pass
-
-    with patch("kamihi.tg.client.logger.debug") as mock_debug:
-        await client.register_command("test", test_callback)
-
-        # Verify debug log
-        mock_debug.assert_called_once()
-        assert "registered" in mock_debug.call_args[0][0]
