@@ -12,8 +12,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from telegram import Update
-from telegram.constants import BotCommandLimit
-from telegram.ext import Application, ApplicationBuilder, CommandHandler, MessageHandler
+from telegram.ext import Application, ApplicationBuilder, CommandHandler
 
 from kamihi.base.config import KamihiSettings
 from kamihi.tg.client import TelegramClient, _post_init, _post_shutdown
@@ -151,7 +150,7 @@ def test_filter_valid_commands_syntax(client):
         valid_commands = client._filter_valid_commands(commands, "test_callback")
 
         # Both "valid" and "a" should pass the filter since min length is 1
-        assert set(valid_commands) == set(["valid", "a"])
+        assert set(valid_commands) == {"valid", "a"}
 
         # Check that warnings were logged for each invalid command (3 of them)
         assert mock_logger.call_count == 4

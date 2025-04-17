@@ -42,7 +42,7 @@ async def send_text(
             text,
             message_thread_id=reply_to_message_id,
         )
-        lg.debug(f"Message sent", message=reply)
+        lg.debug("Message sent", message=reply)
         return reply
 
 
