@@ -154,6 +154,7 @@ def test_filter_valid_commands_syntax(client):
 
         # Check that warnings were logged for each invalid command (4 of them)
 
+
 def test_filter_valid_commands_duplicates(client):
     """
     Test that _filter_valid_commands filters out duplicate commands.
