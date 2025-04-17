@@ -63,7 +63,7 @@ async def test_default_handler_logging(mock_update, mock_context):
     operation of acciones-comandos-reconocimiento.
     """
     # Patch reply_text to avoid actually calling it
-    with patch("kamihi.tg.default_handlers.reply_text", new=AsyncMock()) as mock_reply:
+    with patch("kamihi.tg.default_handlers.reply_text", new=AsyncMock()):
         # Patch logger to verify logging behavior
         with patch("kamihi.tg.default_handlers.logger") as mock_logger:
             # Set up bind return value to enable method chaining
