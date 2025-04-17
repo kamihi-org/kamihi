@@ -113,3 +113,4 @@ version_files = [
 [tool.pytest.ini_options]
 addopts = "--cov=src --cov-report=xml --cov-report=term-missing -n auto"
 testpaths = ["tests/kamihi"]
+asyncio_default_fixture_loop_scope = "function"
