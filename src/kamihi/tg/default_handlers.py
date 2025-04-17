@@ -10,7 +10,7 @@ from loguru import logger
 from telegram import Update
 from telegram.ext import CallbackContext
 
-from kamihi.telegram.send import reply_text
+from kamihi.tg.send import reply_text
 
 
 async def default(update: Update, context: CallbackContext) -> None:

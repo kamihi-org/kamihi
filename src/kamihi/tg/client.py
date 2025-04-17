@@ -7,7 +7,7 @@ License:
     MIT
 
 Examples:
-    >>> from kamihi.telegram.client import TelegramClient
+    >>> from kamihi.tg.client import TelegramClient
     >>> from kamihi.base.config import KamihiSettings
     >>> client = TelegramClient(KamihiSettings())
     >>> client.run()
@@ -30,7 +30,7 @@ from telegram.ext import (
 )
 
 from kamihi.base.config import KamihiSettings
-from kamihi.telegram.default_handlers import default, error
+from kamihi.tg.default_handlers import default, error
 
 
 async def _post_init(_: Application) -> None:

@@ -8,6 +8,6 @@ License:
 
 """
 
-from kamihi.telegram.client import TelegramClient
+from kamihi.tg.client import TelegramClient
 
 __all__ = ["TelegramClient"]
