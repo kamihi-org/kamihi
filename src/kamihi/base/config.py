@@ -11,13 +11,15 @@ License:
 
 import os
 
-from pydantic import BaseModel, Field
+import pytz
+from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
     YamlConfigSettingsSource,
 )
+from pytz.tzinfo import DstTzInfo
 
 _LEVEL_PATTERN = r"^(TRACE|DEBUG|INFO|SUCCESS|WARNING|ERROR|CRITICAL)$"
 
@@ -68,6 +70,20 @@ class LogSettings(BaseModel):
     notification_urls: list[str] = Field(default_factory=list)
 
 
+class ResponseSettings(BaseModel):
+    """
+    Defines the response settings schema.
+
+    Attributes:
+        default (DefaultResponseSettings): Default response settings.
+
+    """
+
+    default_enabled: bool = Field(default=True)
+    default_message: str = Field(default="I'm sorry, but I don't know how to respond to that.")
+    error_message: str = Field(default="An error occurred while processing your request. We are working on it.")
+
+
 class KamihiSettings(BaseSettings):
     """
     Defines the configuration schema for the Kamihi framework.
@@ -79,8 +95,45 @@ class KamihiSettings(BaseSettings):
 
     """
 
-    log: LogSettings = Field(default_factory=LogSettings)
+    token: str | None = Field(default=None, pattern=r"^\d{9}:[0-9A-Za-z_-]{35}$", exclude=True)
+    timezone: str = Field(default="UTC", validate_default=True)
     autoreload_templates: bool = Field(default=True)
+
+    log: LogSettings = Field(default_factory=LogSettings)
+    responses: ResponseSettings = Field(default_factory=ResponseSettings)
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone(cls, value: str) -> str:
+        """
+        Validate the timezone value.
+
+        Args:
+            value (str): The timezone value to validate.
+
+        Returns:
+            str: The validated timezone value.
+
+        Raises:
+            ValueError: If the timezone is invalid.
+
+        """
+        if value not in pytz.all_timezones:
+            msg = f"Invalid timezone: {value}"
+            raise ValueError(msg)
+
+        return value
+
+    @property
+    def timezone_obj(self) -> DstTzInfo:
+        """
+        Get the timezone object.
+
+        Returns:
+            DstTzInfo: The timezone object.
+
+        """
+        return pytz.timezone(self.timezone)
 
     model_config = SettingsConfigDict(
         env_prefix="KAMIHI_",
