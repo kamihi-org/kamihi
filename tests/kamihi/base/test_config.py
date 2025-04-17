@@ -11,6 +11,7 @@ import tempfile
 from unittest.mock import patch
 
 import pytest
+import pytz
 from pydantic import ValidationError
 
 from kamihi.base.config import KamihiSettings, LogSettings
@@ -259,3 +260,49 @@ log:
         # Clean up
         if os.path.exists(config_path):
             os.unlink(config_path)
+
+
+@pytest.mark.parametrize(
+    "timezone",
+    [
+        "UTC",
+        "America/New_York",
+        "Europe/London",
+        "Asia/Tokyo",
+        "Australia/Sydney",
+        "America/Los_Angeles",
+        "Europe/Berlin",
+        "America/Chicago",
+        "Asia/Kolkata",
+        "Africa/Cairo",
+    ],
+)
+def test_timezone_validation_valid(timezone):
+    """Test that valid timezones are accepted."""
+    # Test with a valid timezone
+    with patch.dict(os.environ, {"KAMIHI_TIMEZONE": timezone}):
+        settings = KamihiSettings()
+        assert settings.timezone == timezone
+
+
+def test_timezone_validation_invalid():
+    """Test that invalid timezones raise a validation error."""
+    # Test with an invalid timezone
+    with patch.dict(os.environ, {"KAMIHI_TIMEZONE": "AAA/AAA"}), pytest.raises(ValidationError):
+        KamihiSettings()
+
+
+def test_timezone_obj_property():
+    """Test that the timezone_obj property returns the correct timezone object."""
+    # Test with a specific timezone
+    with patch.dict(os.environ, {"KAMIHI_TIMEZONE": "Asia/Tokyo"}):
+        settings = KamihiSettings()
+        # Check that it's the correct type
+        assert isinstance(settings.timezone_obj, pytz.tzinfo.DstTzInfo)
+        # Check that it's the correct timezone
+        assert settings.timezone_obj == pytz.timezone("Asia/Tokyo")
+
+    # Test with UTC (default)
+    settings = KamihiSettings()
+    assert settings.timezone == "UTC"
+    assert settings.timezone_obj == pytz.timezone("UTC")
