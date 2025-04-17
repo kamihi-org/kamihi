@@ -28,7 +28,7 @@ async def send_text(
         reply_to_message_id (int, optional): The ID of the message to reply to. Defaults to None.
 
     Returns:
-        dict: The response from the Telegram API.
+        Message | None: The response from the Telegram API, or None if an error occurs.
 
     """
     lg = logger.bind(chat_id=chat_id, message=text)
