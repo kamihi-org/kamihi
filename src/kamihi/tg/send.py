@@ -31,18 +31,15 @@ async def send_text(
         Message | None: The response from the Telegram API, or None if an error occurs.
 
     """
-    lg = logger.bind(chat_id=chat_id, message=text)
-
-    if reply_to_message_id is not None:
-        lg = lg.bind(reply_to=reply_to_message_id)
+    lg = logger.bind(chat_id=chat_id, received_id=reply_to_message_id, response_text=text)
 
     with lg.catch(exception=TelegramError, message="Failed to send message"):
         reply = await bot.send_message(
             chat_id,
             text,
-            message_thread_id=reply_to_message_id,
+            reply_to_message_id=reply_to_message_id,
         )
-        lg.debug("Message sent", message=reply)
+        lg.bind(response_id=reply.message_id).debug("Reply sent" if reply_to_message_id else "Message sent")
         return reply
 
 
