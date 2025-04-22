@@ -62,7 +62,7 @@ async def test_send_text_basic(mock_bot):
     result = await send_text(mock_bot, chat_id, text)
 
     # Verify send_message was called with correct parameters
-    mock_bot.send_message.assert_called_once_with(chat_id, text, message_thread_id=None)
+    mock_bot.send_message.assert_called_once_with(chat_id, text, reply_to_message_id=None)
 
     # Verify correct return value
     assert result == mock_message
@@ -82,8 +82,8 @@ async def test_send_text_with_reply(mock_bot):
     # Call function
     await send_text(mock_bot, chat_id, text, reply_to)
 
-    # Verify send_message was called with message_thread_id parameter set to reply_to
-    mock_bot.send_message.assert_called_once_with(chat_id, text, message_thread_id=reply_to)
+    # Verify send_message was called with reply_to_message_id parameter set to reply_to
+    mock_bot.send_message.assert_called_once_with(chat_id, text, reply_to_message_id=reply_to)
 
 
 @pytest.mark.asyncio
@@ -104,7 +104,7 @@ async def test_send_text_with_markdown_formatting(mock_bot):
     await send_text(mock_bot, chat_id, markdown_text)
 
     # Verify markdown text is preserved when sending
-    mock_bot.send_message.assert_called_once_with(chat_id, markdown_text, message_thread_id=None)
+    mock_bot.send_message.assert_called_once_with(chat_id, markdown_text, reply_to_message_id=None)
 
 
 @pytest.mark.asyncio
@@ -123,7 +123,7 @@ async def test_send_text_with_special_markdown_characters(mock_bot):
     await send_text(mock_bot, chat_id, text_with_special_chars)
 
     # Verify text with special characters is sent correctly
-    mock_bot.send_message.assert_called_once_with(chat_id, text_with_special_chars, message_thread_id=None)
+    mock_bot.send_message.assert_called_once_with(chat_id, text_with_special_chars, reply_to_message_id=None)
 
 
 @pytest.mark.asyncio
@@ -142,7 +142,7 @@ async def test_send_text_with_complex_markdown(mock_bot):
     await send_text(mock_bot, chat_id, complex_markdown)
 
     # Verify complex markdown is preserved
-    mock_bot.send_message.assert_called_once_with(chat_id, complex_markdown, message_thread_id=None)
+    mock_bot.send_message.assert_called_once_with(chat_id, complex_markdown, reply_to_message_id=None)
 
 
 @pytest.mark.asyncio
@@ -223,7 +223,7 @@ async def test_send_text_handles_markdown_errors(mock_bot):
         result = await send_text(mock_bot, chat_id, malformed_markdown)
 
         # Verify bind was called with the right parameters
-        mock_logger.bind.assert_called_with(chat_id=chat_id, message=malformed_markdown)
+        mock_logger.bind.assert_called_with(chat_id=chat_id, received_id=None, response_text=malformed_markdown)
         # Verify catch was called with the correct arguments
         mock_bind.catch.assert_called_with(exception=TelegramError, message="Failed to send message")
         # Verify function returns None on error

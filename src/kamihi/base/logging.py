@@ -26,6 +26,23 @@ from kamihi.base.config import LogSettings
 from kamihi.base.manual_send import ManualSender
 
 
+def _extra_formatter(record: loguru.Record) -> None:
+    """
+    Add a compact representation of the extra fields to the log record.
+
+    This function takes a log record and adds the extra fields in a compact
+    way and only if there are any.
+
+    Args:
+        record: The log record to format.
+
+    """
+    if record.get("extra") and record["level"].no <= 10:
+        record["extra"]["compact"] = ", ".join(
+            f"{key}={repr(value)}" for key, value in record["extra"].items() if key != "compact"
+        )
+
+
 def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
     """
     Configure logging for the module.
@@ -40,14 +57,16 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
     """
     logger.remove()
 
+    logger.configure(patcher=_extra_formatter, extra={"compact": ""})
+
     if settings.stdout_enable:
         logger.add(
             sys.stdout,
             level=settings.stdout_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
-            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
-            "{message}",
+            "{message} "
+            "<dim>{extra[compact]}</dim>",
             serialize=settings.stdout_serialize,
             enqueue=True,
         )
@@ -58,8 +77,8 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
             level=settings.stderr_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
-            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
-            "{message}",
+            "{message} "
+            "<dim>{extra[compact]}</dim>",
             serialize=settings.stderr_serialize,
             enqueue=True,
         )
@@ -70,8 +89,8 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
             level=settings.file_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
-            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
-            "{message}",
+            "{message} "
+            "<dim>{extra[compact]}</dim>",
             serialize=settings.file_serialize,
             rotation=settings.file_rotation,
             retention=settings.file_retention,
@@ -85,8 +104,8 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
             level=settings.notification_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
-            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
-            "{message}",
+            "{message} "
+            "<dim>{extra[compact]}</dim>",
             filter={"apprise": False},
             enqueue=True,
         )
