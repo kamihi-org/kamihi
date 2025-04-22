@@ -68,43 +68,28 @@ class Bot:
             **kwargs: Additional keyword arguments for settings.
 
         """
-        with logger.catch(
-            exception=ValidationError,
-            message="Failed to initialize the bot.",
-            onerror=_exit_immediately,
-        ):
-            # Loads the settings
-            self.settings = KamihiSettings(**kwargs)
-
-            # Configures the logging
-            configure_logging(logger, self.settings.log)
-            logger.trace("Logging configured")
-
-            # Loads the templates
-            self.templates = Templates(self.settings.autoreload_templates)
-            logger.trace("Templates initialized")
-
-            # Loads the Telegram client
-            self._client = TelegramClient(self.settings)
-            logger.trace("Telegram client initialized")
-
-    def set_settings(self, settings: KamihiSettings) -> None:
-        """Set the settings for the bot."""
-        self.settings = settings
-
-    def add_settings(self, settings: dict[str, Any] | KamihiSettings) -> None: ...  # noqa: D102
-
-    def replace_settings(self, settings: dict[str, Any] | KamihiSettings) -> None: ...  # noqa: D102
-
-    def action(self, *commands: str, description: str = "") -> Callable: ...  # noqa: D102
+        # Loads the settings
+        self.settings = KamihiSettings(**kwargs)
 
     def command(self, *commands: str, description: str = "") -> Callable: ...  # noqa: D102
+
+    def action(self, *commands: str, description: str = "") -> Callable: ...  # noqa: D102
 
     def on_message(self, regex: str = None) -> Callable: ...  # noqa: D102
 
     def start(self) -> None:
         """Start the bot."""
-        logger.info("Starting bot...")
+        # Configures the logging
+        configure_logging(logger, self.settings.log)
+        logger.trace("Logging configured")
+
+        # Loads the templates
+        self.templates = Templates(self.settings.autoreload_templates)
+        logger.trace("Templates initialized")
+
+        # Loads the Telegram client
+        self._client = TelegramClient(self.settings)
+        logger.trace("Telegram client initialized")
 
         # Runs the client
         self._client.run()
