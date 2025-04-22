@@ -125,10 +125,10 @@ class TelegramClient:
 
     def run(self) -> None:
         """Run the Telegram bot."""
-        logger.debug("Starting main loop...")
+        logger.trace("Starting main loop...")
         self._app.run_polling(allowed_updates=Update.ALL_TYPES)
 
     async def stop(self) -> None:
         """Stop the Telegram bot."""
-        logger.debug("Stopping main loop...")
+        logger.trace("Stopping main loop...")
         await self._app.stop()
