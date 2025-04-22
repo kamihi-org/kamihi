@@ -114,8 +114,11 @@ class KamihiSettings(BaseSettings):
     Defines the configuration schema for the Kamihi framework.
 
     Attributes:
-        log (LogSettings): Logging settings.
+        token (str | None): The bot token.
+        timezone (str): The timezone for the bot.
         autoreload_templates (bool): Enable or disable auto-reloading of templates.
+        log (LogSettings): Logging settings.
+        responses (ResponseSettings): Response settings.
         model_config (SettingsConfigDict): Configuration dictionary for environment settings.
 
     """
@@ -129,7 +132,7 @@ class KamihiSettings(BaseSettings):
 
     @field_validator("timezone")
     @classmethod
-    def validate_timezone(cls, value: str) -> str:
+    def _validate_timezone(cls, value: str) -> str:
         """
         Validate the timezone value.
 
