@@ -30,6 +30,7 @@ from pydantic import ValidationError
 from kamihi.base.config import KamihiSettings
 from kamihi.base.logging import configure_logging
 from kamihi.templates import Templates
+from kamihi.tg import TelegramClient
 
 
 def _exit_immediately(_: BaseException) -> None:
@@ -50,11 +51,14 @@ class Bot:
 
     Attributes:
         settings (KamihiSettings): The settings for the bot.
+        templates (Templates): The templates loaded by the bot.
 
     """
 
     settings: KamihiSettings
     templates: Templates
+
+    _client: TelegramClient
 
     def __init__(self, **kwargs: dict[str, Any]) -> None:
         """
@@ -66,12 +70,23 @@ class Bot:
         """
         with logger.catch(
             exception=ValidationError,
-            message="Failed to parse configuration, exiting...",
+            message="Failed to initialize the bot.",
             onerror=_exit_immediately,
         ):
+            # Loads the settings
             self.settings = KamihiSettings(**kwargs)
 
-        self.templates = Templates(self.settings.autoreload_templates)
+            # Configures the logging
+            configure_logging(logger, self.settings.log)
+            logger.trace("Logging configured")
+
+            # Loads the templates
+            self.templates = Templates(self.settings.autoreload_templates)
+            logger.trace("Templates initialized")
+
+            # Loads the Telegram client
+            self._client = TelegramClient(self.settings)
+            logger.trace("Telegram client initialized")
 
     def set_settings(self, settings: KamihiSettings) -> None:
         """Set the settings for the bot."""
@@ -89,11 +104,7 @@ class Bot:
 
     def start(self) -> None:
         """Start the bot."""
-        configure_logging(logger, self.settings.log)
-
         logger.info("Starting bot...")
 
-        while True:
-            # Placeholder for bot's main loop
-            logger.debug("Bot is running...")
-            sleep(1)
+        # Runs the client
+        self._client.run()
