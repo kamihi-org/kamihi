@@ -19,17 +19,23 @@ Examples:
 
 """
 
-import os
+import sys
 from collections.abc import Callable
-from pathlib import Path
 from time import sleep
 from typing import Any
 
 from loguru import logger
+from pydantic import ValidationError
 
 from kamihi.base.config import KamihiSettings
 from kamihi.base.logging import configure_logging
 from kamihi.templates import Templates
+
+
+def _exit_immediately(_: BaseException) -> None:
+    """Exit the bot."""
+    logger.info("Exiting immediately..")
+    sys.exit(1)
 
 
 class Bot:
@@ -58,7 +64,13 @@ class Bot:
             **kwargs: Additional keyword arguments for settings.
 
         """
-        self.settings = KamihiSettings(**kwargs)
+        with logger.catch(
+            exception=ValidationError,
+            message="Failed to parse configuration, exiting...",
+            onerror=_exit_immediately,
+        ):
+            self.settings = KamihiSettings(**kwargs)
+
         self.templates = Templates(self.settings.autoreload_templates)
 
     def set_settings(self, settings: KamihiSettings) -> None:
