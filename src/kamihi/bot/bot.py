@@ -19,6 +19,9 @@ Examples:
 
 """
 
+import os
+from collections.abc import Callable
+from pathlib import Path
 from time import sleep
 from typing import Any
 
@@ -61,6 +64,16 @@ class Bot:
     def set_settings(self, settings: KamihiSettings) -> None:
         """Set the settings for the bot."""
         self.settings = settings
+
+    def add_settings(self, settings: dict[str, Any] | KamihiSettings) -> None: ...  # noqa: D102
+
+    def replace_settings(self, settings: dict[str, Any] | KamihiSettings) -> None: ...  # noqa: D102
+
+    def action(self, *commands: str, description: str = "") -> Callable: ...  # noqa: D102
+
+    def command(self, *commands: str, description: str = "") -> Callable: ...  # noqa: D102
+
+    def on_message(self, regex: str = None) -> Callable: ...  # noqa: D102
 
     def start(self) -> None:
         """Start the bot."""
