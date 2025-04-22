@@ -23,10 +23,10 @@ async def default(update: Update, context: CallbackContext) -> None:
 
     """
     logger.bind(chat_id=update.effective_message.chat_id, message_id=update.effective_message.message_id).debug(
-        "Message has no handler, so sending default response"
+        "Received message but no handler matched, so sending default response"
     )
 
-    text = context.bot_data.get("responses").get("default_text")
+    text = context.bot_data["responses"]["default_message"]
     await reply_text(update, context, text)
 
 
@@ -42,5 +42,5 @@ async def error(update: object | None, context: CallbackContext) -> None:
     logger.opt(exception=context.error).error("An error occurred")
 
     if isinstance(update, Update):
-        text = context.bot_data.get("responses").get("error_text")
+        text = context.bot_data["responses"]["error_message"]
         await reply_text(update, context, text)
