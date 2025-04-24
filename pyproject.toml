@@ -10,14 +10,15 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "apprise>=1.9.2",
-    "decorator>=5.2.1",
     "jinja2>=3.1.6",
     "loguru>=0.7.3",
+    "multipledispatch>=1.0.0",
     "pydantic>=2.10.6",
     "pydantic-settings>=2.8.1",
     "python-telegram-bot>=22.0",
     "pytz>=2025.2",
     "types-pytz>=2025.2.0.20250326",
+    "wrapt>=1.17.2",
 ]
 
 [build-system]
