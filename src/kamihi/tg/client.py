@@ -15,6 +15,7 @@ Examples:
 """
 
 import re
+from collections.abc import Callable
 
 from loguru import logger
 from telegram import Update
@@ -101,7 +102,7 @@ class TelegramClient:
 
         return valid_commands
 
-    async def register_command(self, command: str | list[str], callback) -> None:  # noqa: ANN001
+    def register_command(self, command: str | list[str], callback: Callable) -> None:  # noqa: ANN001
         """
         Register a command handler.
 
