@@ -219,7 +219,7 @@ async def test_register_command_single(client, mock_app):
 
     # Register a single command
     with patch("kamihi.tg.client.logger.debug") as mock_debug:
-        await client.register_command("test", test_callback)
+        client.register_command("test", test_callback)
 
         # Verify CommandHandler was added
         mock_app.add_handler.assert_called_once()
@@ -252,7 +252,7 @@ async def test_register_command_multiple(client, mock_app):
 
     # Register multiple commands
     with patch("kamihi.tg.client.logger.debug") as mock_debug:
-        await client.register_command(["cmd1", "cmd2"], test_callback)
+        client.register_command(["cmd1", "cmd2"], test_callback)
 
         # Verify CommandHandler was added with both commands
         mock_app.add_handler.assert_called_once()
@@ -284,7 +284,7 @@ async def test_register_command_no_valid_commands(client, mock_app):
 
     # Try to register invalid commands
     with patch("kamihi.tg.client.logger.warning") as mock_warning:
-        await client.register_command(["A-INVALID", "ALSO-INVALID"], test_callback)
+        client.register_command(["A-INVALID", "ALSO-INVALID"], test_callback)
 
         # Verify add_handler was not called (no valid commands)
         mock_app.add_handler.assert_not_called()
@@ -334,7 +334,7 @@ async def test_register_commands_with_same_name():
 
         # Register commands with duplicates in a single call
         with patch("kamihi.tg.client.logger.warning") as mock_warning:
-            await client.register_command(["same", "same", "different"], test_callback)
+            client.register_command(["same", "same", "different"], test_callback)
 
             # The warning should be triggered for the duplicate command
             assert mock_warning.called, "Warning should be logged for duplicate command"
