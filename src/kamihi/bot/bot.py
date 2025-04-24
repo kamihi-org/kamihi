@@ -20,17 +20,16 @@ Examples:
 """
 
 import functools
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable
 from functools import partial
 from typing import Any
 
-import wrapt
 from loguru import logger
 from multipledispatch import dispatch
-from telegram.error import TelegramError
 
 from kamihi.base.config import KamihiSettings
 from kamihi.base.logging import configure_logging
+from kamihi.bot.command import Command
 from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
 
@@ -55,7 +54,7 @@ class Bot:
     templates: Templates
 
     _client: TelegramClient
-    _commands: list[dict[str, str | Callable]] = []
+    _commands: list[Command] = []
 
     def __init__(self, **kwargs: dict[str, Any]) -> None:
         """
@@ -69,7 +68,7 @@ class Bot:
         self.settings = KamihiSettings(**kwargs)
 
     @dispatch([(str, Callable)])
-    def command(self, *commands: str, description: str = None) -> Coroutine:
+    def command(self, *args: str | Callable, description: str = None) -> Command | Callable:
         """
         Register a command with the bot.
 
@@ -78,20 +77,26 @@ class Bot:
         will be added automatically.
 
         Args:
-            *commands: A list of command names. If not provided, the function name will be used.
+            *args: A list of command names. If not provided, the function name will be used.
             description: A description of the command. This will be used in the help message.
 
         Returns:
-            Coroutine: The wrapped function.
+            Callable: The wrapped function.
 
         """
-        commands = list(commands)
-        _func = commands.pop()
-        self._save_command(self._call_command(_func), commands or [_func.__name__], description=description)
-        return self._call_command(_func)
+        # Because of the dispatch decorator, the function is passed as the last argument
+        args = list(args)
+        func: Callable = args.pop()
+        command_strings: list[str] = args or [func.__name__]
+
+        cmd = Command(func.__name__, command_strings, description, func)
+
+        self._commands.append(cmd)
+
+        return cmd
 
     @dispatch([str])
-    def command(self, *commands: str, description: str = "") -> partial[Coroutine]:
+    def command(self, *commands: str, description: str = "") -> partial[Command]:
         """
         Register a command with the bot.
 
@@ -103,34 +108,14 @@ class Bot:
             description: A description of the command. This will be used in the help message.
 
         Returns:
-            Coroutine: The wrapped function.
+            Callable: The wrapped function.
 
         """
         return functools.partial(self.command, *commands, description=description)
 
-    def _save_command(self, func: Coroutine, commands: list[str], description: str = "") -> None:
-        """Save a command for registration on startup."""
-        self._commands.append({"commands": commands, "description": description, "func": func})
-
-    @wrapt.decorator
-    async def _call_command(self, func: Callable, instance: Any, args: tuple, kwargs: dict) -> None:  # noqa: ANN401, ARG002
-        """Call a command with the bot."""
-        result = await func()
-        await self._client.reply(*args, result)
-
     def action(self, *commands: str, description: str = "") -> Callable: ...  # noqa: D102
 
     def on_message(self, regex: str = None) -> Callable: ...  # noqa: D102
-
-    def _register_commands(self) -> None:
-        """Register all commands."""
-        for command in self._commands:
-            with logger.catch(
-                exception=TelegramError,
-                message=f"Error registering command {command['commands']}",
-            ):
-                self._client.register_command(command["commands"], command["func"])
-                logger.debug(f"Registered command: {command['commands']}")
 
     def start(self) -> None:
         """Start the bot."""
@@ -143,12 +128,8 @@ class Bot:
         logger.trace("Templates initialized")
 
         # Loads the Telegram client
-        self._client = TelegramClient(self.settings)
+        self._client = TelegramClient(self.settings, self._commands)
         logger.trace("Telegram client initialized")
-
-        # Registers the commands
-        self._register_commands()
-        logger.trace("Commands registered")
 
         # Runs the client
         self._client.run()
