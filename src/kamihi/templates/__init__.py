@@ -16,6 +16,7 @@ Examples:
     >>> tmps.add_directory("example_action", Path("/path/to/templates"))
     >>> tmps.load()
     >>> rendered_template = tmps.render("example_action/template_name.md", context={"key": "value"})
+
 """
 
 from kamihi.templates.templates import Templates
