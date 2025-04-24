@@ -23,6 +23,7 @@ from telegram.constants import BotCommandLimit, ParseMode
 from telegram.ext import (
     Application,
     ApplicationBuilder,
+    CallbackContext,
     CommandHandler,
     Defaults,
     DictPersistence,
@@ -32,6 +33,7 @@ from telegram.ext import (
 
 from kamihi.base.config import KamihiSettings
 from kamihi.tg.default_handlers import default, error
+from kamihi.tg.send import reply_text, send_text
 
 
 async def _post_init(_: Application) -> None:
@@ -133,3 +135,26 @@ class TelegramClient:
         """Stop the Telegram bot."""
         logger.trace("Stopping main loop...")
         await self._app.stop()
+
+    async def send(self, chat_id: int, message: str) -> None:
+        """
+        Send a message to a chat.
+
+        Args:
+            chat_id (int): The ID of the chat to send the message to.
+            message (str): The text of the message.
+
+        """
+        await send_text(self._app.bot, chat_id, message)
+
+    async def reply(self, update: Update, context: CallbackContext, message: str) -> None:
+        """
+        Reply to a message.
+
+        Args:
+            update: The Update object passed by the handler.
+            context: The CallbackContext object passed by the handler.
+            message (str): The text of the reply.
+
+        """
+        await reply_text(update, context, message)
