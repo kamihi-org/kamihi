@@ -57,16 +57,16 @@ class Bot:
     _client: TelegramClient
     _actions: list[Action] = []
 
-    def __init__(self, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, settings: KamihiSettings) -> None:
         """
         Initialize the Bot class.
 
         Args:
-            **kwargs: Additional keyword arguments for settings.
+            settings: The settings for the bot.
 
         """
         # Loads the settings
-        self.settings = KamihiSettings(**kwargs)
+        self.settings = settings
 
     @dispatch([(str, Callable)])
     def action(self, *args: str | Callable, description: str = None) -> Action | Callable:
@@ -121,10 +121,6 @@ class Bot:
 
     def start(self) -> None:
         """Start the bot."""
-        # Configures the logging
-        configure_logging(logger, self.settings.log)
-        logger.trace("Logging configured")
-
         # Loads the templates
         self.templates = Templates(self.settings.autoreload_templates)
         logger.trace("Templates initialized")
