@@ -36,22 +36,6 @@ class Action:
     description: str
     func: Callable
 
-    def _filter_valid_commands(self, commands: list[str]) -> list[str]:
-        """Filter valid commands and log invalid ones."""
-        min_len, max_len = BotCommandLimit.MIN_COMMAND, BotCommandLimit.MAX_COMMAND
-        valid_commands = []
-
-        for cmd in commands:
-            if not COMMAND_REGEX.match(cmd):
-                logger.warning(
-                    f"Command '/{cmd}' for action '{self.name}' was discarded: "
-                    f"must be {min_len}-{max_len} chars of lowercase letters, digits and underscores"
-                )
-                continue
-            valid_commands.append(cmd)
-
-        return valid_commands
-
     def __init__(self, name: str, commands: list[str], description: str, func: Callable) -> None:
         """
         Initialize the Action class.
@@ -64,12 +48,27 @@ class Action:
 
         """
         self.name = name
-
-        commands = self._filter_valid_commands(commands)
-
         self.commands = commands
         self.description = description
         self.func = func
+
+        self._filter_valid_commands()
+
+    def _filter_valid_commands(self) -> None:
+        """Filter valid commands and log invalid ones."""
+        min_len, max_len = BotCommandLimit.MIN_COMMAND, BotCommandLimit.MAX_COMMAND
+
+        # Remove duplicate commands
+        self.commands = list(set(self.commands))
+
+        # Filter out invalid commands
+        for cmd in self.commands.copy():
+            if not COMMAND_REGEX.match(cmd):
+                logger.warning(
+                    f"Command '/{cmd}' for action '{self.name}' was discarded: "
+                    f"must be {min_len}-{max_len} chars of lowercase letters, digits and underscores"
+                )
+                self.commands.remove(cmd)
 
     @property
     def handler(self) -> CommandHandler:
