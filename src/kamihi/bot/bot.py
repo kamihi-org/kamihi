@@ -113,8 +113,6 @@ class Bot:
         """
         return functools.partial(self.action, *commands, description=description)
 
-    def on_message(self, regex: str = None) -> Callable: ...  # noqa: D102
-
     def start(self) -> None:
         """Start the bot."""
         # Configures the logging
