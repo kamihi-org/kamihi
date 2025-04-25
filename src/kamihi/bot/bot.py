@@ -26,6 +26,7 @@ from typing import Any
 
 from loguru import logger
 from multipledispatch import dispatch
+from telegram.ext import CommandHandler
 
 from kamihi.base.config import KamihiSettings
 from kamihi.base.logging import configure_logging
@@ -113,6 +114,11 @@ class Bot:
         """
         return functools.partial(self.action, *commands, description=description)
 
+    @property
+    def _handlers(self) -> list[CommandHandler]:
+        """Return the handlers for the bot."""
+        return [action.handler for action in self._actions if action.is_valid()]
+
     def start(self) -> None:
         """Start the bot."""
         # Configures the logging
@@ -124,7 +130,7 @@ class Bot:
         logger.trace("Templates initialized")
 
         # Loads the Telegram client
-        self._client = TelegramClient(self.settings, self._actions)
+        self._client = TelegramClient(self.settings, self._handlers)
         logger.trace("Telegram client initialized")
 
         # Runs the client

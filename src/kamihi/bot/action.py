@@ -58,6 +58,11 @@ class Action:
         self._validate_commands()
         self._validate_function()
 
+        if self.is_valid():
+            logger.debug(f"Successfully registered {self}")
+        else:
+            logger.warning(f"Failed to register {self}")
+
     def _validate_commands(self) -> None:
         """Filter valid commands and log invalid ones."""
         min_len, max_len = BotCommandLimit.MIN_COMMAND, BotCommandLimit.MAX_COMMAND
@@ -76,7 +81,7 @@ class Action:
 
         # Mark as invalid if no commands are left
         if not self.commands:
-            logger.warning(f"Action '{self.name}' has no valid commands left")
+            logger.warning(f"Action '{self.name}' has no valid commands")
             self._valid = False
 
     def _validate_function(self) -> None:
@@ -85,7 +90,7 @@ class Action:
         if not inspect.iscoroutinefunction(self.func):
             logger.warning(
                 f"Action '{self.name}' should be a coroutine, define it with 'async def {self.func.__name__}()' "
-                f"instead of 'def {self.func.__name__}()'"
+                f"instead of 'def {self.func.__name__}()'."
             )
             self._valid = False
 
