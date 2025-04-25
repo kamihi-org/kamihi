@@ -9,7 +9,7 @@ License:
 Examples:
     >>> from kamihi.tg.client import TelegramClient
     >>> from kamihi.base.config import KamihiSettings
-    >>> client = TelegramClient(KamihiSettings())
+    >>> client = TelegramClient(KamihiSettings(), [])
     >>> client.run()
 
 """
