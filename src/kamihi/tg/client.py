@@ -85,8 +85,11 @@ class TelegramClient:
 
         # Register the actions
         for action in actions:
-            self._app.add_handler(action.handler)
-            logger.trace(f"Handler for {action} registered")
+            if action.is_valid():
+                self._app.add_handler(action.handler)
+                logger.trace(f"Handler for {action} registered")
+            else:
+                logger.warning(f"Invalid action '{action.name}' skipped")
 
         # Register the default handlers
         if settings.responses.default_enabled:
