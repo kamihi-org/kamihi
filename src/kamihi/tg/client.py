@@ -16,14 +16,14 @@ Examples:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from loguru import logger
 from telegram import Update
 from telegram.constants import ParseMode
+from telegram.error import TelegramError
 from telegram.ext import (
     Application,
     ApplicationBuilder,
+    BaseHandler,
     Defaults,
     DictPersistence,
     MessageHandler,
@@ -32,9 +32,6 @@ from telegram.ext import (
 
 from kamihi.base.config import KamihiSettings
 from kamihi.tg.default_handlers import default, error
-
-if TYPE_CHECKING:
-    from kamihi.bot.action import Action
 
 
 async def _post_init(_: Application) -> None:
@@ -58,13 +55,13 @@ class TelegramClient:
     _builder: ApplicationBuilder
     _app: Application
 
-    def __init__(self, settings: KamihiSettings, actions: list[Action]) -> None:
+    def __init__(self, settings: KamihiSettings, handlers: list[BaseHandler]) -> None:
         """
         Initialize the Telegram client.
 
         Args:
             settings (KamihiSettings): The settings object.
-            actions (list[Action]): List of actions to register.
+            handlers (list[BaseHandler]): List of handlers to register.
 
         """
         # Set up the application with all the settings
@@ -83,13 +80,10 @@ class TelegramClient:
         # Build the application
         self._app: Application = self._builder.build()
 
-        # Register the actions
-        for action in actions:
-            if action.is_valid():
-                self._app.add_handler(action.handler)
-                logger.trace(f"Handler for {action} registered")
-            else:
-                logger.warning(f"Invalid action '{action.name}' skipped")
+        # Register the handlers
+        for handler in handlers:
+            with logger.catch(exception=TelegramError, message="Failed to register handler"):
+                self._app.add_handler(handler)
 
         # Register the default handlers
         if settings.responses.default_enabled:
