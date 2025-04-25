@@ -29,7 +29,7 @@ from multipledispatch import dispatch
 
 from kamihi.base.config import KamihiSettings
 from kamihi.base.logging import configure_logging
-from kamihi.bot.command import Command
+from kamihi.bot.action import Action
 from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
 
@@ -54,7 +54,7 @@ class Bot:
     templates: Templates
 
     _client: TelegramClient
-    _commands: list[Command] = []
+    _actions: list[Action] = []
 
     def __init__(self, **kwargs: dict[str, Any]) -> None:
         """
@@ -68,17 +68,17 @@ class Bot:
         self.settings = KamihiSettings(**kwargs)
 
     @dispatch([(str, Callable)])
-    def command(self, *args: str | Callable, description: str = None) -> Command | Callable:
+    def action(self, *args: str | Callable, description: str = None) -> Action | Callable:
         """
-        Register a command with the bot.
+        Register an action with the bot.
 
-        The command name must be unique and can only contain lowercase letters,
-        numbers, and underscores. Do not prepend the command with a slash, as it
+        The commands in `*args` must be unique and can only contain lowercase letters,
+        numbers, and underscores. Do not prepend the commands with a slash, as it
         will be added automatically.
 
         Args:
             *args: A list of command names. If not provided, the function name will be used.
-            description: A description of the command. This will be used in the help message.
+            description: A description for the action. This will be used in the help message.
 
         Returns:
             Callable: The wrapped function.
@@ -87,33 +87,31 @@ class Bot:
         # Because of the dispatch decorator, the function is passed as the last argument
         args = list(args)
         func: Callable = args.pop()
-        command_strings: list[str] = args or [func.__name__]
+        commands: list[str] = args or [func.__name__]
 
-        cmd = Command(func.__name__, command_strings, description, func)
+        action = Action(func.__name__, commands, description, func)
 
-        self._commands.append(cmd)
+        self._actions.append(action)
 
-        return cmd
+        return action
 
     @dispatch([str])
-    def command(self, *commands: str, description: str = "") -> partial[Command]:
+    def action(self, *commands: str, description: str = "") -> partial[Action]:
         """
-        Register a command with the bot.
+        Register an action with the bot.
 
-        This method overloads the command method so the decorator can be used
+        This method overloads the `bot.action` method so the decorator can be used
         with or without parentheses.
 
         Args:
             *commands: A list of command names. If not provided, the function name will be used.
-            description: A description of the command. This will be used in the help message.
+            description: A description of the action. This will be used in the help message.
 
         Returns:
             Callable: The wrapped function.
 
         """
-        return functools.partial(self.command, *commands, description=description)
-
-    def action(self, *commands: str, description: str = "") -> Callable: ...  # noqa: D102
+        return functools.partial(self.action, *commands, description=description)
 
     def on_message(self, regex: str = None) -> Callable: ...  # noqa: D102
 
@@ -128,7 +126,7 @@ class Bot:
         logger.trace("Templates initialized")
 
         # Loads the Telegram client
-        self._client = TelegramClient(self.settings, self._commands)
+        self._client = TelegramClient(self.settings, self._actions)
         logger.trace("Telegram client initialized")
 
         # Runs the client
