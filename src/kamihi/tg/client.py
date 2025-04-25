@@ -34,7 +34,7 @@ from kamihi.base.config import KamihiSettings
 from kamihi.tg.default_handlers import default, error
 
 if TYPE_CHECKING:
-    from kamihi.bot.command import Command
+    from kamihi.bot.action import Action
 
 
 async def _post_init(_: Application) -> None:
@@ -57,15 +57,14 @@ class TelegramClient:
 
     _builder: ApplicationBuilder
     _app: Application
-    _registered_commands: set[str] = set()
 
-    def __init__(self, settings: KamihiSettings, commands: list[Command]) -> None:
+    def __init__(self, settings: KamihiSettings, actions: list[Action]) -> None:
         """
         Initialize the Telegram client.
 
         Args:
             settings (KamihiSettings): The settings object.
-            commands (list[Command]): List of commands to register.
+            actions (list[Action]): List of actions to register.
 
         """
         # Set up the application with all the settings
@@ -84,10 +83,10 @@ class TelegramClient:
         # Build the application
         self._app: Application = self._builder.build()
 
-        # Register the commands
-        for command in commands:
-            self._app.add_handler(command.handler)
-            logger.trace(f"Handler for {command} registered")
+        # Register the actions
+        for action in actions:
+            self._app.add_handler(action.handler)
+            logger.trace(f"Handler for {action} registered")
 
         # Register the default handlers
         if settings.responses.default_enabled:
