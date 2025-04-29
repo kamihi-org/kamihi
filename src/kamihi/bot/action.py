@@ -97,7 +97,7 @@ class Action:
     @property
     def handler(self) -> CommandHandler:
         """Construct a CommandHandler for the action."""
-        return CommandHandler(self.commands, self.__call__)
+        return CommandHandler(self.commands, self.__call__) if self.is_valid() else None
 
     def is_valid(self) -> bool:
         """Check if the action is valid."""
@@ -131,7 +131,8 @@ class Action:
                     )
 
         result = await self.func()
-        await reply_text(update, context, result)
+        if result is not None:
+            await reply_text(update, context, result)
 
         raise ApplicationHandlerStop
 
