@@ -210,6 +210,3 @@ async def test_action_invalid_call(logot: Logot, action: Action, mock_update, mo
     action._valid = False
     await action(mock_update, mock_context)
     await logot.await_for(logged.warning("Not valid, skipping execution"))
-
-
-def test_action_repr(): ...
