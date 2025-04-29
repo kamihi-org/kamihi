@@ -11,10 +11,11 @@ License:
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from telegram import Bot, Message, Update
+from telegram import Bot, Message
 from telegram.error import TelegramError
 
 from kamihi.tg.send import reply_text, send_text
+from tests.kamihi.conftest import mock_update, mock_context
 
 
 @pytest.fixture
@@ -23,25 +24,6 @@ def mock_bot():
     bot = Mock(spec=Bot)
     bot.send_message = AsyncMock(return_value=Mock(spec=Message))
     return bot
-
-
-@pytest.fixture
-def mock_update():
-    """Fixture to provide a mock Update instance."""
-    update = Mock(spec=Update)
-    update.effective_message = Mock()
-    update.effective_message.chat_id = 123456
-    update.effective_message.message_id = 789
-    return update
-
-
-@pytest.fixture
-def mock_context():
-    """Fixture to provide a mock CallbackContext."""
-    context = Mock()
-    context.bot = Mock(spec=Bot)
-    context.bot.send_message = AsyncMock(return_value=Mock(spec=Message))
-    return context
 
 
 @pytest.mark.asyncio
