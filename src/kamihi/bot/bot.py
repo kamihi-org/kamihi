@@ -29,7 +29,6 @@ from multipledispatch import dispatch
 from telegram.ext import CommandHandler
 
 from kamihi.base.config import KamihiSettings
-from kamihi.base.logging import configure_logging
 from kamihi.bot.action import Action
 from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
