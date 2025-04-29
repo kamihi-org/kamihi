@@ -115,3 +115,4 @@ version_files = [
 addopts = "--cov=src --cov-report=xml --cov-report=term-missing -n auto"
 testpaths = ["tests/kamihi"]
 asyncio_default_fixture_loop_scope = "function"
+logot_capturer = "logot.loguru.LoguruCapturer"
