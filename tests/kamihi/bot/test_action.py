@@ -120,6 +120,26 @@ def test_action_init_function_parameter_names(logot: Logot, parameter: str, vali
         assert action.is_valid() is False
 
 
+@pytest.mark.parametrize(
+    "parameter, kind",
+    [
+        ("args", Parameter.VAR_POSITIONAL),
+        ("kwargs", Parameter.VAR_KEYWORD),
+    ],
+)
+def test_action_init_function_varargs(logot: Logot, parameter, kind) -> None:
+    """Test the Action class initialization with function signature."""
+    mock_function = AsyncMock()
+    mock_function.__signature__ = Signature([Parameter(name=parameter, kind=kind)])
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
+
+    logot.assert_logged(logged.warning("Special arguments '*args' and '**kwargs' are not supported%s"))
+    logot.assert_logged(logged.warning("Failed to register"))
+
+    assert action.is_valid() is False
+
+
 def test_action_handler(action: Action) -> None:
     """Test the Action class handler property."""
     assert action.handler is not None
@@ -152,10 +172,18 @@ async def test_action_call(logot: Logot, mock_update, mock_context) -> None:
 
 
 @pytest.mark.asyncio
-async def test_action_call_update(logot: Logot, mock_update, mock_context) -> None:
+@pytest.mark.parametrize(
+    "kind",
+    [
+        Parameter.POSITIONAL_OR_KEYWORD,
+        Parameter.POSITIONAL_ONLY,
+        Parameter.KEYWORD_ONLY,
+    ],
+)
+async def test_action_call_update(logot: Logot, mock_update, mock_context, kind) -> None:
     """Test the Action class call method with update parameter."""
     mock_function = AsyncMock()
-    mock_function.__signature__ = Signature([Parameter("update", kind=Parameter.POSITIONAL_OR_KEYWORD)])
+    mock_function.__signature__ = Signature([Parameter("update", kind=kind)])
     mock_function.__name__ = "test_function"
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
@@ -168,10 +196,18 @@ async def test_action_call_update(logot: Logot, mock_update, mock_context) -> No
 
 
 @pytest.mark.asyncio
-async def test_action_call_context(logot: Logot, mock_update, mock_context) -> None:
+@pytest.mark.parametrize(
+    "kind",
+    [
+        Parameter.POSITIONAL_OR_KEYWORD,
+        Parameter.POSITIONAL_ONLY,
+        Parameter.KEYWORD_ONLY,
+    ],
+)
+async def test_action_call_context(logot: Logot, mock_update, mock_context, kind) -> None:
     """Test the Action class call method with context parameter."""
     mock_function = AsyncMock()
-    mock_function.__signature__ = Signature([Parameter("context", kind=Parameter.POSITIONAL_OR_KEYWORD)])
+    mock_function.__signature__ = Signature([Parameter("context", kind=kind)])
     mock_function.__name__ = "test_function"
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
@@ -184,10 +220,18 @@ async def test_action_call_context(logot: Logot, mock_update, mock_context) -> N
 
 
 @pytest.mark.asyncio
-async def test_action_call_logger(logot: Logot, mock_update, mock_context) -> None:
+@pytest.mark.parametrize(
+    "kind",
+    [
+        Parameter.POSITIONAL_OR_KEYWORD,
+        Parameter.POSITIONAL_ONLY,
+        Parameter.KEYWORD_ONLY,
+    ],
+)
+async def test_action_call_logger(logot: Logot, mock_update, mock_context, kind) -> None:
     """Test the Action class call method with logger parameter."""
     mock_function = AsyncMock()
-    mock_function.__signature__ = Signature([Parameter("logger", kind=Parameter.POSITIONAL_OR_KEYWORD)])
+    mock_function.__signature__ = Signature([Parameter("logger", kind=kind)])
     mock_function.__name__ = "test_function"
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
@@ -200,8 +244,52 @@ async def test_action_call_logger(logot: Logot, mock_update, mock_context) -> No
 
 
 @pytest.mark.asyncio
+async def test_action_call_unknown_parameter(logot: Logot, mock_update, mock_context) -> None:
+    """Test the Action class call method with an unknown parameter name."""
+    # Create a mock function with an unknown parameter
+    mock_function = AsyncMock()
+    mock_function.__signature__ = Signature([Parameter("unknown", kind=Parameter.POSITIONAL_OR_KEYWORD)])
+    mock_function.__name__ = "test_function"
+
+    # Bypass validation to create a valid action with an unknown parameter
+    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
+    action._valid = True  # Force action to be valid despite invalid parameter
+
+    with pytest.raises(ApplicationHandlerStop):
+        await action(mock_update, mock_context)
+        mock_function.assert_called_once_with(unknown=None)  # Value should be None
+
+
+@pytest.mark.asyncio
 async def test_action_invalid_call(logot: Logot, action: Action, mock_update, mock_context) -> None:
     """Test the Action class call method when invalid."""
     action._valid = False
     await action(mock_update, mock_context)
     await logot.await_for(logged.warning("Not valid, skipping execution"))
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "return_value",
+    [
+        "test result",
+        None,
+    ],
+)
+async def test_action_call_with_result(logot: Logot, action: Action, mock_update, mock_context, return_value) -> None:
+    """Test the Action class call method with a result."""
+    str_func = AsyncMock(return_value=return_value)
+    action.func = str_func
+
+    with pytest.raises(ApplicationHandlerStop):
+        await action(mock_update, mock_context)
+        str_func.assert_called_once_with(update=mock_update, context=mock_context)
+        if return_value is None:
+            logot.assert_logged(logged.debug("No result to send"))
+        logot.assert_logged(logged.debug("Executed successfully"))
+
+
+def test_action_repr(action: Action) -> None:
+    """Test the Action class string representation."""
+    assert repr(action) == "Action 'test_action' (/test) [-> func]"
+    assert str(action) == "Action 'test_action' (/test) [-> func]"
