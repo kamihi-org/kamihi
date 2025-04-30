@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 from unittest.mock import Mock, AsyncMock
 
 import pytest
