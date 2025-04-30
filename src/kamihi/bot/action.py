@@ -141,7 +141,6 @@ class Action:
         keyword_args = {}
 
         for name, param in parameters.items():
-            value = None
             match name:
                 case "update":
                     value = update
@@ -149,16 +148,19 @@ class Action:
                     value = context
                 case "logger":
                     value = self._logger
+                case _:
+                    value = None
 
-            match param.kind:
-                case inspect.Parameter.POSITIONAL_OR_KEYWORD | inspect.Parameter.KEYWORD_ONLY:
-                    keyword_args[name] = value
-                case inspect.Parameter.POSITIONAL_ONLY:
-                    pos_args.append(value)
+            if param.kind == inspect.Parameter.POSITIONAL_ONLY:
+                pos_args.append(value)
+            else:
+                keyword_args[name] = value
 
         result = await self.func(*pos_args, **keyword_args)
         if result is not None:
             await reply_text(update, context, result)
+        else:
+            self._logger.debug("No result to send")
 
         self._logger.debug("Executed successfully")
         raise ApplicationHandlerStop
