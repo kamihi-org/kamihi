@@ -12,7 +12,8 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from telegram import Update
-from telegram.ext import Application, ApplicationBuilder
+from telegram.error import TelegramError
+from telegram.ext import Application, ApplicationBuilder, BaseHandler
 
 from kamihi.base.config import KamihiSettings
 from kamihi.tg.client import TelegramClient, _post_init, _post_shutdown
@@ -127,3 +128,57 @@ async def test_stop_calls_stop(client, mock_app):
     """
     await client.stop()
     mock_app.stop.assert_called_once()
+
+
+def test_handler_registration(mock_settings, mock_builder, mock_app):
+    """
+    Test that handlers are properly registered with the application.
+
+    Verifies that each handler in the provided list is correctly added to the application.
+    """
+    # Create mock handlers
+    mock_handler1 = Mock(spec=BaseHandler)
+    mock_handler2 = Mock(spec=BaseHandler)
+    handlers = [mock_handler1, mock_handler2]
+
+    # Set up the application builder mock
+    with patch("kamihi.tg.client.Application.builder", return_value=mock_builder):
+        mock_builder.build.return_value = mock_app
+
+        # Create the client with mock handlers
+        client = TelegramClient(mock_settings, handlers)
+
+        # Verify that add_handler was called for each handler
+        assert mock_app.add_handler.call_count == 3  # 2 handlers + 1 default handler
+        mock_app.add_handler.assert_any_call(mock_handler1)
+        mock_app.add_handler.assert_any_call(mock_handler2)
+
+
+def test_handler_registration_with_error(mock_settings, mock_builder, mock_app):
+    """
+    Test handler registration when a TelegramError occurs.
+
+    Verifies that when add_handler raises a TelegramError for one handler,
+    the error is caught and registration continues with the next handler.
+    """
+    # Create mock handlers
+    mock_handler1 = Mock(spec=BaseHandler)
+    mock_handler2 = Mock(spec=BaseHandler)
+    handlers = [mock_handler1, mock_handler2]
+
+    # Set up the application builder mock
+    with patch("kamihi.tg.client.Application.builder", return_value=mock_builder):
+        mock_builder.build.return_value = mock_app
+
+        # Make add_handler raise a TelegramError for the first handler
+        def add_handler_side_effect(handler, group=None):
+            if handler == mock_handler1:
+                raise TelegramError("Test error")
+
+        mock_app.add_handler.side_effect = add_handler_side_effect
+
+        # Create the client - this should not raise an exception due to logger.catch
+        client = TelegramClient(mock_settings, handlers)
+
+        # Verify that add_handler was called for both handlers
+        assert mock_app.add_handler.call_count == 3  # 2 handlers + 1 default handler
