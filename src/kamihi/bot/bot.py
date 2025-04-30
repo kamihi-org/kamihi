@@ -22,7 +22,6 @@ Examples:
 import functools
 from collections.abc import Callable
 from functools import partial
-from typing import Any
 
 from loguru import logger
 from multipledispatch import dispatch
@@ -96,7 +95,7 @@ class Bot:
         return action
 
     @dispatch([str])
-    def action(self, *commands: str, description: str = "") -> partial[Action]:
+    def action(self, *commands: str, description: str = None) -> partial[Action]:
         """
         Register an action with the bot.
 
