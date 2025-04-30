@@ -146,7 +146,7 @@ def test_handler_registration(mock_settings, mock_builder, mock_app):
         mock_builder.build.return_value = mock_app
 
         # Create the client with mock handlers
-        client = TelegramClient(mock_settings, handlers)
+        TelegramClient(mock_settings, handlers)
 
         # Verify that add_handler was called for each handler
         assert mock_app.add_handler.call_count == 3  # 2 handlers + 1 default handler
@@ -178,7 +178,7 @@ def test_handler_registration_with_error(mock_settings, mock_builder, mock_app):
         mock_app.add_handler.side_effect = add_handler_side_effect
 
         # Create the client - this should not raise an exception due to logger.catch
-        client = TelegramClient(mock_settings, handlers)
+        TelegramClient(mock_settings, handlers)
 
         # Verify that add_handler was called for both handlers
         assert mock_app.add_handler.call_count == 3  # 2 handlers + 1 default handler
