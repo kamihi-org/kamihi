@@ -1,17 +1,11 @@
 """
-TODO: one-line module description.
-
-TODO: Additional details about the module, its purpose, and any necessary
-background information. Explain what functions or classes are included.
+Utilities and constants for the bot module.
 
 License:
     MIT
 
-Examples:
-    [Examples of how to use the module/classes/functions]
-
 Attributes:
-    [List any relevant module-level attributes with types and descriptions]
+    COMMAND_REGEX (re.Pattern): Regular expression pattern for validating command names.
 
 """
 
