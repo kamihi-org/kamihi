@@ -18,7 +18,7 @@ from kamihi.tg.send import reply_text, send_text
 
 
 @pytest.fixture
-def mock_bot():
+def mock_ptb_bot():
     """Fixture to provide a mock Bot instance."""
     bot = Mock(spec=Bot)
     bot.send_message = AsyncMock(return_value=Mock(spec=Message))
@@ -26,7 +26,7 @@ def mock_bot():
 
 
 @pytest.mark.asyncio
-async def test_send_text_basic(mock_bot):
+async def test_send_text_basic(mock_ptb_bot):
     """
     Test basic functionality of send_text with minimal parameters.
 
@@ -34,23 +34,23 @@ async def test_send_text_basic(mock_bot):
     """
     # Configure return value for send_message
     mock_message = Mock(spec=Message)
-    mock_bot.send_message.return_value = mock_message
+    mock_ptb_bot.send_message.return_value = mock_message
 
     chat_id = 123456
     text = "Test message"
 
     # Call function
-    result = await send_text(mock_bot, chat_id, text)
+    result = await send_text(mock_ptb_bot, chat_id, text)
 
     # Verify send_message was called with correct parameters
-    mock_bot.send_message.assert_called_once_with(chat_id, text, reply_to_message_id=None)
+    mock_ptb_bot.send_message.assert_called_once_with(chat_id, text, reply_to_message_id=None)
 
     # Verify correct return value
     assert result == mock_message
 
 
 @pytest.mark.asyncio
-async def test_send_text_with_reply(mock_bot):
+async def test_send_text_with_reply(mock_ptb_bot):
     """
     Test that send_text correctly handles reply_to_message_id parameter.
 
@@ -61,14 +61,14 @@ async def test_send_text_with_reply(mock_bot):
     reply_to = 789
 
     # Call function
-    await send_text(mock_bot, chat_id, text, reply_to)
+    await send_text(mock_ptb_bot, chat_id, text, reply_to)
 
     # Verify send_message was called with reply_to_message_id parameter set to reply_to
-    mock_bot.send_message.assert_called_once_with(chat_id, text, reply_to_message_id=reply_to)
+    mock_ptb_bot.send_message.assert_called_once_with(chat_id, text, reply_to_message_id=reply_to)
 
 
 @pytest.mark.asyncio
-async def test_send_text_with_markdown_formatting(mock_bot):
+async def test_send_text_with_markdown_formatting(mock_ptb_bot):
     """
     Test that send_text correctly sends messages with Markdown formatting.
 
@@ -82,14 +82,14 @@ async def test_send_text_with_markdown_formatting(mock_bot):
     markdown_text = "*Bold text* and _italic text_"
 
     # Call function
-    await send_text(mock_bot, chat_id, markdown_text)
+    await send_text(mock_ptb_bot, chat_id, markdown_text)
 
     # Verify markdown text is preserved when sending
-    mock_bot.send_message.assert_called_once_with(chat_id, markdown_text, reply_to_message_id=None)
+    mock_ptb_bot.send_message.assert_called_once_with(chat_id, markdown_text, reply_to_message_id=None)
 
 
 @pytest.mark.asyncio
-async def test_send_text_with_special_markdown_characters(mock_bot):
+async def test_send_text_with_special_markdown_characters(mock_ptb_bot):
     """
     Test that send_text correctly handles special Markdown characters.
 
@@ -101,14 +101,14 @@ async def test_send_text_with_special_markdown_characters(mock_bot):
     text_with_special_chars = "Special characters: *asterisks*, _underscores_, `backticks`"
 
     # Call function
-    await send_text(mock_bot, chat_id, text_with_special_chars)
+    await send_text(mock_ptb_bot, chat_id, text_with_special_chars)
 
     # Verify text with special characters is sent correctly
-    mock_bot.send_message.assert_called_once_with(chat_id, text_with_special_chars, reply_to_message_id=None)
+    mock_ptb_bot.send_message.assert_called_once_with(chat_id, text_with_special_chars, reply_to_message_id=None)
 
 
 @pytest.mark.asyncio
-async def test_send_text_with_complex_markdown(mock_bot):
+async def test_send_text_with_complex_markdown(mock_ptb_bot):
     """
     Test that send_text correctly handles complex Markdown formatting.
 
@@ -120,14 +120,14 @@ async def test_send_text_with_complex_markdown(mock_bot):
     complex_markdown = "_*Bold inside italic*_ and *_Italic inside bold_*"
 
     # Call function
-    await send_text(mock_bot, chat_id, complex_markdown)
+    await send_text(mock_ptb_bot, chat_id, complex_markdown)
 
     # Verify complex markdown is preserved
-    mock_bot.send_message.assert_called_once_with(chat_id, complex_markdown, reply_to_message_id=None)
+    mock_ptb_bot.send_message.assert_called_once_with(chat_id, complex_markdown, reply_to_message_id=None)
 
 
 @pytest.mark.asyncio
-async def test_send_text_error_handling(mock_bot):
+async def test_send_text_error_handling(mock_ptb_bot):
     """
     Test that send_text properly catches and logs TelegramError.
 
@@ -137,7 +137,7 @@ async def test_send_text_error_handling(mock_bot):
     text = "Test message"
 
     # Make send_message raise a TelegramError
-    mock_bot.send_message.side_effect = TelegramError("Test error")
+    mock_ptb_bot.send_message.side_effect = TelegramError("Test error")
 
     # We need to patch the logger in a way that prevents the exception from propagating
     with patch("kamihi.tg.send.logger") as mock_logger:
@@ -157,7 +157,7 @@ async def test_send_text_error_handling(mock_bot):
         mock_bind.catch.return_value = MockCatch()
 
         # Call the function (should not raise now because context manager swallows exception)
-        result = await send_text(mock_bot, chat_id, text)
+        result = await send_text(mock_ptb_bot, chat_id, text)
 
         # Verify bind was called with correct parameters
         mock_logger.bind.assert_called_once()
@@ -168,7 +168,7 @@ async def test_send_text_error_handling(mock_bot):
 
 
 @pytest.mark.asyncio
-async def test_send_text_handles_markdown_errors(mock_bot):
+async def test_send_text_handles_markdown_errors(mock_ptb_bot):
     """
     Test that send_text properly handles malformed Markdown content.
 
@@ -181,7 +181,7 @@ async def test_send_text_handles_markdown_errors(mock_bot):
 
     # Make send_message raise a TelegramError for malformed markdown
     error = TelegramError("Bad markdown formatting")
-    mock_bot.send_message.side_effect = error
+    mock_ptb_bot.send_message.side_effect = error
 
     # We need to patch the logger in a way that prevents the exception from propagating
     with patch("kamihi.tg.send.logger") as mock_logger:
@@ -201,7 +201,7 @@ async def test_send_text_handles_markdown_errors(mock_bot):
         mock_bind.catch.return_value = MockCatch()
 
         # Call the function (should not raise now)
-        result = await send_text(mock_bot, chat_id, malformed_markdown)
+        result = await send_text(mock_ptb_bot, chat_id, malformed_markdown)
 
         # Verify bind was called with the right parameters
         mock_logger.bind.assert_called_with(chat_id=chat_id, received_id=None, response_text=malformed_markdown)
