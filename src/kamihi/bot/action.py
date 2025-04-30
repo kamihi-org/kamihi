@@ -113,7 +113,7 @@ class Action:
                 )
                 self._valid = False
 
-            if param.kind == inspect.Parameter.VAR_POSITIONAL or param.kind == inspect.Parameter.VAR_KEYWORD:
+            if param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
                 self._logger.warning(
                     "Special arguments '*args' and '**kwargs' are not supported in action"
                     " parameters, they will be ignored. Beware that this may cause issues."
