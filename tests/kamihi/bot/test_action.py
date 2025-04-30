@@ -156,6 +156,7 @@ async def test_action_call(logot: Logot, mock_update, mock_context) -> None:
         await action(mock_update, mock_context)
         assert mock_function.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_action_call_update(logot: Logot, mock_update, mock_context) -> None:
     """Test the Action class call method with update parameter."""
