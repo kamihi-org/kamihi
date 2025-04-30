@@ -15,7 +15,6 @@ from telegram import Bot, Message
 from telegram.error import TelegramError
 
 from kamihi.tg.send import reply_text, send_text
-from tests.kamihi.conftest import mock_update, mock_context
 
 
 @pytest.fixture

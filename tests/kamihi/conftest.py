@@ -13,13 +13,6 @@ import pytest
 from telegram import Update, Bot, Message
 
 
-@pytest.fixture(scope="session")
-def testing_config():
-    """Fixture for testing configuration."""
-    os.environ["KAMIHI_LOG__STDOUT_LEVEL"] = "TRACE"
-    os.environ["KAMIHI_LOG__STDERR_LEVEL"] = "TRACE"
-
-
 @pytest.fixture
 def mock_update():
     """Fixture to provide a mock Update instance."""
