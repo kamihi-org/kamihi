@@ -53,7 +53,7 @@ class Bot:
     templates: Templates
 
     _client: TelegramClient
-    _actions: list[Action] = []
+    _actions: list[Action]
 
     def __init__(self, settings: KamihiSettings) -> None:
         """
@@ -63,8 +63,8 @@ class Bot:
             settings: The settings for the bot.
 
         """
-        # Loads the settings
         self.settings = settings
+        self._actions = []
 
     @dispatch([(str, Callable)])
     def action(self, *args: str | Callable, description: str = None) -> Action | Callable:
@@ -113,15 +113,24 @@ class Bot:
         return functools.partial(self.action, *commands, description=description)
 
     @property
+    def valid_actions(self) -> list[Action]:
+        """Return the valid actions for the bot."""
+        return [action for action in self._actions if action.is_valid()]
+
+    @property
     def _handlers(self) -> list[CommandHandler]:
         """Return the handlers for the bot."""
-        return [action.handler for action in self._actions if action.is_valid()]
+        return [action.handler for action in self.valid_actions]
 
     def start(self) -> None:
         """Start the bot."""
         # Loads the templates
         self.templates = Templates(self.settings.autoreload_templates)
         logger.trace("Templates initialized")
+
+        # Warns the user if there are no valid actions registered
+        if not self.valid_actions:
+            logger.warning("No valid actions were registered. The bot will not respond to any commands.")
 
         # Loads the Telegram client
         self._client = TelegramClient(self.settings, self._handlers)
