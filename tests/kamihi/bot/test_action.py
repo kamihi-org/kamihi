@@ -8,20 +8,15 @@ License:
 
 from __future__ import annotations
 
-import inspect
 from inspect import Signature, Parameter
-from unittest.mock import MagicMock, Mock, patch, create_autospec, AsyncMock
+from unittest.mock import AsyncMock
 
-import loguru
-from loguru import logger
 import pytest
 from logot import Logot, logged
-from telegram import Update
 from telegram.constants import BotCommandLimit
-from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
+from telegram.ext import ApplicationHandlerStop, CommandHandler
 
 from kamihi.bot.action import Action
-from tests.kamihi.conftest import mock_update, mock_context
 
 
 async def func():
@@ -98,7 +93,6 @@ def test_action_init_sync_function(logot: Logot):
     assert action.is_valid() is False
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "parameter, valid",
     [
