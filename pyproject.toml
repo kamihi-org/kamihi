@@ -116,3 +116,10 @@ addopts = "--cov=src --cov-report=xml --cov-report=term-missing"
 testpaths = ["tests/kamihi"]
 asyncio_default_fixture_loop_scope = "function"
 logot_capturer = "logot.loguru.LoguruCapturer"
+
+[tool.coverage.run]
+branch = true
+omit = [
+    "tests/*",
+    ".idea/*",
+]
