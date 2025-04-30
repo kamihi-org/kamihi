@@ -1,5 +1,5 @@
 """
-Testing configuration and common fixtures.
+Unit testing configuration and common fixtures.
 
 License:
     MIT
