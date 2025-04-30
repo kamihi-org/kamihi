@@ -17,8 +17,8 @@ from telegram import Update
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
+from kamihi.bot.utils import COMMAND_REGEX
 from kamihi.tg.send import reply_text
-from kamihi.utils import COMMAND_REGEX
 
 
 class Action:
