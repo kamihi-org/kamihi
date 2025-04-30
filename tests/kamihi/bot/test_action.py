@@ -54,8 +54,8 @@ def test_action_init_invalid_commands(logot: Logot, command: str) -> None:
     action = Action(name="test_action", commands=[command], description="Test action", func=func)
 
     logot.assert_logged(logged.warning(f"Command '/{command}' was discarded%s"))
-    logot.assert_logged(logged.warning(f"No valid commands were given"))
-    logot.assert_logged(logged.warning(f"Failed to register"))
+    logot.assert_logged(logged.warning("No valid commands were given"))
+    logot.assert_logged(logged.warning("Failed to register"))
 
     assert action.name == "test_action"
     assert action.commands == []
@@ -66,7 +66,7 @@ def test_action_init_duplicate_commands(logot: Logot) -> None:
     """Test the Action class initialization with duplicate commands."""
     action = Action(name="test_action", commands=["test", "test"], description="Test action", func=func)
 
-    logot.assert_logged(logged.debug(f"Successfully registered"))
+    logot.assert_logged(logged.debug("Successfully registered"))
 
     assert action.name == "test_action"
     assert action.commands == ["test"]
@@ -79,12 +79,12 @@ def test_action_init_sync_function(logot: Logot):
     """Test the Action class initialization with invalid function."""
 
     def test_func():
-        pass
+        raise NotImplementedError()
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=test_func)
 
-    logot.assert_logged(logged.warning(f"Function should be a coroutine%s"))
-    logot.assert_logged(logged.warning(f"Failed to register"))
+    logot.assert_logged(logged.warning("Function should be a coroutine%s"))
+    logot.assert_logged(logged.warning("Failed to register"))
 
     assert action.name == "test_action"
     assert action.commands == ["test"]
@@ -116,7 +116,7 @@ def test_action_init_function_parameter_names(logot: Logot, parameter: str, vali
         assert action.is_valid() is True
     else:
         logot.assert_logged(logged.warning(f"Invalid parameter '{parameter}' in function"))
-        logot.assert_logged(logged.warning(f"Failed to register"))
+        logot.assert_logged(logged.warning("Failed to register"))
         assert action.is_valid() is False
 
 

@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from telegram import Update
-from telegram.ext import Application, ApplicationBuilder, CommandHandler
+from telegram.ext import Application, ApplicationBuilder
 
 from kamihi.base.config import KamihiSettings
 from kamihi.tg.client import TelegramClient, _post_init, _post_shutdown
