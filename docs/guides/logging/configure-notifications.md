@@ -1,5 +1,3 @@
-# Configuring Log Notifications in Kamihi
-
 This guide shows you how to set up log notifications in Kamihi to receive alerts for important log events through various notification services.
 
 ## Prerequisites

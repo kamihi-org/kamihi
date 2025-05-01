@@ -1,5 +1,3 @@
-# Structured Logging in Kamihi
-
 Structured logging transforms your application logs into machine-readable JSON format instead of plain text. You should enable structured logging when:
 
 - You need to process logs programmatically
