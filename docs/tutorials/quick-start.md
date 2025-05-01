@@ -36,7 +36,7 @@ from kamihi import bot
 
 
 @bot.action
-def start():
+async def start():
     return "Hello! I'm your friendly bot. How can I help you today?"
 
 
@@ -74,7 +74,7 @@ In your script, just remove the token from the `bot.start()` call:
 from kamihi import bot
 
 @bot.action
-def start():
+async def start():
     return "Hello! I'm your friendly bot. How can I help you today?"
 
 bot.start()
