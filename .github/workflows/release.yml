@@ -29,15 +29,13 @@ jobs:
       - name: Upload incremental changelog
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: changelog-${{ env.REVISION }}
+          name: changelog
           path: body.md
 
-  publish:
+  build:
     runs-on: ubuntu-latest
-    name: "Publish to PyPI"
+    name: "Build project"
     needs: bump-version
-    permissions:
-      id-token: write
 
     steps:
       - name: Check out
@@ -53,35 +51,54 @@ jobs:
         run: |
           uv sync --dev
           uv build
+          
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
 
-      - name: Publish to PyPI
-        run: |
-          uv publish
+  publish:
+    runs-on: ubuntu-latest
+    name: "Publish to PyPI"
+    needs: build
+    environment:
+      name: pypi
+      url: https://pypi.org/p/kamihi
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
 
   create-release:
     runs-on: ubuntu-latest
     name: "Create release"
-    needs: bump-version
+    needs:
+      - bump-version
+      - build
 
     steps:
       - name: Check out
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@6b9c6063abd6010835644d4c2e1bef4cf5cd0fca # v6
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Builds the project
-        run: |
-          uv sync --dev
-          uv build
-
       - name: Download changelog
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: changelog-${{ needs.bump-version.outputs.REVISION }}
+          name: changelog
+
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
 
       - name: Release
         uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2
