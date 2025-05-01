@@ -2,10 +2,28 @@
 name = "kamihi"
 version = "0.5.0"
 description = "Framework for building Telegram bots in Python"
-license = "MIT"
-readme = "README.md"
 authors = [
     { name = "kiinami", email = "kinami@posteo.net" }
+]
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE.md"]
+keywords = [
+    "telegram", "bot", "framework", "python", "python-telegram-bot",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: Pydantic",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.12"
 dependencies = [
@@ -19,6 +37,12 @@ dependencies = [
     "pytz>=2025.2",
     "types-pytz>=2025.2.0.20250326",
 ]
+
+[project.urls]
+Documentation = "https://kamihi-dev.github.io/kamihi/"
+Repository = "https://github.com/kamihi-dev/kamihi"
+Issues = "https://github.com/kamihi-dev/kamihi/issues"
+Changelog = "https://github.com/kamihi-dev/kamihi/blob/master/CHANGELOG.md"
 
 [build-system]
 requires = ["hatchling"]
