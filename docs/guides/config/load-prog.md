@@ -25,4 +25,5 @@ Kamihi allows you to configure settings directly in your Python code by instanti
 ## Notes
 
 -   Programmatically set settings will override default values and settings loaded from configuration files or environment variables.
+-   Configuration changes made programmatically will not be validated against the schema defined in the `KamihiSettings` class. Ensure that the values you set are valid according to the expected types and formats.
 -   This method is ideal for scenarios where configuration needs to be determined at runtime based on application logic or external factors.

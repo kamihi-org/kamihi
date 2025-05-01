@@ -18,11 +18,20 @@ Attributes:
 
 __version__ = "0.4.0"
 
-import sys
 
+from loguru import logger
+
+from kamihi.base.config import KamihiSettings
+from kamihi.base.logging import configure_logging
 from kamihi.bot import Bot as _Bot
 
-# Check if we're running under pytest
-_running_tests = any("pytest" in arg for arg in sys.argv) or "pytest" in sys.modules
+# Load the settings and configure logging
+_settings = KamihiSettings()
+configure_logging(logger, _settings.log)
+logger.trace("Settings and logging initialized.")
 
-bot = None if _running_tests else _Bot()
+# Initialize the bot
+bot = _Bot(_settings)
+
+
+__all__ = ["bot"]

@@ -1,5 +1,3 @@
-# Configuring Log Notifications in Kamihi
-
 This guide shows you how to set up log notifications in Kamihi to receive alerts for important log events through various notification services.
 
 ## Prerequisites
@@ -12,7 +10,7 @@ This guide shows you how to set up log notifications in Kamihi to receive alerts
 
 Add the appropriate configuration to your Kamihi application to enable notification logging:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
       # Enable notification logging
@@ -42,23 +40,14 @@ Add the appropriate configuration to your Kamihi application to enable notificat
 === "Programmatically"
     ```python
     from kamihi import bot
-    from kamihi.base.config import LogSettings, KamihiSettings
-    
-    settings = LogSettings(
-        # Enable notification logging
-        notification_enable=True,
-        
-        # Set the minimum log level that triggers notifications
-        notification_level="ERROR",
-        
-        # Add notification service URLs (Apprise format)
-        notification_urls=[
-            "discord://webhook_id/webhook_token",
-            "slack://token/channel",
-            "telegram://bot_token/chat_id"
-        ]
-    )
-    bot.set_settings(KamihiSettings(log=settings))
+
+    bot.settings.log.notification_enable = True
+    bot.settings.log.notification_level = "ERROR"
+    bot.settings.log.notification_urls = [
+        "discord://webhook_id/webhook_token",
+        "slack://token/channel",
+        "telegram://bot_token/chat_id"
+    ]
     ```
 
 ## Setting up notification services

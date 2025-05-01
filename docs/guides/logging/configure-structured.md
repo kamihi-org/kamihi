@@ -1,5 +1,3 @@
-# Structured Logging in Kamihi
-
 Structured logging transforms your application logs into machine-readable JSON format instead of plain text. You should enable structured logging when:
 
 - You need to process logs programmatically
@@ -18,7 +16,7 @@ Structured logs make it easier to analyze patterns, troubleshoot issues, and ext
 
 Add the appropriate configuration to your Kamihi application to enable structured logging:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
       # Enable structured logging for stdout
@@ -50,22 +48,15 @@ Add the appropriate configuration to your Kamihi application to enable structure
 === "Programmatically"
     ```python
     from kamihi import bot
-    from kamihi.base.config import LogSettings, KamihiSettings
+    
+    bot.settings.log.stdout_serialize = True
 
-    settings = LogSettings(
-        # Enable structured logging for stdout
-        stdout_serialize=True,
+    bot.settings.log.stderr_enable = True
+    bot.settings.log.stderr_serialize = True
 
-        # Enable structured logging for stderr
-        stderr_enable=True,
-        stderr_serialize=True,
-
-        # Enable structured logging for file output
-        file_enable=True,
-        file_path="kamihi.json",
-        file_serialize=True
-    )
-    bot.set_settings(KamihiSettings(log=settings))
+    bot.settings.log.file_enable = True
+    bot.settings.log.file_path = "kamihi.json"
+    bot.settings.log.file_serialize = True
     ```
 
 ## Checking your structured logs

@@ -19,14 +19,18 @@ Examples:
 
 """
 
-from time import sleep
-from typing import Any
+import functools
+from collections.abc import Callable
+from functools import partial
 
 from loguru import logger
+from multipledispatch import dispatch
+from telegram.ext import CommandHandler
 
 from kamihi.base.config import KamihiSettings
-from kamihi.base.logging import configure_logging
+from kamihi.bot.action import Action
 from kamihi.templates import Templates
+from kamihi.tg import TelegramClient
 
 
 class Bot:
@@ -41,34 +45,96 @@ class Bot:
 
     Attributes:
         settings (KamihiSettings): The settings for the bot.
+        templates (Templates): The templates loaded by the bot.
 
     """
 
     settings: KamihiSettings
     templates: Templates
 
-    def __init__(self, **kwargs: dict[str, Any]) -> None:
+    _client: TelegramClient
+    _actions: list[Action]
+
+    def __init__(self, settings: KamihiSettings) -> None:
         """
         Initialize the Bot class.
 
         Args:
-            **kwargs: Additional keyword arguments for settings.
+            settings: The settings for the bot.
 
         """
-        self.settings = KamihiSettings(**kwargs)
-        self.templates = Templates(self.settings.autoreload_templates)
-
-    def set_settings(self, settings: KamihiSettings) -> None:
-        """Set the settings for the bot."""
         self.settings = settings
+        self._actions = []
+
+    @dispatch([(str, Callable)])
+    def action(self, *args: str | Callable, description: str = None) -> Action | Callable:
+        """
+        Register an action with the bot.
+
+        The commands in `*args` must be unique and can only contain lowercase letters,
+        numbers, and underscores. Do not prepend the commands with a slash, as it
+        will be added automatically.
+
+        Args:
+            *args: A list of command names. If not provided, the function name will be used.
+            description: A description for the action. This will be used in the help message.
+
+        Returns:
+            Callable: The wrapped function.
+
+        """
+        # Because of the dispatch decorator, the function is passed as the last argument
+        args = list(args)
+        func: Callable = args.pop()
+        commands: list[str] = args or [func.__name__]
+
+        action = Action(func.__name__, commands, description, func)
+
+        self._actions.append(action)
+
+        return action
+
+    @dispatch([str])
+    def action(self, *commands: str, description: str = None) -> partial[Action]:
+        """
+        Register an action with the bot.
+
+        This method overloads the `bot.action` method so the decorator can be used
+        with or without parentheses.
+
+        Args:
+            *commands: A list of command names. If not provided, the function name will be used.
+            description: A description of the action. This will be used in the help message.
+
+        Returns:
+            Callable: The wrapped function.
+
+        """
+        return functools.partial(self.action, *commands, description=description)
+
+    @property
+    def valid_actions(self) -> list[Action]:
+        """Return the valid actions for the bot."""
+        return [action for action in self._actions if action.is_valid()]
+
+    @property
+    def _handlers(self) -> list[CommandHandler]:
+        """Return the handlers for the bot."""
+        return [action.handler for action in self.valid_actions]
 
     def start(self) -> None:
         """Start the bot."""
-        configure_logging(logger, self.settings.log)
+        # Loads the templates
+        self.templates = Templates(self.settings.autoreload_templates)
+        logger.trace("Templates initialized")
 
-        logger.info("Starting bot...")
+        # Warns the user if there are no valid actions registered
+        if not self.valid_actions:
+            logger.warning("No valid actions were registered. The bot will not respond to any commands.")
 
-        while True:
-            # Placeholder for bot's main loop
-            logger.debug("Bot is running...")
-            sleep(1)
+        # Loads the Telegram client
+        self._client = TelegramClient(self.settings, self._handlers)
+        logger.trace("Telegram client initialized")
+
+        # Runs the client
+        self._client.run()

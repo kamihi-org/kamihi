@@ -6,7 +6,7 @@ If you need to capture application activity for debugging or monitoring, configu
 
 Console logging to `stdout` is enabled by default. You can configure it in several ways:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
         stdout_level: DEBUG # default is INFO
@@ -18,20 +18,16 @@ Console logging to `stdout` is enabled by default. You can configure it in sever
 === "Programmatically"
     ```python
     from kamihi import bot
-    from kamihi.base.config import LogSettings, KamihiSettings
 
-    settings = LogSettings(
-        stdout_level="DEBUG"  # default is INFO
-    )
-
-    bot.set_settings(KamihiSettings(log=settings))
+    # Set the logging level for stdout
+    bot.settings.log.stdout_level = "DEBUG"  # default is INFO
     ```
 
 ## Configuring `stderr` logging
 
 If you want to log to `stderr`, you can enable and configure it similarly:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
         stderr_enable: true
@@ -45,19 +41,17 @@ If you want to log to `stderr`, you can enable and configure it similarly:
 === "Programmatically"
     ```python
     from kamihi import bot
-    from kamihi.base.config import LogSettings, KamihiSettings
-    settings = LogSettings(
-        stderr_enable=True,
-        stderr_level="ERROR"
-    )
-    bot.set_settings(KamihiSettings(log=settings))
+
+    # Enable and set the logging level for stderr
+    bot.settings.log.stderr_enable = True
+    bot.settings.log.stderr_level = "ERROR"
     ```
 
 ## Adding file logging
 
 If you need to store logs in a file:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
         file_enable: true
@@ -72,9 +66,10 @@ If you need to store logs in a file:
     ```
 === "Programmatically"
     ```python
-    settings = LogSettings(
-        file_enable=True,
-        file_path="app.log", # Path to the log file, default is "kamihi.log"
-        file_level="DEBUG"
-    )
+    from kamihi import bot
+
+    # Enable file logging and set the log file path and level
+    bot.settings.log.file_enable = True
+    bot.settings.log.file_path = "app.log"  # Path to the log file, default is "kamihi.log"
+    bot.settings.log.file_level = "DEBUG"
     ```

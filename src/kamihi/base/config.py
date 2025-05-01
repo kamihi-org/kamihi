@@ -10,6 +10,7 @@ License:
 """
 
 import os
+import re
 
 import pytz
 from pydantic import BaseModel, Field, field_validator
@@ -51,23 +52,47 @@ class LogSettings(BaseModel):
     """
 
     stdout_enable: bool = Field(default=True)
-    stdout_level: str = Field(default="INFO", pattern=_LEVEL_PATTERN)
+    stdout_level: str = Field(default="INFO")
     stdout_serialize: bool = Field(default=False)
 
     stderr_enable: bool = Field(default=False)
-    stderr_level: str = Field(default="ERROR", pattern=_LEVEL_PATTERN)
+    stderr_level: str = Field(default="ERROR")
     stderr_serialize: bool = Field(default=False)
 
     file_enable: bool = Field(default=False)
-    file_level: str = Field(default="DEBUG", pattern=_LEVEL_PATTERN)
+    file_level: str = Field(default="DEBUG")
     file_path: str = Field(default="kamihi.log")
     file_serialize: bool = Field(default=False)
     file_rotation: str = Field(default="1 MB")
     file_retention: str = Field(default="7 days")
 
     notification_enable: bool = Field(default=False)
-    notification_level: str = Field(default="SUCCESS", pattern=_LEVEL_PATTERN)
+    notification_level: str = Field(default="SUCCESS")
     notification_urls: list[str] = Field(default_factory=list)
+
+    @field_validator("stdout_level", "stderr_level", "file_level", "notification_level")
+    @classmethod
+    def validate_log_level(cls, value: str) -> str:
+        """
+        Validate the log level value.
+
+        Args:
+            value (str): The log level value to validate.
+
+        Returns:
+            str: The validated log level value.
+
+        Raises:
+            ValueError: If the log level is invalid.
+
+        """
+        value = value.upper()
+
+        if not re.match(_LEVEL_PATTERN, value):
+            msg = f"Invalid log level: {value}"
+            raise ValueError(msg)
+
+        return value
 
 
 class ResponseSettings(BaseModel):
@@ -80,8 +105,8 @@ class ResponseSettings(BaseModel):
     """
 
     default_enabled: bool = Field(default=True)
-    default_message: str = Field(default="I'm sorry, but I don't know how to respond to that.")
-    error_message: str = Field(default="An error occurred while processing your request. We are working on it.")
+    default_message: str = Field(default="I'm sorry, but I don't know how to respond to that")
+    error_message: str = Field(default="An error occurred while processing your request, please try again later")
 
 
 class KamihiSettings(BaseSettings):
@@ -89,13 +114,16 @@ class KamihiSettings(BaseSettings):
     Defines the configuration schema for the Kamihi framework.
 
     Attributes:
-        log (LogSettings): Logging settings.
+        token (str | None): The bot token.
+        timezone (str): The timezone for the bot.
         autoreload_templates (bool): Enable or disable auto-reloading of templates.
+        log (LogSettings): Logging settings.
+        responses (ResponseSettings): Response settings.
         model_config (SettingsConfigDict): Configuration dictionary for environment settings.
 
     """
 
-    token: str | None = Field(default=None, pattern=r"^\d{9}:[0-9A-Za-z_-]{35}$", exclude=True)
+    token: str | None = Field(default=None, pattern=r"^\d+:[0-9A-Za-z_-]{35}$", exclude=True)
     timezone: str = Field(default="UTC", validate_default=True)
     autoreload_templates: bool = Field(default=True)
 
@@ -104,7 +132,7 @@ class KamihiSettings(BaseSettings):
 
     @field_validator("timezone")
     @classmethod
-    def validate_timezone(cls, value: str) -> str:
+    def _validate_timezone(cls, value: str) -> str:
         """
         Validate the timezone value.
 

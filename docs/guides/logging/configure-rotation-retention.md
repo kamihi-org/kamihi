@@ -22,7 +22,7 @@ To understand how to set configuration options, refer to the [configuration guid
 
 If your application produces high-volume logs (e.g., many requests per second), the following settings are recommended
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
     file_enable: true
@@ -40,20 +40,16 @@ If your application produces high-volume logs (e.g., many requests per second), 
 === "Programmatically"
     ```python
     from kamihi import bot
-    from kamihi.base.config import LogSettings, KamihiSettings
 
-    settings = LogSettings(
-        file_enable=True,
-        file_path="/var/log/kamihi/app.log",
-        file_rotation="100 MB",  # Rotate when the file reaches 100 MB
-        file_retention="10 days"  # Keep logs for 10 days
-    )
-    bot.set_settings(KamihiSettings(log=settings))
+    bot.settings.log.file_enable = True
+    bot.settings.log.file_path = "/var/log/kamihi/app.log"
+    bot.settings.log.file_rotation = "100 MB"  # Rotate when the file reaches 100 MB
+    bot.settings.log.file_retention = "10 days"  # Keep logs for 10 days
     ```
 
 Alternatively, for containers or environments with limited disk space, you can use a more conservative approach:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
     file_enable: true
@@ -71,21 +67,18 @@ Alternatively, for containers or environments with limited disk space, you can u
 === "Programmatically"
     ```python
     from kamihi import bot
-    from kamihi.base.config import LogSettings, KamihiSettings
-    settings = LogSettings(
-        file_enable=True,
-        file_path="/var/log/kamihi/app.log",
-        file_rotation="50 MB",  # Rotate when the file reaches 50 MB
-        file_retention="3 days"  # Keep logs for 3 days
-    )
-    bot.set_settings(KamihiSettings(log=settings))
+
+    bot.settings.log.file_enable = True
+    bot.settings.log.file_path = "/var/log/kamihi/app.log"
+    bot.settings.log.file_rotation = "50 MB"  # Rotate when the file reaches 50 MB
+    bot.settings.log.file_retention = "3 days"  # Keep logs for 3 days
     ```
 
 ### Background or batch processing applications
 
 If your application runs scheduled jobs or processes data in batches, you can configure daily rotation to match your job schedule:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
     file_enable: true
@@ -103,22 +96,18 @@ If your application runs scheduled jobs or processes data in batches, you can co
 === "Programmatically"
     ```python
     from kamihi import bot
-    from kamihi.base.config import LogSettings, KamihiSettings
 
-    settings = LogSettings(
-        file_enable=True,
-        file_path="/var/log/kamihi/app.log",
-        file_rotation="1 day",  # Rotate daily
-        file_retention="7 days"  # Keep logs for 7 days
-    )
-    bot.set_settings(KamihiSettings(log=settings))
+    bot.settings.log.file_enable = True
+    bot.settings.log.file_path = "/var/log/kamihi/app.log"
+    bot.settings.log.file_rotation = "1 day"  # Rotate daily
+    bot.settings.log.file_retention = "7 days"  # Keep logs for 7 days
     ```
 
 ### Development environments
 
 For local development, we do not recommend using file logging, as it can clutter your workspace. However, if you want to keep logs for debugging purposes, you can set a short retention period:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
     file_enable: true
@@ -136,14 +125,11 @@ For local development, we do not recommend using file logging, as it can clutter
 === "Programmatically"
     ```python
     from kamihi import bot
-    from kamihi.base.config import LogSettings, KamihiSettings
-    settings = LogSettings(
-        file_enable=True,
-        file_path="app.log",
-        file_rotation="1 hour",  # Rotate every hour
-        file_retention="1 day"  # Keep logs for 1 day
-    )
-    bot.set_settings(KamihiSettings(log=settings))
+
+    bot.settings.log.file_enable = True
+    bot.settings.log.file_path = "app.log"
+    bot.settings.log.file_rotation = "1 hour"  # Rotate every hour
+    bot.settings.log.file_retention = "1 day"  # Keep logs for 1 day
     ```
 
 ## Advanced usage

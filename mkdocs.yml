@@ -7,26 +7,34 @@ repo_url: https://github.com/kamihi-dev/kamihi
 repo_name: kamihi-dev/kamihi
 watch:
   - mkdocs.yml
-  - README.md
   - CHANGELOG.md
+  - CONTRIBUTING.md
   - src/kamihi
 
 nav:
-  - Home: index.md
-  - Getting started:
+  - Home:
+      - index.md
       - Installation: tutorials/installation.md
+      - Quick start: tutorials/quick-start.md
+      - Changelog: changelog.md
+      - Contributing: contributing.md
+      - Special thanks: thanks.md
   - Guides:
-      - Logging:
-          - Set up basic logging: guides/logging/setup-basic.md
-          - Configure log rotation and retention: guides/logging/configure-rotation-retention.md
-          - Configure structured logging: guides/logging/configure-structured.md
-          - Configure notifications: guides/logging/configure-notifications.md
+      - guides/index.md
+      - Key concepts: guides/key-concepts.md
       - Configuration:
           - Load configuration from a file: guides/config/load-file.md
           - Load configuration from environment variables: guides/config/load-environment.md
           - Set configuration values programmatically: guides/config/load-prog.md
+          - Configure the timezone: guides/config/configure-timezone.md
+      - Actions:
+          - Set commands: guides/actions/commands.md
+      - Logging:
+          - Set up basic logging: guides/logging/setup-basic.md
+          - Configure notifications: guides/logging/configure-notifications.md
+          - Configure structured logging: guides/logging/configure-structured.md
+          - Configure file log rotation and retention: guides/logging/configure-rotation-retention.md
   #  - "Explanation":
-  - Changelog: changelog.md
 
 theme:
   name: material
@@ -35,6 +43,7 @@ theme:
     - content.code.annotate
     - content.code.copy
     - content.code.select
+    - content.tabs.link
     - navigation.instant
     - navigation.instant.progress
     - navigation.tracking

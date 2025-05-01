@@ -31,7 +31,7 @@ def mock_update():
 def mock_context():
     """Fixture to provide a mock CallbackContext."""
     context = Mock(spec=CallbackContext)
-    context.bot_data = {"responses": {"default_text": "Default response", "error_text": "Error occurred"}}
+    context.bot_data = {"responses": {"default_message": "Default response", "error_message": "Error occurred"}}
     return context
 
 
@@ -50,7 +50,7 @@ async def test_default_handler(mock_update, mock_context):
 
         # Verify reply_text is called with the correct text from bot_data
         mock_reply.assert_called_once_with(
-            mock_update, mock_context, mock_context.bot_data["responses"]["default_text"]
+            mock_update, mock_context, mock_context.bot_data["responses"]["default_message"]
         )
 
 
@@ -79,7 +79,9 @@ async def test_default_handler_logging(mock_update, mock_context):
             )
 
             # Verify debug log is called with the correct message
-            bind_mock.debug.assert_called_once_with("Message has no handler, so sending default response")
+            bind_mock.debug.assert_called_once_with(
+                "Received message but no handler matched, so sending default response"
+            )
 
 
 @pytest.mark.asyncio
@@ -100,7 +102,9 @@ async def test_error_handler_with_update(mock_update, mock_context):
         await error(mock_update, mock_context)
 
         # Verify reply_text is called with the error text
-        mock_reply.assert_called_once_with(mock_update, mock_context, mock_context.bot_data["responses"]["error_text"])
+        mock_reply.assert_called_once_with(
+            mock_update, mock_context, mock_context.bot_data["responses"]["error_message"]
+        )
 
 
 @pytest.mark.asyncio
