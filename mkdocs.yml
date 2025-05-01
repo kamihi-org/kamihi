@@ -7,13 +7,12 @@ repo_url: https://github.com/kamihi-dev/kamihi
 repo_name: kamihi-dev/kamihi
 watch:
   - mkdocs.yml
-  - README.md
   - CHANGELOG.md
   - src/kamihi
 
 nav:
-  - Home: index.md
-  - Tutorials:
+  - Home:
+      - index.md
       - Installation: tutorials/installation.md
       - Quick start: tutorials/quick-start.md
   - Guides:
