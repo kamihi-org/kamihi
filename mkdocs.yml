@@ -22,6 +22,8 @@ nav:
           - Load configuration from environment variables: guides/config/load-environment.md
           - Set configuration values programmatically: guides/config/load-prog.md
           - Configure the timezone: guides/config/configure-timezone.md
+      - Actions:
+          - Set commands: guides/actions/commands.md
       - Logging:
           - Set up basic logging: guides/logging/setup-basic.md
           - Configure notifications: guides/logging/configure-notifications.md
