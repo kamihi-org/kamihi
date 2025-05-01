@@ -1,3 +1,9 @@
+## 0.5.2 (2025-05-01)
+
+### Fix
+
+- checking out latest ref instead of action ref
+
 ## 0.5.1 (2025-05-01)
 
 ### Fix
