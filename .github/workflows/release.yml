@@ -55,8 +55,32 @@ jobs:
       - name: Uploads the artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: kamihi-${{ needs.bump-version.outputs.REVISION }}-py3-none-any.whl
-          path: dist/kamihi-${{ needs.bump-version.outputs.REVISION }}-py3-none-any.whl
+          name: kamihi-${{ needs.bump-version.outputs.REVISION }}
+          path: dist/
+
+  publish:
+    runs-on: ubuntu-latest
+    name: "Publish to PyPI"
+    needs: build
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          token: "${{ secrets.PAT }}"
+          fetch-depth: 0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: kamihi-${{ needs.bump-version.outputs.REVISION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@6b9c6063abd6010835644d4c2e1bef4cf5cd0fca # v6
+
+      - name: Publish to PyPI
+        run: |
+          uv publish
 
   create-release:
     runs-on: ubuntu-latest
@@ -71,11 +95,10 @@ jobs:
         with:
           name: changelog-${{ needs.bump-version.outputs.REVISION }}
 
-      - name: Download wheel
+      - name: Download artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: kamihi-${{ needs.bump-version.outputs.REVISION }}-py3-none-any.whl
-          path: dist
+          name: kamihi-${{ needs.bump-version.outputs.REVISION }}
 
       - name: Release
         uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2
