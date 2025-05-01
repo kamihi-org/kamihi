@@ -6,7 +6,7 @@ If you need to capture application activity for debugging or monitoring, configu
 
 Console logging to `stdout` is enabled by default. You can configure it in several ways:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
         stdout_level: DEBUG # default is INFO
@@ -31,7 +31,7 @@ Console logging to `stdout` is enabled by default. You can configure it in sever
 
 If you want to log to `stderr`, you can enable and configure it similarly:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
         stderr_enable: true
@@ -57,7 +57,7 @@ If you want to log to `stderr`, you can enable and configure it similarly:
 
 If you need to store logs in a file:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
         file_enable: true

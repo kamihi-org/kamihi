@@ -22,7 +22,7 @@ To understand how to set configuration options, refer to the [configuration guid
 
 If your application produces high-volume logs (e.g., many requests per second), the following settings are recommended
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
     file_enable: true
@@ -53,7 +53,7 @@ If your application produces high-volume logs (e.g., many requests per second), 
 
 Alternatively, for containers or environments with limited disk space, you can use a more conservative approach:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
     file_enable: true
@@ -85,7 +85,7 @@ Alternatively, for containers or environments with limited disk space, you can u
 
 If your application runs scheduled jobs or processes data in batches, you can configure daily rotation to match your job schedule:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
     file_enable: true
@@ -118,7 +118,7 @@ If your application runs scheduled jobs or processes data in batches, you can co
 
 For local development, we do not recommend using file logging, as it can clutter your workspace. However, if you want to keep logs for debugging purposes, you can set a short retention period:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
     file_enable: true

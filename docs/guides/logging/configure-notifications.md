@@ -12,7 +12,7 @@ This guide shows you how to set up log notifications in Kamihi to receive alerts
 
 Add the appropriate configuration to your Kamihi application to enable notification logging:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
       # Enable notification logging

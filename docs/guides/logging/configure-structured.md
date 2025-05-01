@@ -18,7 +18,7 @@ Structured logs make it easier to analyze patterns, troubleshoot issues, and ext
 
 Add the appropriate configuration to your Kamihi application to enable structured logging:
 
-=== "kamihi.yaml"
+=== "Config. file"
     ```yaml
     log:
       # Enable structured logging for stdout
