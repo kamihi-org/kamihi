@@ -1,3 +1,9 @@
+## 0.5.1 (2025-05-01)
+
+### Fix
+
+- added metadata to pyproject.toml
+
 ## 0.5.0 (2025-05-01)
 
 ### Feat
