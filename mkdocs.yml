@@ -17,6 +17,7 @@ nav:
       - Quick start: tutorials/quick-start.md
   - Guides:
       - guides/index.md
+      - Key concepts: guides/key-concepts.md
       - Configuration:
           - Load configuration from a file: guides/config/load-file.md
           - Load configuration from environment variables: guides/config/load-environment.md
