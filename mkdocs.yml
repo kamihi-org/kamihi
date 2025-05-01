@@ -13,9 +13,11 @@ watch:
 
 nav:
   - Home: index.md
-  - Getting started:
+  - Tutorials:
       - Installation: tutorials/installation.md
+      - Quick start: tutorials/quick-start.md
   - Guides:
+      - guides/index.md
       - Logging:
           - Set up basic logging: guides/logging/setup-basic.md
           - Configure log rotation and retention: guides/logging/configure-rotation-retention.md

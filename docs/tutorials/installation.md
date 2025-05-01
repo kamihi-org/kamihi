@@ -60,4 +60,5 @@ X.X.X
 
 ## Next steps
 
-You've successfully installed Kamihi and verified it's working! Now, we can set the basic configuration options. Check the [configuration tutorial](configuration.md) for more information.
+You've successfully installed Kamihi and verified it's working! Now, we can create our first project. Check out
+the [quick start guide](quick-start.md) to get started.
