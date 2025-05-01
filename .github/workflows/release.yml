@@ -61,7 +61,9 @@ jobs:
   create-release:
     runs-on: ubuntu-latest
     name: "Create release"
-    needs: build
+    needs:
+      - bump-version
+      - build
 
     steps:
       - name: Download changelog
