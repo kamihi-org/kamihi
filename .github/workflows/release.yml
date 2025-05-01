@@ -61,7 +61,9 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     name: "Publish to PyPI"
-    needs: build
+    needs:
+      - bump-version
+      - build
 
     steps:
       - name: Check out
