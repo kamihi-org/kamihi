@@ -18,11 +18,13 @@ Create a bot with:
 ```python
 from kamihi import bot
 
+bot.settings.token = "123456789:ABC-DEF1234ghIkl-zyx57W2P0s"
+
 @bot.action
 async def start():
     return "Hello! I'm your friendly bot. How can I help you today?"
 
-bot.start({"token": "123456789:ABC-DEF1234ghIkl-zyx57W2P0s"})
+bot.start()
 ```
 
 Execute the bot with:

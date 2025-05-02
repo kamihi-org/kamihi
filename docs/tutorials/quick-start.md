@@ -7,12 +7,14 @@ send him the `/newbot` command and follow the instructions. He'll give you a tok
 
 ## Creating the bot
 
-You can create your first bot in two lines. No, really! Just two lines. Here's how:
+You can create your first bot in three lines. No, really! Just three lines. Here's how:
 
 ```python
 from kamihi import bot
 
-bot.start({"token": "123456789:ABC-DEF1234ghIkl-zyx57W2P0s"})
+bot.settings.token = "123456789:ABC-DEF1234ghIkl-zyx57W2P0s"
+
+bot.start()
 ```
 
 Just replace the token with the one you got from BotFather. That's it! You've created your first bot.
@@ -34,13 +36,13 @@ by making our first action. Let's make the bot respond to the `/start` command w
 ```python
 from kamihi import bot
 
+bot.settings.token = "123456789:ABC-DEF1234ghIkl-zyx57W2P0s"
 
 @bot.action
 async def start():
     return "Hello! I'm your friendly bot. How can I help you today?"
 
-
-bot.start({"token": "123456789:ABC-DEF1234ghIkl-zyx57W2P0s"})
+bot.start()
 ```
 
 You can restart the bot and send the `/start` command to it. The bot will respond with the message you return in the
