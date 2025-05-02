@@ -10,6 +10,7 @@ from loguru import logger
 from telegram import Bot, Message, Update
 from telegram.error import TelegramError
 from telegram.ext import CallbackContext
+from telegramify_markdown import markdownify as md
 
 
 async def send_text(
@@ -36,7 +37,7 @@ async def send_text(
     with lg.catch(exception=TelegramError, message="Failed to send message"):
         reply = await bot.send_message(
             chat_id,
-            text,
+            md(text),
             reply_to_message_id=reply_to_message_id,
         )
         lg.bind(response_id=reply.message_id).debug("Reply sent" if reply_to_message_id else "Message sent")
