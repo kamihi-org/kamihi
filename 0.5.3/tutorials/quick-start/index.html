@@ -1829,10 +1829,12 @@ with the Telegram API. You can get your token by talking to <a href="https://t.m
 send him the <code>/newbot</code> command and follow the instructions. He'll give you a token that looks like this:
 <code>123456789:ABC-DEF1234ghIkl-zyx57W2P0s</code>.</p>
 <h2 id="creating-the-bot">Creating the bot<a class="headerlink" href="#creating-the-bot" title="Permanent link">⚓︎</a></h2>
-<p>You can create your first bot in two lines. No, really! Just two lines. Here's how:</p>
+<p>You can create your first bot in three lines. No, really! Just three lines. Here's how:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">kamihi</span><span class="w"> </span><span class="kn">import</span> <span class="n">bot</span>
 
-<span class="n">bot</span><span class="o">.</span><span class="n">start</span><span class="p">({</span><span class="s2">&quot;token&quot;</span><span class="p">:</span> <span class="s2">&quot;123456789:ABC-DEF1234ghIkl-zyx57W2P0s&quot;</span><span class="p">})</span>
+<span class="n">bot</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="s2">&quot;123456789:ABC-DEF1234ghIkl-zyx57W2P0s&quot;</span>
+
+<span class="n">bot</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 </code></pre></div>
 <p>Just replace the token with the one you got from BotFather. That's it! You've created your first bot.</p>
 <h2 id="running-the-bot">Running the bot<a class="headerlink" href="#running-the-bot" title="Permanent link">⚓︎</a></h2>
@@ -1845,13 +1847,13 @@ directory where you saved the script and run:</p>
 by making our first action. Let's make the bot respond to the <code>/start</code> command with a friendly message. Here's how:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">kamihi</span><span class="w"> </span><span class="kn">import</span> <span class="n">bot</span>
 
+<span class="n">bot</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="s2">&quot;123456789:ABC-DEF1234ghIkl-zyx57W2P0s&quot;</span>
 
 <span class="nd">@bot</span><span class="o">.</span><span class="n">action</span>
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">():</span>
     <span class="k">return</span> <span class="s2">&quot;Hello! I&#39;m your friendly bot. How can I help you today?&quot;</span>
 
-
-<span class="n">bot</span><span class="o">.</span><span class="n">start</span><span class="p">({</span><span class="s2">&quot;token&quot;</span><span class="p">:</span> <span class="s2">&quot;123456789:ABC-DEF1234ghIkl-zyx57W2P0s&quot;</span><span class="p">})</span>
+<span class="n">bot</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 </code></pre></div>
 <p>You can restart the bot and send the <code>/start</code> command to it. The bot will respond with the message you return in the
 <code>start</code> action.</p>
