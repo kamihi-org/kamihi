@@ -161,6 +161,7 @@ async def test_action_call(logot: Logot, mock_update, mock_context) -> None:
     mock_function = AsyncMock()
     mock_function.__signature__ = Signature([])
     mock_function.__name__ = "test_function"
+    mock_function.return_value = "test result"
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
 
@@ -185,6 +186,7 @@ async def test_action_call_update(logot: Logot, mock_update, mock_context, kind)
     mock_function = AsyncMock()
     mock_function.__signature__ = Signature([Parameter("update", kind=kind)])
     mock_function.__name__ = "test_function"
+    mock_function.return_value = "test result"
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
 
@@ -209,6 +211,7 @@ async def test_action_call_context(logot: Logot, mock_update, mock_context, kind
     mock_function = AsyncMock()
     mock_function.__signature__ = Signature([Parameter("context", kind=kind)])
     mock_function.__name__ = "test_function"
+    mock_function.return_value = "test result"
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
 
@@ -233,6 +236,7 @@ async def test_action_call_logger(logot: Logot, mock_update, mock_context, kind)
     mock_function = AsyncMock()
     mock_function.__signature__ = Signature([Parameter("logger", kind=kind)])
     mock_function.__name__ = "test_function"
+    mock_function.return_value = "test result"
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
 
@@ -250,6 +254,7 @@ async def test_action_call_unknown_parameter(logot: Logot, mock_update, mock_con
     mock_function = AsyncMock()
     mock_function.__signature__ = Signature([Parameter("unknown", kind=Parameter.POSITIONAL_OR_KEYWORD)])
     mock_function.__name__ = "test_function"
+    mock_function.return_value = "test result"
 
     # Bypass validation to create a valid action with an unknown parameter
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)

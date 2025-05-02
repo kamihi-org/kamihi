@@ -13,6 +13,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from telegram import Bot, Message
 from telegram.error import TelegramError
+from telegramify_markdown import markdownify as md
 
 from kamihi.tg.send import reply_text, send_text
 
@@ -40,13 +41,10 @@ async def test_send_text_basic(mock_ptb_bot):
     text = "Test message"
 
     # Call function
-    result = await send_text(mock_ptb_bot, chat_id, text)
+    await send_text(mock_ptb_bot, chat_id, text)
 
     # Verify send_message was called with correct parameters
-    mock_ptb_bot.send_message.assert_called_once_with(chat_id, text, reply_to_message_id=None)
-
-    # Verify correct return value
-    assert result == mock_message
+    mock_ptb_bot.send_message.assert_called_once_with(chat_id, md(text), reply_to_message_id=None)
 
 
 @pytest.mark.asyncio
@@ -64,7 +62,7 @@ async def test_send_text_with_reply(mock_ptb_bot):
     await send_text(mock_ptb_bot, chat_id, text, reply_to)
 
     # Verify send_message was called with reply_to_message_id parameter set to reply_to
-    mock_ptb_bot.send_message.assert_called_once_with(chat_id, text, reply_to_message_id=reply_to)
+    mock_ptb_bot.send_message.assert_called_once_with(chat_id, md(text), reply_to_message_id=reply_to)
 
 
 @pytest.mark.asyncio
@@ -85,7 +83,7 @@ async def test_send_text_with_markdown_formatting(mock_ptb_bot):
     await send_text(mock_ptb_bot, chat_id, markdown_text)
 
     # Verify markdown text is preserved when sending
-    mock_ptb_bot.send_message.assert_called_once_with(chat_id, markdown_text, reply_to_message_id=None)
+    mock_ptb_bot.send_message.assert_called_once_with(chat_id, md(markdown_text), reply_to_message_id=None)
 
 
 @pytest.mark.asyncio
@@ -104,7 +102,7 @@ async def test_send_text_with_special_markdown_characters(mock_ptb_bot):
     await send_text(mock_ptb_bot, chat_id, text_with_special_chars)
 
     # Verify text with special characters is sent correctly
-    mock_ptb_bot.send_message.assert_called_once_with(chat_id, text_with_special_chars, reply_to_message_id=None)
+    mock_ptb_bot.send_message.assert_called_once_with(chat_id, md(text_with_special_chars), reply_to_message_id=None)
 
 
 @pytest.mark.asyncio
@@ -117,13 +115,13 @@ async def test_send_text_with_complex_markdown(mock_ptb_bot):
       el sistema mantiene la jerarquía correcta del formato."
     """
     chat_id = 123456
-    complex_markdown = "_*Bold inside italic*_ and *_Italic inside bold_*"
+    complex_markdown = "_*Bold inside italic*_ and *_Italic inside bold_*."
 
     # Call function
     await send_text(mock_ptb_bot, chat_id, complex_markdown)
 
     # Verify complex markdown is preserved
-    mock_ptb_bot.send_message.assert_called_once_with(chat_id, complex_markdown, reply_to_message_id=None)
+    mock_ptb_bot.send_message.assert_called_once_with(chat_id, md(complex_markdown), reply_to_message_id=None)
 
 
 @pytest.mark.asyncio
