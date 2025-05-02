@@ -41,7 +41,7 @@ async def test_send_text_basic(mock_ptb_bot):
     text = "Test message"
 
     # Call function
-    result = await send_text(mock_ptb_bot, chat_id, text)
+    await send_text(mock_ptb_bot, chat_id, text)
 
     # Verify send_message was called with correct parameters
     mock_ptb_bot.send_message.assert_called_once_with(chat_id, md(text), reply_to_message_id=None)
