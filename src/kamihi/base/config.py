@@ -100,7 +100,9 @@ class ResponseSettings(BaseModel):
     Defines the response settings schema.
 
     Attributes:
-        default (DefaultResponseSettings): Default response settings.
+        default_enabled(bool): Whether to enable the default message
+        default_message(str): The message to return when no handler has been triggered
+        error_message(str): The message to send to the user when an error happens
 
     """
 
@@ -109,17 +111,56 @@ class ResponseSettings(BaseModel):
     error_message: str = Field(default="An error occurred while processing your request, please try again later")
 
 
+class WebSettings(BaseModel):
+    """
+    Defines the web settings schema.
+
+    Attributes:
+        secret (str): The secret key for the web server.
+        host (str): The host of the web interface.
+        port (int): The port of the web interface.
+
+    """
+
+    secret: str = Field(default="insecure_secret", validate_default=True)
+    host: str = Field(default="localhost")
+    port: int = Field(default=4242)
+
+    @field_validator("secret")
+    @classmethod
+    def _validate_secret(cls, value: str) -> str:
+        """
+        Validate the secret value.
+
+        Args:
+            value (str): The secret value to validate.
+
+        Returns:
+            str: The validated secret value.
+
+        Raises:
+            ValueError: If the secret is the default one.
+
+        """
+        if value == "insecure_secret":
+            msg = f"You must set a new secret key for the web server. The default one is insecure."
+            raise ValueError(msg)
+
+        return value
+
+
 class KamihiSettings(BaseSettings):
     """
     Defines the configuration schema for the Kamihi framework.
 
     Attributes:
-        token (str | None): The bot token.
-        timezone (str): The timezone for the bot.
-        autoreload_templates (bool): Enable or disable auto-reloading of templates.
-        log (LogSettings): Logging settings.
-        responses (ResponseSettings): Response settings.
-        model_config (SettingsConfigDict): Configuration dictionary for environment settings.
+        timezone (str): The timezone for the application.
+        autoreload_templates (bool): Whether to enable template auto-reloading.
+        log (LogSettings): The logging settings.
+        db_url (str): The database URL.
+        token (str | None): The Telegram bot token.
+        responses (ResponseSettings): The response settings.
+        web (WebSettings): The web settings.
 
     """
 
@@ -140,7 +181,7 @@ class KamihiSettings(BaseSettings):
     responses: ResponseSettings = Field(default_factory=ResponseSettings)
 
     # Web settings
-    secret: str = Field(default="test_secret")
+    web: WebSettings = Field(default_factory=WebSettings)
 
     @field_validator("timezone")
     @classmethod
