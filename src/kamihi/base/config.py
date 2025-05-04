@@ -122,31 +122,8 @@ class WebSettings(BaseModel):
 
     """
 
-    secret: str = Field(default="insecure_secret", validate_default=True)
     host: str = Field(default="localhost")
     port: int = Field(default=4242)
-
-    @field_validator("secret")
-    @classmethod
-    def _validate_secret(cls, value: str) -> str:
-        """
-        Validate the secret value.
-
-        Args:
-            value (str): The secret value to validate.
-
-        Returns:
-            str: The validated secret value.
-
-        Raises:
-            ValueError: If the secret is the default one.
-
-        """
-        if value == "insecure_secret":
-            msg = f"You must set a new secret key for the web server. The default one is insecure."
-            raise ValueError(msg)
-
-        return value
 
 
 class KamihiSettings(BaseSettings):
