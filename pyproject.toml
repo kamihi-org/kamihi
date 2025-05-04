@@ -39,6 +39,7 @@ dependencies = [
     "python-telegram-bot>=22.0",
     "pytz>=2025.2",
     "telegramify-markdown>=0.5.1",
+    "tornado>=6.4.2",
     "types-pytz>=2025.2.0.20250326",
     "wtf-peewee>=3.0.6",
 ]
