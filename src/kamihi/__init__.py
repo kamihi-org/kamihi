@@ -29,6 +29,7 @@ from kamihi.bot import Bot as _Bot
 _settings = KamihiSettings()
 configure_logging(logger, _settings.log)
 logger.trace("Settings and logging initialized.")
+logger.info("Starting Kamihi version: {version}", version=__version__)
 
 # Initialize the bot
 bot = _Bot(_settings)

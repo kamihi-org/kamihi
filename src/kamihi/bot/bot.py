@@ -150,7 +150,7 @@ class Bot:
         logger.trace("Database tables created")
 
         # Loads the web server
-        self._web = KamihiWeb(self.settings)
+        self._web = KamihiWeb(self.settings, self._db)
         logger.trace("Web server initialized")
         self._web.start()
 

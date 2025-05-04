@@ -15,9 +15,8 @@ Attributes:
 
 """
 
-from sqlalchemy import Engine, create_engine
-
-from kamihi.db.models import Base
+from sqlalchemy import Engine
+from sqlmodel import SQLModel, create_engine
 
 
 def get_engine(db_url: str) -> Engine:
@@ -42,4 +41,4 @@ def create_tables(engine: Engine) -> None:
         engine (Engine): The SQLAlchemy engine.
 
     """
-    Base.metadata.create_all(bind=engine)
+    SQLModel.metadata.create_all(bind=engine)

@@ -15,89 +15,118 @@ Attributes:
 
 """
 
+import inspect
+import logging
+from collections.abc import AsyncGenerator
 from pathlib import Path
 from threading import Thread
+from typing import Any
 
-from flask import Flask
-from flask_admin import Admin
-from flask_admin.contrib.sqla import ModelView
-from flask_sqlalchemy import SQLAlchemy
+import uvicorn
 from loguru import logger
-from tornado.httpserver import HTTPServer
-from tornado.ioloop import IOLoop
-from tornado.wsgi import WSGIContainer
+from sqlalchemy import Engine
+from starlette.applications import Starlette
+from starlette_admin.contrib.sqlmodel import Admin, ModelView
 
 from kamihi.base.config import KamihiSettings
-from kamihi.db.models import Base
+from kamihi.db.models import User
 
 FLASK_PATH = Path(__file__).parent
 PROJECT_PATH = Path.cwd()
+
+
+class _InterceptHandler(logging.Handler):
+    def emit(self, record: logging.LogRecord) -> None:
+        frame, depth = inspect.currentframe(), 0
+        while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
+            frame = frame.f_back
+            depth += 1
+
+        level = logger.level("TRACE").name if record.name == "uvicorn.access" else logger.level(record.levelname).name
+
+        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
 class KamihiWeb(Thread):
     """
     KamihiWeb is a class that sets up a web server for the Kamihi application.
 
-    This class is responsible for creating and running a Flask web server
-    with an admin interface using Flask-Admin. It also handles the database
+    This class is responsible for creating and running a web server
+    with an admin interface. It also handles the database
     connection and configuration.
 
     Attributes:
         bot_settings (KamihiSettings): The settings for the Kamihi bot.
         db (Database): The database connection for the Kamihi bot.
-        flask_app (Flask): The Flask application instance.
-        admin (Admin): The Flask-Admin instance for the admin interface.
+        app (Starlette): The application instance.
+        admin (Admin): The Starlette-Admin instance for the admin interface.
 
     """
 
-    def __init__(self, settings: KamihiSettings) -> None:
+    bot_settings: KamihiSettings
+    db: Engine
+    app: Starlette | None
+    admin: Admin | None
+
+    def __init__(self, settings: KamihiSettings, engine: Engine) -> None:
         """Initialize the KamihiWeb instance."""
         super().__init__()
         self.bot_settings = settings
         self.daemon = True
+        self.engine = engine
 
-        self.flask_app = None
+        self.app = None
         self.admin = None
-        self.db = None
-
-    def model_views(self) -> list[ModelView]:
-        """Return model views for models inputted."""
-        return [ModelView(model, self.db.session) for model in Base.__subclasses__()]
 
     def _create_app(self) -> None:
-        self.flask_app = Flask(
-            "kamihi",
-            template_folder=FLASK_PATH / "templates",
-            static_folder=FLASK_PATH / "static",
-        )
+        self.app = Starlette()
 
-        if self.bot_settings.db_url.startswith("sqlite:///"):
-            self.flask_app.config["SQLALCHEMY_DATABASE_URI"] = self.bot_settings.db_url.replace(
-                "sqlite:///", "sqlite:///" + str(PROJECT_PATH) + "/"
-            )
-        else:
-            self.flask_app.config["SQLALCHEMY_DATABASE_URI"] = self.bot_settings.db_url
+        admin = Admin(self.engine, title="Kamihi", base_url="/")
+        admin.add_view(ModelView(User, icon="fas fa-user"))
 
-        self.flask_app.config["SECRET_KEY"] = self.bot_settings.web.secret
-        self.flask_app.config.from_prefixed_env("KAMIHI_FLASK__")
+        admin.mount_to(self.app)
 
-        self.db = SQLAlchemy(model_class=Base)
-        self.db.init_app(self.flask_app)
-
-        self.admin = Admin(self.flask_app, name="kamihi")
-        self.admin.add_views(*self.model_views())
+        @self.app.on_event("startup")
+        async def startup() -> AsyncGenerator[None, Any]:
+            logger.info("Starting Kamihi web server...")
+            yield
+            logger.info("Stopping Kamihi web server...")
 
     def run(self) -> None:
-        """Run the Flask webapp."""
+        """Run the app."""
         self._create_app()
-        http_server = HTTPServer(WSGIContainer(self.flask_app))
-        http_server.listen(self.bot_settings.web.port, address=self.bot_settings.web.host)
-        IOLoop.instance().call_later(
-            0,
-            lambda: logger.info(
-                "Admin interface started on http://{host}:{port}/admin",
-                host=self.bot_settings.web.host,
-                port=self.bot_settings.web.port,
-            ),
+
+        uvicorn.run(
+            self.app,
+            host=self.bot_settings.web.host,
+            port=self.bot_settings.web.port,
+            log_config={
+                "version": 1,
+                "disable_existing_loggers": False,
+                "formatters": {
+                    "default": {
+                        "()": "uvicorn.logging.DefaultFormatter",
+                        "fmt": "%(message)s",
+                    },
+                    "access": {
+                        "()": "uvicorn.logging.AccessFormatter",
+                        "fmt": '%(client_addr)s - "%(request_line)s" %(status_code)s',  # noqa: E501
+                    },
+                },
+                "handlers": {
+                    "default": {
+                        "formatter": "default",
+                        "class": "kamihi.web.web._InterceptHandler",
+                    },
+                    "access": {
+                        "formatter": "access",
+                        "class": "kamihi.web.web._InterceptHandler",
+                    },
+                },
+                "loggers": {
+                    "uvicorn": {"handlers": ["default"], "level": "DEBUG", "propagate": False},
+                    "uvicorn.error": {"level": "DEBUG"},
+                    "uvicorn.access": {"handlers": ["access"], "level": "DEBUG", "propagate": False},
+                },
+            },
         )
-        IOLoop.instance().start()

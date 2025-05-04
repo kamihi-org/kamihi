@@ -15,21 +15,11 @@ Attributes:
 
 """
 
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import Mapped, declarative_base, mapped_column
-
-base = declarative_base()
+from sqlmodel import Field, SQLModel
 
 
-class Base(base):
-    """Base model for all database models."""
+class User(SQLModel, table=True):
+    """Placeholder for the User model."""
 
-    __abstract__ = True
-    uid = Column(Integer, primary_key=True, autoincrement=True)
-
-
-class User(Base):
-    """Provisional user model."""
-
-    __tablename__ = "user"
-    telegram_id: Mapped[str] = mapped_column(String())
+    id: int | None = Field(default=None, primary_key=True)
+    telegram_id: int

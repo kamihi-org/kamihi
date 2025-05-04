@@ -18,6 +18,8 @@ Examples:
 
 from __future__ import annotations
 
+import inspect
+import logging
 import sys
 
 import loguru
