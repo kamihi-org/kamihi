@@ -15,10 +15,21 @@ Attributes:
 
 """
 
-from peewee import Model
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import Mapped, declarative_base, mapped_column
+
+base = declarative_base()
 
 
-class BaseModel(Model):
+class Base(base):
     """Base model for all database models."""
 
-    pass
+    __abstract__ = True
+    uid = Column(Integer, primary_key=True, autoincrement=True)
+
+
+class User(Base):
+    """Provisional user model."""
+
+    __tablename__ = "user"
+    telegram_id: Mapped[str] = mapped_column(String())

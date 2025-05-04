@@ -20,15 +20,18 @@ from threading import Thread
 
 from flask import Flask
 from flask_admin import Admin
-from flask_admin.contrib.peewee import ModelView
+from flask_admin.contrib.sqla import ModelView
+from flask_sqlalchemy import SQLAlchemy
 from loguru import logger
-from peewee import Database
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from tornado.wsgi import WSGIContainer
 
 from kamihi.base.config import KamihiSettings
-from kamihi.db.models import BaseModel
+from kamihi.db.models import Base
+
+FLASK_PATH = Path(__file__).parent
+PROJECT_PATH = Path.cwd()
 
 
 class KamihiWeb(Thread):
@@ -41,50 +44,54 @@ class KamihiWeb(Thread):
 
     Attributes:
         bot_settings (KamihiSettings): The settings for the Kamihi bot.
-        database (Database): The database connection for the Kamihi bot.
-        models (list[type[BaseModel]]): A list of models to be displayed in the admin interface.
+        db (Database): The database connection for the Kamihi bot.
         flask_app (Flask): The Flask application instance.
         admin (Admin): The Flask-Admin instance for the admin interface.
 
     """
 
-    def __init__(self, settings: KamihiSettings, database: Database, models_to_show: list[type[BaseModel]]) -> None:
+    def __init__(self, settings: KamihiSettings) -> None:
         """Initialize the KamihiWeb instance."""
         super().__init__()
         self.bot_settings = settings
-        self.database = database
-        self.models = models_to_show
         self.daemon = True
 
         self.flask_app = None
         self.admin = None
+        self.db = None
 
-    @property
     def model_views(self) -> list[ModelView]:
         """Return model views for models inputted."""
-        return [ModelView(model, model.__name__.capitalize()) for model in self.models]
+        return [ModelView(model, self.db.session) for model in Base.__subclasses__()]
 
     def _create_app(self) -> None:
         self.flask_app = Flask(
             "kamihi",
-            template_folder=Path(__file__).parent / "templates",
-            static_folder=Path(__file__).parent / "static",
+            template_folder=FLASK_PATH / "templates",
+            static_folder=FLASK_PATH / "static",
         )
 
-        self.flask_app.config["DATABASE"] = self.bot_settings.db_url
+        if self.bot_settings.db_url.startswith("sqlite:///"):
+            self.flask_app.config["SQLALCHEMY_DATABASE_URI"] = self.bot_settings.db_url.replace(
+                "sqlite:///", "sqlite:///" + str(PROJECT_PATH) + "/"
+            )
+        else:
+            self.flask_app.config["SQLALCHEMY_DATABASE_URI"] = self.bot_settings.db_url
+
         self.flask_app.config["SECRET_KEY"] = self.bot_settings.web.secret
-        self.flask_app.config["HOST"] = self.bot_settings.web.host
-        self.flask_app.config["PORT"] = self.bot_settings.web.port
         self.flask_app.config.from_prefixed_env("KAMIHI_FLASK__")
 
-        self.admin = Admin(self.flask_app, name="kamihi", template_mode="bootstrap3")
-        self.admin.add_views(*self.model_views)
+        self.db = SQLAlchemy(model_class=Base)
+        self.db.init_app(self.flask_app)
+
+        self.admin = Admin(self.flask_app, name="kamihi")
+        self.admin.add_views(*self.model_views())
 
     def run(self) -> None:
         """Run the Flask webapp."""
         self._create_app()
         http_server = HTTPServer(WSGIContainer(self.flask_app))
-        http_server.listen(5000)
+        http_server.listen(self.bot_settings.web.port, address=self.bot_settings.web.host)
         IOLoop.instance().call_later(
             0,
             lambda: logger.info(

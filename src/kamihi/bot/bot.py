@@ -25,12 +25,15 @@ from functools import partial
 
 from loguru import logger
 from multipledispatch import dispatch
+from sqlalchemy import Engine
 from telegram.ext import CommandHandler
 
 from kamihi.base.config import KamihiSettings
 from kamihi.bot.action import Action
+from kamihi.db.db import create_tables, get_engine
 from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
+from kamihi.web.web import KamihiWeb
 
 
 class Bot:
@@ -52,7 +55,9 @@ class Bot:
     settings: KamihiSettings
     templates: Templates
 
+    _db: Engine
     _client: TelegramClient
+    _web: KamihiWeb
     _actions: list[Action]
 
     def __init__(self, settings: KamihiSettings) -> None:
@@ -124,6 +129,10 @@ class Bot:
 
     def start(self) -> None:
         """Start the bot."""
+        # Loads the database
+        self._db = get_engine(self.settings.db_url)
+        logger.trace("Database initialized")
+
         # Loads the templates
         self.templates = Templates(self.settings.autoreload_templates)
         logger.trace("Templates initialized")
@@ -135,6 +144,15 @@ class Bot:
         # Loads the Telegram client
         self._client = TelegramClient(self.settings, self._handlers)
         logger.trace("Telegram client initialized")
+
+        # Creates the database tables
+        create_tables(self._db)
+        logger.trace("Database tables created")
+
+        # Loads the web server
+        self._web = KamihiWeb(self.settings)
+        logger.trace("Web server initialized")
+        self._web.start()
 
         # Runs the client
         self._client.run()
