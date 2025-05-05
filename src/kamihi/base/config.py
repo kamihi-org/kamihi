@@ -100,7 +100,9 @@ class ResponseSettings(BaseModel):
     Defines the response settings schema.
 
     Attributes:
-        default (DefaultResponseSettings): Default response settings.
+        default_enabled(bool): Whether to enable the default message
+        default_message(str): The message to return when no handler has been triggered
+        error_message(str): The message to send to the user when an error happens
 
     """
 
@@ -109,26 +111,54 @@ class ResponseSettings(BaseModel):
     error_message: str = Field(default="An error occurred while processing your request, please try again later")
 
 
+class WebSettings(BaseModel):
+    """
+    Defines the web settings schema.
+
+    Attributes:
+        secret (str): The secret key for the web server.
+        host (str): The host of the web interface.
+        port (int): The port of the web interface.
+
+    """
+
+    host: str = Field(default="localhost")
+    port: int = Field(default=4242)
+
+
 class KamihiSettings(BaseSettings):
     """
     Defines the configuration schema for the Kamihi framework.
 
     Attributes:
-        token (str | None): The bot token.
-        timezone (str): The timezone for the bot.
-        autoreload_templates (bool): Enable or disable auto-reloading of templates.
-        log (LogSettings): Logging settings.
-        responses (ResponseSettings): Response settings.
-        model_config (SettingsConfigDict): Configuration dictionary for environment settings.
+        timezone (str): The timezone for the application.
+        autoreload_templates (bool): Whether to enable template auto-reloading.
+        log (LogSettings): The logging settings.
+        db_url (str): The database URL.
+        token (str | None): The Telegram bot token.
+        responses (ResponseSettings): The response settings.
+        web (WebSettings): The web settings.
 
     """
 
-    token: str | None = Field(default=None, pattern=r"^\d+:[0-9A-Za-z_-]{35}$", exclude=True)
+    # General settings
     timezone: str = Field(default="UTC", validate_default=True)
+
+    # Template settings
     autoreload_templates: bool = Field(default=True)
 
+    # Logging settings
     log: LogSettings = Field(default_factory=LogSettings)
+
+    # Database settings
+    db_url: str = Field(default="sqlite:///kamihi.db")
+
+    # Telegram settings
+    token: str | None = Field(default=None, pattern=r"^\d+:[0-9A-Za-z_-]{35}$", exclude=True)
     responses: ResponseSettings = Field(default_factory=ResponseSettings)
+
+    # Web settings
+    web: WebSettings = Field(default_factory=WebSettings)
 
     @field_validator("timezone")
     @classmethod
