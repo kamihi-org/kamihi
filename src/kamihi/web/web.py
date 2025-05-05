@@ -88,8 +88,8 @@ class KamihiWeb(Thread):
             base_url="/",
             templates_dir=str(WEB_PATH / "templates"),
             statics_dir=str(WEB_PATH / "static"),
+            index_view=CustomView(label="Home", icon="fa fa-home", path="/", template_path="home.html"),
         )
-        admin.add_view(CustomView(label="Home", icon="fa fa-home", path="/", template_path="home.html"))
         admin.add_view(ModelView(User, icon="fas fa-user"))
 
         admin.mount_to(self.app)
