@@ -36,6 +36,7 @@ dependencies = [
     "python-telegram-bot>=22.0",
     "pytz>=2025.2",
     "sqlmodel>=0.0.24",
+    "starlette>=0.46.2",
     "starlette-admin>=0.14.1",
     "telegramify-markdown>=0.5.1",
     "types-pytz>=2025.2.0.20250326",
