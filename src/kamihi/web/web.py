@@ -24,7 +24,7 @@ from kamihi.db.models import User
 WEB_PATH = Path(__file__).parent
 
 
-class _InterceptHandler(logging.Handler):
+class _InterceptHandler(logging.Handler):  # skipcq: PY-A6006
     def emit(self, record: logging.LogRecord) -> None:
         frame, depth = inspect.currentframe(), 0
         while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
