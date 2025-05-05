@@ -26,12 +26,13 @@ import uvicorn
 from loguru import logger
 from sqlalchemy import Engine
 from starlette.applications import Starlette
+from starlette_admin import CustomView
 from starlette_admin.contrib.sqlmodel import Admin, ModelView
 
 from kamihi.base.config import KamihiSettings
 from kamihi.db.models import User
 
-FLASK_PATH = Path(__file__).parent
+WEB_PATH = Path(__file__).parent
 PROJECT_PATH = Path.cwd()
 
 
@@ -81,7 +82,14 @@ class KamihiWeb(Thread):
     def _create_app(self) -> None:
         self.app = Starlette()
 
-        admin = Admin(self.engine, title="Kamihi", base_url="/")
+        admin = Admin(
+            self.engine,
+            title="Kamihi",
+            base_url="/",
+            templates_dir=str(WEB_PATH / "templates"),
+            statics_dir=str(WEB_PATH / "static"),
+        )
+        admin.add_view(CustomView(label="Home", icon="fa fa-home", path="/", template_path="home.html"))
         admin.add_view(ModelView(User, icon="fas fa-user"))
 
         admin.mount_to(self.app)
