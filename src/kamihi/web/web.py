@@ -22,7 +22,6 @@ from kamihi.base.config import KamihiSettings
 from kamihi.db.models import User
 
 WEB_PATH = Path(__file__).parent
-PROJECT_PATH = Path.cwd()
 
 
 class _InterceptHandler(logging.Handler):
