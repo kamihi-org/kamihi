@@ -77,6 +77,7 @@ class KamihiWeb(Thread):
             templates_dir=str(WEB_PATH / "templates"),
             statics_dir=str(WEB_PATH / "static"),
             index_view=CustomView(label="Home", icon="fa fa-home", path="/", template_path="home.html"),
+            favicon_url="/statics/images/favicon.ico",
         )
         admin.add_view(ModelView(User, icon="fas fa-user"))
 
