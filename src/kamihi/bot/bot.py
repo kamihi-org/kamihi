@@ -133,6 +133,10 @@ class Bot:
         self._db = get_engine(self.settings.db_url)
         logger.trace("Database initialized")
 
+        # Creates the database tables
+        create_tables(self._db)
+        logger.trace("Database tables created")
+
         # Loads the templates
         self.templates = Templates(self.settings.autoreload_templates)
         logger.trace("Templates initialized")
@@ -144,10 +148,6 @@ class Bot:
         # Loads the Telegram client
         self._client = TelegramClient(self.settings, self._handlers)
         logger.trace("Telegram client initialized")
-
-        # Creates the database tables
-        create_tables(self._db)
-        logger.trace("Database tables created")
 
         # Loads the web server
         self._web = KamihiWeb(self.settings, self._db)
