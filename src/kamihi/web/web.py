@@ -46,14 +46,14 @@ class KamihiWeb(Thread):
 
     Attributes:
         bot_settings (KamihiSettings): The settings for the Kamihi bot.
-        db (Database): The database connection for the Kamihi bot.
+        engine (Database): The database connection for the Kamihi bot.
         app (Starlette): The application instance.
         admin (Admin): The Starlette-Admin instance for the admin interface.
 
     """
 
     bot_settings: KamihiSettings
-    db: Engine
+    engine: Engine
     app: Starlette | None
     admin: Admin | None
 
