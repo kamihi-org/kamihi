@@ -1,5 +1,5 @@
 """
-Database models.
+User model.
 
 License:
     MIT
