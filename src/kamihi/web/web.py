@@ -8,10 +8,8 @@ License:
 
 import inspect
 import logging
-from collections.abc import AsyncGenerator
 from pathlib import Path
 from threading import Thread
-from typing import Any
 
 import uvicorn
 from loguru import logger
@@ -84,12 +82,6 @@ class KamihiWeb(Thread):
         admin.add_view(ModelView(User, icon="fas fa-user"))
 
         admin.mount_to(self.app)
-
-        @self.app.on_event("startup")
-        async def startup() -> AsyncGenerator[None, Any]:
-            logger.info("Starting Kamihi web server...")
-            yield
-            logger.info("Stopping Kamihi web server...")
 
     def run(self) -> None:
         """Run the app."""
