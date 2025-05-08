@@ -30,7 +30,8 @@ from telegram.ext import CommandHandler
 
 from kamihi.base.config import KamihiSettings
 from kamihi.bot.action import Action
-from kamihi.db.db import create_tables, get_engine
+from kamihi.db.db import connect_to_db
+from kamihi.db.models.user import User
 from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
 from kamihi.web.web import KamihiWeb
@@ -127,15 +128,20 @@ class Bot:
         """Return the handlers for the bot."""
         return [action.handler for action in self.valid_actions]
 
+    def user_class(self, cls: type[User]) -> None:
+        """
+        Set the user class for the bot.
+
+        Args:
+            cls: The user class to set.
+
+        """
+        User.set_model(cls)
+
     def start(self) -> None:
         """Start the bot."""
-        # Loads the database
-        self._db = get_engine(self.settings.db_url)
-        logger.trace("Database initialized")
-
-        # Creates the database tables
-        create_tables(self._db)
-        logger.trace("Database tables created")
+        # Connects to the database
+        connect_to_db(self.settings)
 
         # Loads the templates
         self.templates = Templates(self.settings.autoreload_templates)
@@ -150,7 +156,7 @@ class Bot:
         logger.trace("Telegram client initialized")
 
         # Loads the web server
-        self._web = KamihiWeb(self.settings, self._db)
+        self._web = KamihiWeb(self.settings)
         logger.trace("Web server initialized")
         self._web.start()
 

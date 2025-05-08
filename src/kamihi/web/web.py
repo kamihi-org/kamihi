@@ -13,13 +13,14 @@ from threading import Thread
 
 import uvicorn
 from loguru import logger
-from sqlalchemy import Engine
+from mongoengine import connect, disconnect
 from starlette.applications import Starlette
 from starlette_admin import CustomView
-from starlette_admin.contrib.sqlmodel import Admin, ModelView
+from starlette_admin.contrib.mongoengine import Admin
 
 from kamihi.base.config import KamihiSettings
 from kamihi.db.models import User
+from kamihi.web.views import NoClsView
 
 WEB_PATH = Path(__file__).parent
 
@@ -53,25 +54,25 @@ class KamihiWeb(Thread):
     """
 
     bot_settings: KamihiSettings
-    engine: Engine
     app: Starlette | None
     admin: Admin | None
 
-    def __init__(self, settings: KamihiSettings, engine: Engine) -> None:
+    def __init__(self, settings: KamihiSettings) -> None:
         """Initialize the KamihiWeb instance."""
         super().__init__()
         self.bot_settings = settings
         self.daemon = True
-        self.engine = engine
 
         self.app = None
         self.admin = None
 
     def _create_app(self) -> None:
-        self.app = Starlette()
+        self.app = Starlette(
+            on_startup=[lambda: connect(host=self.bot_settings.db_url)],
+            on_shutdown=[lambda: disconnect()],
+        )
 
         admin = Admin(
-            self.engine,
             title="Kamihi",
             base_url="/",
             templates_dir=str(WEB_PATH / "templates"),
@@ -79,7 +80,8 @@ class KamihiWeb(Thread):
             index_view=CustomView(label="Home", icon="fa fa-home", path="/", template_path="home.html"),
             favicon_url="/statics/images/favicon.ico",
         )
-        admin.add_view(ModelView(User, icon="fas fa-user"))
+
+        admin.add_view(NoClsView(User.get_model(), icon="fas fa-user"))
 
         admin.mount_to(self.app)
 
