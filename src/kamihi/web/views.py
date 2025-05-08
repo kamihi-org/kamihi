@@ -19,27 +19,17 @@ class NoClsView(ModelView):
     exclude_fields_from_edit = ["_cls"]
 
 
-class ActionView(ModelView):
-    """ActionView is a custom view for the Action model in the admin interface."""
-
-    exclude_fields_from_edit = ["name", "commands", "description"]
-
-    def can_delete(self, request: Request) -> bool:  # noqa: ARG002
-        """
-        Override to prevent deletion of the Action model.
-
-        Args:
-            request (Request): The request object.
-
-        """
-        return False
+class ReadOnlyView(ModelView):
+    """ReadOnlyView makes the model read-only in the admin interface."""
 
     def can_create(self, request: Request) -> bool:  # noqa: ARG002
-        """
-        Override to prevent creation of the Action model.
+        """Check if the user can create a new instance of the model."""
+        return False
 
-        Args:
-            request (Request): The request object.
+    def can_edit(self, request: Request) -> bool:  # noqa: ARG002
+        """Check if the user can edit an instance of the model."""
+        return False
 
-        """
+    def can_delete(self, request: Request) -> bool:  # noqa: ARG002
+        """Check if the user can edit an instance of the model."""
         return False

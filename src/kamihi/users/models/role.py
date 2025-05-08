@@ -8,7 +8,7 @@ License:
 
 from mongoengine import *
 
-from kamihi.db.models.user import User
+from kamihi.users.models.user import User
 
 
 class Role(Document):
@@ -24,4 +24,4 @@ class Role(Document):
     """
 
     name: str = StringField(required=True, unique=True)
-    users: list = ListField(ReferenceField(User, reverse_delete_rule=PULL))
+    users: list = ListField(ReferenceField(User, reverse_delete_rule=PULL), default=list)
