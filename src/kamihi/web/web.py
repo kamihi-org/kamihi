@@ -19,9 +19,10 @@ from starlette_admin import CustomView
 from starlette_admin.contrib.mongoengine import Admin, ModelView
 
 from kamihi.base.config import KamihiSettings
-from kamihi.db.models import Role, User
-from kamihi.db.models.action import Action
-from kamihi.web.views import ActionView, NoClsView
+from kamihi.bot.models import RegisteredAction
+from kamihi.users.models import Role, User
+from kamihi.users.models.permission import Permission
+from kamihi.web.views import NoClsView, ReadOnlyView
 
 WEB_PATH = Path(__file__).parent
 
@@ -84,7 +85,8 @@ class KamihiWeb(Thread):
 
         admin.add_view(NoClsView(User.get_model(), icon="fas fa-user"))
         admin.add_view(ModelView(Role, icon="fas fa-tags"))
-        admin.add_view(ActionView(Action, icon="fas fa-circle-play"))
+        admin.add_view(ReadOnlyView(RegisteredAction, name="Actions", icon="fas fa-circle-play"))
+        admin.add_view(ModelView(Permission, icon="fas fa-check"))
 
         admin.mount_to(self.app)
 

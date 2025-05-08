@@ -18,8 +18,9 @@ from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
 from kamihi.bot.utils import COMMAND_REGEX
-from kamihi.db.models.action import Action as DBAction
 from kamihi.tg.send import reply_text
+
+from .models import RegisteredAction
 
 
 class Action:
@@ -42,7 +43,6 @@ class Action:
     _func: Callable
     _valid: bool = True
     _logger: loguru.Logger
-    _db_action: DBAction
 
     def __init__(self, name: str, commands: list[str], description: str, func: Callable) -> None:
         """
@@ -133,16 +133,15 @@ class Action:
 
     def save(self) -> None:
         """Save the action to the database."""
-        DBAction.objects(name=self.name).upsert_one(
+        RegisteredAction.objects(name=self.name).upsert_one(
             name=self.name,
-            commands=self.commands,
             description=self.description,
         )
 
     @classmethod
     def clean_up(cls, names: list[str]) -> None:
         """Clean up the action from the database."""
-        DBAction.objects(name__nin=names).delete()
+        RegisteredAction.objects(name__nin=names).delete()
         logger.debug("Cleaned up actions not present in code from database")
 
     async def __call__(self, update: Update, context: CallbackContext) -> None:
