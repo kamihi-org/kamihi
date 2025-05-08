@@ -25,7 +25,6 @@ from functools import partial
 
 from loguru import logger
 from multipledispatch import dispatch
-from sqlalchemy import Engine
 from telegram.ext import CommandHandler
 
 from kamihi.base.config import KamihiSettings
@@ -56,7 +55,6 @@ class Bot:
     settings: KamihiSettings
     templates: Templates
 
-    _db: Engine
     _client: TelegramClient
     _web: KamihiWeb
     _actions: list[Action]
