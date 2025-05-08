@@ -151,7 +151,7 @@ class KamihiSettings(BaseSettings):
     log: LogSettings = Field(default_factory=LogSettings)
 
     # Database settings
-    db_url: str = Field(default="sqlite:///kamihi.db")
+    db_url: str = Field(default="mongodb://localhost:27017/kamihi")
 
     # Telegram settings
     token: str | None = Field(default=None, pattern=r"^\d+:[0-9A-Za-z_-]{35}$", exclude=True)
