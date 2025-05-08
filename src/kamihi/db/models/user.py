@@ -7,16 +7,25 @@ License:
 """
 
 from mongoengine import *
+from starlette.requests import Request
 
 
 class User(Document):
     """Placeholder for the User model."""
 
-    _model = None
+    meta = {"allow_inheritance": True}
 
     telegram_id: str = StringField(required=True, unique=True)
 
-    meta = {"allow_inheritance": True}
+    def __str__(self) -> str:
+        """Representation of the User model."""
+        return f"{self.telegram_id}"
+
+    async def __admin_repr__(self, request: Request) -> str:
+        """Representation of the User model in the admin interface."""
+        return str(self)
+
+    _model = None
 
     @classmethod
     def get_model(cls) -> type["User"]:
