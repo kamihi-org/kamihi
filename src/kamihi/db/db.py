@@ -6,17 +6,20 @@ License:
 
 """
 
-from mongoengine import connect
-
-from kamihi.base.config import KamihiSettings
+from mongoengine import connect, disconnect
 
 
-def connect_to_db(settings: KamihiSettings) -> None:
+def connect_to_db(url: str) -> None:
     """
     Connect to the database using the provided settings.
 
     Args:
-        settings (KamihiSettings): The settings for the bot.
+        url (str): The settings for the bot.
 
     """
-    connect(host=settings.db_url)
+    connect(host=url)
+
+
+def disconnect_from_db() -> None:
+    """Disconnect from the database."""
+    disconnect()

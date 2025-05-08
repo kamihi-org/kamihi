@@ -20,7 +20,8 @@ from starlette_admin.contrib.mongoengine import Admin, ModelView
 
 from kamihi.base.config import KamihiSettings
 from kamihi.db.models import Role, User
-from kamihi.web.views import NoClsView
+from kamihi.db.models.action import Action
+from kamihi.web.views import ActionView, NoClsView
 
 WEB_PATH = Path(__file__).parent
 
@@ -83,6 +84,7 @@ class KamihiWeb(Thread):
 
         admin.add_view(NoClsView(User.get_model(), icon="fas fa-user"))
         admin.add_view(ModelView(Role, icon="fas fa-tags"))
+        admin.add_view(ActionView(Action, icon="fas fa-circle-play"))
 
         admin.mount_to(self.app)
 

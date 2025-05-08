@@ -36,7 +36,7 @@ def test_action_init(logot: Logot, action: Action) -> None:
     assert action.name == "test_action"
     assert action.commands == ["test"]
     assert action.description == "Test action"
-    assert action.func is func
+    assert action._func is func
 
 
 @pytest.mark.parametrize(
@@ -71,7 +71,7 @@ def test_action_init_duplicate_commands(logot: Logot) -> None:
     assert action.name == "test_action"
     assert action.commands == ["test"]
     assert action.description == "Test action"
-    assert action.func is func
+    assert action._func is func
     assert action.is_valid() is True
 
 
@@ -89,7 +89,7 @@ def test_action_init_sync_function(logot: Logot):
     assert action.name == "test_action"
     assert action.commands == ["test"]
     assert action.description == "Test action"
-    assert action.func is test_func
+    assert action._func is test_func
     assert action.is_valid() is False
 
 
@@ -284,7 +284,7 @@ async def test_action_invalid_call(logot: Logot, action: Action, mock_update, mo
 async def test_action_call_with_result(logot: Logot, action: Action, mock_update, mock_context, return_value) -> None:
     """Test the Action class call method with a result."""
     str_func = AsyncMock(return_value=return_value)
-    action.func = str_func
+    action._func = str_func
 
     with pytest.raises(ApplicationHandlerStop):
         await action(mock_update, mock_context)

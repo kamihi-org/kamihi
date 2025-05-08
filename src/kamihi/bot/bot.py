@@ -29,7 +29,7 @@ from telegram.ext import CommandHandler
 
 from kamihi.base.config import KamihiSettings
 from kamihi.bot.action import Action
-from kamihi.db.db import connect_to_db
+from kamihi.db.db import connect_to_db, disconnect_from_db
 from kamihi.db.models.user import User
 from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
@@ -69,6 +69,9 @@ class Bot:
         """
         self.settings = settings
         self._actions = []
+
+        # Connects to the database
+        connect_to_db(self.settings.db_url)
 
     @dispatch([(str, Callable)])
     def action(self, *args: str | Callable, description: str = None) -> Action | Callable:
@@ -138,8 +141,8 @@ class Bot:
 
     def start(self) -> None:
         """Start the bot."""
-        # Connects to the database
-        connect_to_db(self.settings)
+        # Cleans up the database of actions that are not present in code
+        Action.clean_up([action.name for action in self._actions])
 
         # Loads the templates
         self.templates = Templates(self.settings.autoreload_templates)
@@ -160,3 +163,6 @@ class Bot:
 
         # Runs the client
         self._client.run()
+
+        # When the client is stopped, stop the rest of things
+        disconnect_from_db()
