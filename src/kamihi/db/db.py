@@ -6,30 +6,17 @@ License:
 
 """
 
-from sqlalchemy import Engine
-from sqlmodel import SQLModel, create_engine
+from mongoengine import connect
+
+from kamihi.base.config import KamihiSettings
 
 
-def get_engine(db_url: str) -> Engine:
+def connect_to_db(settings: KamihiSettings) -> None:
     """
-    Create a SQLAlchemy engine.
+    Connect to the database using the provided settings.
 
     Args:
-        db_url (str): The database URL.
-
-    Returns:
-        create_engine: The SQLAlchemy engine.
+        settings (KamihiSettings): The settings for the bot.
 
     """
-    return create_engine(db_url)
-
-
-def create_tables(engine: Engine) -> None:
-    """
-    Create a table in the database.
-
-    Args:
-        engine (Engine): The SQLAlchemy engine.
-
-    """
-    SQLModel.metadata.create_all(bind=engine)
+    connect(host=settings.db_url)
