@@ -16,10 +16,10 @@ from loguru import logger
 from mongoengine import connect, disconnect
 from starlette.applications import Starlette
 from starlette_admin import CustomView
-from starlette_admin.contrib.mongoengine import Admin
+from starlette_admin.contrib.mongoengine import Admin, ModelView
 
 from kamihi.base.config import KamihiSettings
-from kamihi.db.models import User
+from kamihi.db.models import Role, User
 from kamihi.web.views import NoClsView
 
 WEB_PATH = Path(__file__).parent
@@ -82,6 +82,7 @@ class KamihiWeb(Thread):
         )
 
         admin.add_view(NoClsView(User.get_model(), icon="fas fa-user"))
+        admin.add_view(ModelView(Role, icon="fas fa-user-tag"))
 
         admin.mount_to(self.app)
 
