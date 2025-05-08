@@ -82,7 +82,7 @@ class KamihiWeb(Thread):
         )
 
         admin.add_view(NoClsView(User.get_model(), icon="fas fa-user"))
-        admin.add_view(ModelView(Role, icon="fas fa-user-tag"))
+        admin.add_view(ModelView(Role, icon="fas fa-tags"))
 
         admin.mount_to(self.app)
 
