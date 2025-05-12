@@ -145,7 +145,6 @@ class Action:
     def clean_up(cls, names: list[str]) -> None:
         """Clean up the action from the database."""
         RegisteredAction.objects(name__nin=names).delete()
-        logger.debug("Cleaned up actions not present in code from database")
 
     async def __call__(self, update: Update, context: CallbackContext) -> None:
         """Execute the action."""

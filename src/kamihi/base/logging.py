@@ -37,7 +37,7 @@ def _extra_formatter(record: loguru.Record) -> None:
         record: The log record to format.
 
     """
-    if record.get("extra") and record["level"].no <= 10:
+    if record.get("extra"):
         record["extra"]["compact"] = ", ".join(
             f"{key}={repr(value)}" for key, value in record["extra"].items() if key != "compact"
         )

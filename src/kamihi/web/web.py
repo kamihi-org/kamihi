@@ -35,7 +35,7 @@ class _InterceptHandler(logging.Handler):  # skipcq: PY-A6006
             frame = frame.f_back
             depth += 1
 
-        level = logger.level("TRACE").name if record.name == "uvicorn.access" else logger.level(record.levelname).name
+        level = logger.level("TRACE").name
 
         logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
@@ -97,7 +97,14 @@ class KamihiWeb(Thread):
 
     def _create_app(self) -> None:
         self.app = Starlette(
-            on_startup=[lambda: connect(host=self.bot_settings.db_url)],
+            on_startup=[
+                lambda: connect(host=self.bot_settings.db_url),
+                lambda: logger.info(
+                    "Web server started on http://{host}:{port}",
+                    host=self.bot_settings.web.host,
+                    port=self.bot_settings.web.port,
+                ),
+            ],
             on_shutdown=[lambda: disconnect()],
         )
 

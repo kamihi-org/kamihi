@@ -190,6 +190,7 @@ class Bot:
         """Start the bot."""
         # Cleans up the database of actions that are not present in code
         Action.clean_up([action.name for action in self._actions])
+        logger.debug("Removed actions not present in code from database")
 
         # Warns the user if there are no valid actions registered
         if not self._valid_actions:
@@ -197,11 +198,12 @@ class Bot:
 
         # Loads the Telegram client
         self._client = TelegramClient(self.settings, self._handlers)
-        logger.trace("Telegram client initialized")
+        logger.trace("Initialized Telegram client")
 
         # Sets the command scopes for the bot
-        self._client.register_run_once_job(self._reset_scopes, 0)
-        self._client.register_run_once_job(self._set_scopes, 1)
+        self._client.register_run_once_job(self._reset_scopes, 1)
+        self._client.register_run_once_job(self._set_scopes, 2)
+        logger.trace("Initialized command scopes jobs")
 
         # Loads the web server
         self._web = KamihiWeb(
@@ -212,12 +214,12 @@ class Bot:
                 "after_delete": [self._set_scopes],
             },
         )
-        logger.trace("Web server initialized")
+        logger.trace("Initialized web server")
         self._web.start()
 
         # Loads the template engine
         self.templates = Templates(self.settings.autoreload_templates)
-        logger.trace("Templates initialized")
+        logger.trace("Initialized templating engine")
 
         # Runs the client
         self._client.run()
