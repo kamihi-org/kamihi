@@ -44,6 +44,7 @@ class Action:
     _func: Callable
     _valid: bool = True
     _logger: loguru.Logger
+    _db_object: RegisteredAction | None
 
     def __init__(self, name: str, commands: list[str], description: str, func: Callable) -> None:
         """
@@ -67,9 +68,10 @@ class Action:
         self._validate_function()
 
         if self.is_valid():
-            self.save()
+            self._db_object = self.save_to_db()
             self._logger.debug("Successfully registered")
         else:
+            self._db_object = None
             self._logger.warning("Failed to register")
 
     def _validate_commands(self) -> None:
@@ -132,9 +134,9 @@ class Action:
         """Check if the action is valid."""
         return self._valid
 
-    def save(self) -> None:
+    def save_to_db(self) -> RegisteredAction:
         """Save the action to the database."""
-        RegisteredAction.objects(name=self.name).upsert_one(
+        return RegisteredAction.objects(name=self.name).upsert_one(
             name=self.name,
             description=self.description,
         )

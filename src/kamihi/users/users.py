@@ -50,7 +50,7 @@ def get_user_from_telegram_id(telegram_id: int) -> User | None:
 
 def is_user_authorized(user: User, action: str) -> bool:
     """
-    Check if a user is authorized tu use a specific action.
+    Check if a user is authorized to use a specific action.
 
     Args:
         user (User): The user object to check.
@@ -60,8 +60,34 @@ def is_user_authorized(user: User, action: str) -> bool:
         bool: True if the user is authorized, False otherwise.
 
     """
+    if user.is_admin:
+        return True
+
     action = RegisteredAction.objects(name=action).first()
     role = Role.objects(users=user).first()
     permissions = Permission.objects(Q(action=action) & (Q(users=user) | Q(roles=role))).first()
 
     return bool(permissions)
+
+
+def users_for_action(action: str) -> list[User]:
+    """
+    Get all users authorized to use a specific action.
+
+    Args:
+        action (str): The action to check authorization for.
+
+    Returns:
+        list[User]: A list of users authorized to use the action.
+
+    """
+    action = RegisteredAction.objects(name=action).first()
+    permissions = Permission.objects(action=action)
+    users = set()
+    for permission in permissions:
+        if permission.users:
+            users.update(permission.users)
+        if permission.roles and permission.roles.users:
+            users.update(permission.roles.users)
+
+    return list(users)
