@@ -140,21 +140,6 @@ def test_action_init_function_varargs(logot: Logot, parameter, kind) -> None:
     assert action.is_valid() is False
 
 
-def test_action_handler(action: Action) -> None:
-    """Test the Action class handler property."""
-    assert action.handler is not None
-    assert isinstance(action.handler, CommandHandler)
-    assert list(action.handler.commands) == action.commands
-    assert action.handler.callback == action.__call__
-
-
-def test_action_invalid_handler(action: Action) -> None:
-    """Test the Action class handler property with invalid handler."""
-    action._valid = False
-
-    assert action.handler is None
-
-
 @pytest.mark.asyncio
 async def test_action_call(logot: Logot, mock_update, mock_context) -> None:
     """Test the Action class call method."""

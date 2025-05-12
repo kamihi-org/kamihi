@@ -59,7 +59,7 @@ class Bot:
 
     _client: TelegramClient
     _web: KamihiWeb
-    _actions: list[Action]
+    _actions: list[Action] = []
 
     def __init__(self, settings: KamihiSettings) -> None:
         """
@@ -70,7 +70,6 @@ class Bot:
 
         """
         self.settings = settings
-        self._actions = []
 
         # Connects to the database
         connect(host=self.settings.db_url)
@@ -97,10 +96,11 @@ class Bot:
         func: Callable = args.pop()
         commands: list[str] = args or [func.__name__]
 
+        # Create and store the action
         action = Action(func.__name__, commands, description, func)
-
         self._actions.append(action)
 
+        # The action is returned so it can be used by the user if needed
         return action
 
     @dispatch([str])
@@ -121,25 +121,44 @@ class Bot:
         """
         return functools.partial(self.action, *commands, description=description)
 
-    @property
-    def valid_actions(self) -> list[Action]:
-        """Return the valid actions for the bot."""
-        return [action for action in self._actions if action.is_valid()]
-
-    @property
-    def _handlers(self) -> list[CommandHandler]:
-        """Return the handlers for the bot."""
-        return [action.handler for action in self.valid_actions]
-
     def user_class(self, cls: type[User]) -> None:
         """
-        Set the user class for the bot.
+        Set the user model for the bot.
+
+        This method is used as a decorator to set the user model for the bot.
 
         Args:
             cls: The user class to set.
 
         """
         User.set_model(cls)
+
+    @property
+    def _valid_actions(self) -> list[Action]:
+        """Return the valid actions for the bot."""
+        return [action for action in self._actions if action.is_valid()]
+
+    @property
+    def _handlers(self) -> list[CommandHandler]:
+        """Return the handlers for the bot."""
+        return [action.handler for action in self._valid_actions]
+
+    @property
+    def _scopes(self) -> dict[int, list[BotCommand]]:
+        """Return the current scopes for the bot."""
+        scopes = {}
+        for user in get_users():
+            scopes[user.telegram_id] = []
+            for action in self._valid_actions:
+                if is_user_authorized(user, action.name):
+                    scopes[user.telegram_id].extend(
+                        [
+                            BotCommand(command=command, description=action.description or f"Action {action.name}")
+                            for command in action.commands
+                        ]
+                    )
+
+        return scopes
 
     async def _set_scopes(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003, ARG002
         """
@@ -153,33 +172,26 @@ class Bot:
             **kwargs: Keyword arguments. Not used but required for using the method as a callback.
 
         """
-        # Constructs the scopes list
-        scopes = {}
-        for user in get_users():
-            scopes[user.telegram_id] = []
-            for action in self.valid_actions:
-                if is_user_authorized(user, action.name):
-                    scopes[user.telegram_id].extend(
-                        [
-                            BotCommand(command=command, description=action.description or f"Action {action.name}")
-                            for command in action.commands
-                        ]
-                    )
+        await self._client.set_scopes(self._scopes)
 
-        # Sets the scopes for the bot
-        await self._client.set_scopes(scopes)
+    async def _reset_scopes(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003, ARG002
+        """
+        Reset the command scopes for the bot.
+
+        Args:
+            *args: Positional arguments. Not used but required for using the method as a callback.
+            **kwargs: Keyword arguments. Not used but required for using the method as a callback.
+
+        """
+        await self._client.reset_scopes(*args, **kwargs)
 
     def start(self) -> None:
         """Start the bot."""
         # Cleans up the database of actions that are not present in code
         Action.clean_up([action.name for action in self._actions])
 
-        # Loads the templates
-        self.templates = Templates(self.settings.autoreload_templates)
-        logger.trace("Templates initialized")
-
         # Warns the user if there are no valid actions registered
-        if not self.valid_actions:
+        if not self._valid_actions:
             logger.warning("No valid actions were registered. The bot will not respond to any commands.")
 
         # Loads the Telegram client
@@ -187,7 +199,7 @@ class Bot:
         logger.trace("Telegram client initialized")
 
         # Sets the command scopes for the bot
-        self._client.register_run_once_job(self._client.reset_scopes, 0)
+        self._client.register_run_once_job(self._reset_scopes, 0)
         self._client.register_run_once_job(self._set_scopes, 1)
 
         # Loads the web server
@@ -202,8 +214,12 @@ class Bot:
         logger.trace("Web server initialized")
         self._web.start()
 
+        # Loads the template engine
+        self.templates = Templates(self.settings.autoreload_templates)
+        logger.trace("Templates initialized")
+
         # Runs the client
         self._client.run()
 
-        # When the client is stopped, stop the rest of things
+        # When the client is stopped, stop the database connection
         disconnect()
