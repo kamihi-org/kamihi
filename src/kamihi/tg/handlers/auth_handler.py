@@ -19,7 +19,7 @@ from loguru import logger
 from telegram import Update
 from telegram.ext import BaseHandler
 
-from kamihi.users.users import get_user_from_telegram_id, is_user_authorized
+from kamihi.users import get_user_from_telegram_id, is_user_authorized
 
 
 class AuthHandler(BaseHandler):

@@ -17,11 +17,11 @@ from telegram import Update
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
-from kamihi.bot.utils import COMMAND_REGEX
-from kamihi.tg.handlers.auth_handler import AuthHandler
-from kamihi.tg.send import reply_text
+from kamihi.tg import reply_text
+from kamihi.tg.handlers import AuthHandler
 
 from .models import RegisteredAction
+from .utils import COMMAND_REGEX
 
 
 class Action:

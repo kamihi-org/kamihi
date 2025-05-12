@@ -8,8 +8,10 @@ License:
 
 from mongoengine import *
 
-from kamihi.bot.models.registered_action import RegisteredAction
-from kamihi.users.models import Role, User
+from kamihi.bot.models import RegisteredAction
+
+from .role import Role
+from .user import User
 
 
 class Permission(Document):

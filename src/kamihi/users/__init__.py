@@ -14,3 +14,7 @@ Attributes:
     [List any relevant module-level attributes with types and descriptions]
 
 """
+
+from .users import *
+
+__all__ = ["get_users", "get_user_from_telegram_id", "is_user_authorized"]

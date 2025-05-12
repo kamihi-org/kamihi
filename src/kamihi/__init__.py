@@ -21,13 +21,13 @@ __version__ = "0.6.0"
 
 from loguru import logger
 
-from kamihi.base.config import KamihiSettings
-from kamihi.base.logging import configure_logging
-from kamihi.bot import Bot as _Bot
+from .base.config import KamihiSettings
+from .base.logging import configure_logging as _configure_logging
+from .bot import Bot as _Bot
 
 # Load the settings and configure logging
 _settings = KamihiSettings()
-configure_logging(logger, _settings.log)
+_configure_logging(logger, _settings.log)
 logger.trace("Settings and logging initialized.")
 logger.info("Starting Kamihi version: {version}", version=__version__)
 
@@ -35,4 +35,4 @@ logger.info("Starting Kamihi version: {version}", version=__version__)
 bot = _Bot(_settings)
 
 
-__all__ = ["bot"]
+__all__ = ["__version__", "bot", "KamihiSettings"]
