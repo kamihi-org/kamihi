@@ -22,8 +22,8 @@ import sys
 
 import loguru
 
-from kamihi.base.config import LogSettings
-from kamihi.base.manual_send import ManualSender
+from .config import LogSettings
+from .manual_send import ManualSender
 
 
 def _extra_formatter(record: loguru.Record) -> None:

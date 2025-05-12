@@ -9,6 +9,8 @@ License:
 
 """
 
-from kamihi.bot.bot import Bot
+from .action import Action
+from .bot import Bot
+from .models import RegisteredAction
 
-__all__ = ["Bot"]
+__all__ = ["Bot", "Action"]

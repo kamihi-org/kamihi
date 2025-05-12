@@ -14,3 +14,7 @@ Attributes:
     [List any relevant module-level attributes with types and descriptions]
 
 """
+
+from .auth_handler import AuthHandler
+
+__all__ = ["AuthHandler"]

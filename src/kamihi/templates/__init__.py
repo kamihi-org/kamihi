@@ -19,6 +19,6 @@ Examples:
 
 """
 
-from kamihi.templates.templates import Templates
+from .templates import Templates
 
 __all__ = ["Templates"]

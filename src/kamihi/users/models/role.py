@@ -8,7 +8,7 @@ License:
 
 from mongoengine import *
 
-from kamihi.users.models.user import User
+from .user import User
 
 
 class Role(Document):

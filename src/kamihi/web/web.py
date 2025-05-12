@@ -21,9 +21,9 @@ from starlette_admin.contrib.mongoengine import Admin
 
 from kamihi.base.config import KamihiSettings
 from kamihi.bot.models import RegisteredAction
-from kamihi.users.models import Role, User
-from kamihi.users.models.permission import Permission
-from kamihi.web.views import HooksView, ReadOnlyView
+from kamihi.users.models import Permission, Role, User
+
+from .views import HooksView, ReadOnlyView
 
 WEB_PATH = Path(__file__).parent
 

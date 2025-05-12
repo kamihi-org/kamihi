@@ -19,8 +19,7 @@ from mongoengine import Q
 
 from kamihi.bot.models import RegisteredAction
 
-from .models import Role, User
-from .models.permission import Permission
+from .models import Permission, Role, User
 
 
 def get_users() -> list[User]:
@@ -68,26 +67,3 @@ def is_user_authorized(user: User, action: str) -> bool:
     permissions = Permission.objects(Q(action=action) & (Q(users=user) | Q(roles=role))).first()
 
     return bool(permissions)
-
-
-def users_for_action(action: str) -> list[User]:
-    """
-    Get all users authorized to use a specific action.
-
-    Args:
-        action (str): The action to check authorization for.
-
-    Returns:
-        list[User]: A list of users authorized to use the action.
-
-    """
-    action = RegisteredAction.objects(name=action).first()
-    permissions = Permission.objects(action=action)
-    users = set()
-    for permission in permissions:
-        if permission.users:
-            users.update(permission.users)
-        if permission.roles and permission.roles.users:
-            users.update(permission.roles.users)
-
-    return list(users)
