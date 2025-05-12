@@ -141,7 +141,7 @@ class Bot:
         """
         User.set_model(cls)
 
-    async def _set_scopes(self, context: CallbackContext) -> None:  # noqa: ARG002
+    async def _set_scopes(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003, ARG002
         """
         Set the command scopes for the bot.
 
@@ -149,7 +149,8 @@ class Bot:
         actions.
 
         Args:
-            context (CallbackContext): The context of the callback. Not used but required for this function to be registered as a job.
+            *args: Positional arguments. Not used but required for using the method as a callback.
+            **kwargs: Keyword arguments. Not used but required for using the method as a callback.
 
         """
         # Constructs the scopes list
@@ -190,7 +191,14 @@ class Bot:
         self._client.register_run_once_job(self._set_scopes, 1)
 
         # Loads the web server
-        self._web = KamihiWeb(self.settings)
+        self._web = KamihiWeb(
+            self.settings,
+            {
+                "after_create": [self._set_scopes],
+                "after_edit": [self._set_scopes],
+                "after_delete": [self._set_scopes],
+            },
+        )
         logger.trace("Web server initialized")
         self._web.start()
 

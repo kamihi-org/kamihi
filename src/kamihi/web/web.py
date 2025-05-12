@@ -10,19 +10,20 @@ import inspect
 import logging
 from pathlib import Path
 from threading import Thread
+from typing import Literal
 
 import uvicorn
 from loguru import logger
 from mongoengine import connect, disconnect
 from starlette.applications import Starlette
 from starlette_admin import CustomView
-from starlette_admin.contrib.mongoengine import Admin, ModelView
+from starlette_admin.contrib.mongoengine import Admin
 
 from kamihi.base.config import KamihiSettings
 from kamihi.bot.models import RegisteredAction
 from kamihi.users.models import Role, User
 from kamihi.users.models.permission import Permission
-from kamihi.web.views import NoClsView, ReadOnlyView
+from kamihi.web.views import HooksView, ReadOnlyView
 
 WEB_PATH = Path(__file__).parent
 
@@ -55,13 +56,40 @@ class KamihiWeb(Thread):
     """
 
     bot_settings: KamihiSettings
+    hooks: dict[
+        Literal[
+            "before_create",
+            "after_create",
+            "before_edit",
+            "after_edit",
+            "before_delete",
+            "after_delete",
+        ],
+        list[callable],
+    ]
     app: Starlette | None
     admin: Admin | None
 
-    def __init__(self, settings: KamihiSettings) -> None:
+    def __init__(
+        self,
+        settings: KamihiSettings,
+        hooks: dict[
+            Literal[
+                "before_create",
+                "after_create",
+                "before_edit",
+                "after_edit",
+                "before_delete",
+                "after_delete",
+            ],
+            list[callable],
+        ] = None,
+    ) -> None:
         """Initialize the KamihiWeb instance."""
         super().__init__()
         self.bot_settings = settings
+        self.hooks = hooks
+
         self.daemon = True
 
         self.app = None
@@ -82,10 +110,10 @@ class KamihiWeb(Thread):
             favicon_url="/statics/images/favicon.ico",
         )
 
-        admin.add_view(NoClsView(User.get_model(), icon="fas fa-user"))
-        admin.add_view(ModelView(Role, icon="fas fa-tags"))
-        admin.add_view(ReadOnlyView(RegisteredAction, name="Actions", icon="fas fa-circle-play"))
-        admin.add_view(ModelView(Permission, icon="fas fa-check"))
+        admin.add_view(HooksView(User.get_model(), icon="fas fa-user", hooks=self.hooks))
+        admin.add_view(HooksView(Role, icon="fas fa-tags", hooks=self.hooks))
+        admin.add_view(ReadOnlyView(RegisteredAction, name="Actions", icon="fas fa-circle-play", hooks=self.hooks))
+        admin.add_view(HooksView(Permission, icon="fas fa-check", hooks=self.hooks))
 
         admin.mount_to(self.app)
 
