@@ -24,13 +24,13 @@ from collections.abc import Callable
 from functools import partial
 
 from loguru import logger
+from mongoengine import connect, disconnect
 from multipledispatch import dispatch
 from telegram import BotCommand
-from telegram.ext import CallbackContext, CommandHandler
+from telegram.ext import CommandHandler
 
 from kamihi.base.config import KamihiSettings
 from kamihi.bot.action import Action
-from kamihi.db.db import connect_to_db, disconnect_from_db
 from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
 from kamihi.users.models.user import User
@@ -73,7 +73,7 @@ class Bot:
         self._actions = []
 
         # Connects to the database
-        connect_to_db(self.settings.db_url)
+        connect(self.settings.db_url)
 
     @dispatch([(str, Callable)])
     def action(self, *args: str | Callable, description: str = None) -> Action | Callable:
@@ -206,4 +206,4 @@ class Bot:
         self._client.run()
 
         # When the client is stopped, stop the rest of things
-        disconnect_from_db()
+        disconnect()
