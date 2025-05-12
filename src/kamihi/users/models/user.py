@@ -13,7 +13,8 @@ from starlette.requests import Request
 class User(Document):
     """Placeholder for the User model."""
 
-    telegram_id: str = StringField(required=True, unique=True)
+    telegram_id: int = IntField(required=True, unique=True)
+    is_admin: bool = BooleanField(default=False)
 
     meta = {"allow_inheritance": True}
 

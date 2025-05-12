@@ -18,6 +18,7 @@ from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
 from kamihi.bot.utils import COMMAND_REGEX
+from kamihi.tg.handlers.auth_handler import AuthHandler
 from kamihi.tg.send import reply_text
 
 from .models import RegisteredAction
@@ -123,9 +124,9 @@ class Action:
                 self._valid = False
 
     @property
-    def handler(self) -> CommandHandler:
+    def handler(self) -> AuthHandler:
         """Construct a CommandHandler for the action."""
-        return CommandHandler(self.commands, self.__call__) if self.is_valid() else None
+        return AuthHandler(CommandHandler(self.commands, self.__call__), self.name) if self.is_valid() else None
 
     def is_valid(self) -> bool:
         """Check if the action is valid."""
