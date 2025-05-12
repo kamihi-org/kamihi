@@ -24,12 +24,12 @@ from collections.abc import Callable
 from functools import partial
 
 from loguru import logger
-from mongoengine import connect, disconnect
 from multipledispatch import dispatch
 from telegram import BotCommand
 from telegram.ext import CommandHandler
 
 from kamihi.base.config import KamihiSettings
+from kamihi.db.mongo import connect, disconnect
 from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
 from kamihi.users import get_users, is_user_authorized
@@ -73,7 +73,7 @@ class Bot:
         self.settings = settings
 
         # Connects to the database
-        connect(host=self.settings.db_url)
+        connect(self.settings.db)
 
     @dispatch([(str, Callable)])
     def action(self, *args: str | Callable, description: str = None) -> Action | Callable:
@@ -207,7 +207,8 @@ class Bot:
 
         # Loads the web server
         self._web = KamihiWeb(
-            self.settings,
+            self.settings.web,
+            self.settings.db,
             {
                 "after_create": [self._set_scopes],
                 "after_edit": [self._set_scopes],

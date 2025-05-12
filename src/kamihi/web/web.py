@@ -14,13 +14,13 @@ from typing import Literal
 
 import uvicorn
 from loguru import logger
-from mongoengine import connect, disconnect
 from starlette.applications import Starlette
 from starlette_admin import CustomView
 from starlette_admin.contrib.mongoengine import Admin
 
-from kamihi.base.config import KamihiSettings
+from kamihi.base.config import DatabaseSettings, KamihiSettings, WebSettings
 from kamihi.bot.models import RegisteredAction
+from kamihi.db.mongo import connect, disconnect
 from kamihi.users.models import Permission, Role, User
 
 from .views import HooksView, ReadOnlyView
@@ -49,13 +49,15 @@ class KamihiWeb(Thread):
     connection and configuration.
 
     Attributes:
-        bot_settings (KamihiSettings): The settings for the Kamihi bot.
+        settings (KamihiSettings): The settings for the Kamihi bot.
+        db_settings (DatabaseSettings): The database settings for the Kamihi bot.
         app (Starlette): The application instance.
         admin (Admin): The Starlette-Admin instance for the admin interface.
 
     """
 
-    bot_settings: KamihiSettings
+    settings: WebSettings
+    db_settings: DatabaseSettings
     hooks: dict[
         Literal[
             "before_create",
@@ -67,12 +69,14 @@ class KamihiWeb(Thread):
         ],
         list[callable],
     ]
+
     app: Starlette | None
     admin: Admin | None
 
     def __init__(
         self,
-        settings: KamihiSettings,
+        settings: WebSettings,
+        db_settings: DatabaseSettings,
         hooks: dict[
             Literal[
                 "before_create",
@@ -87,7 +91,8 @@ class KamihiWeb(Thread):
     ) -> None:
         """Initialize the KamihiWeb instance."""
         super().__init__()
-        self.bot_settings = settings
+        self.settings = settings
+        self.db_settings = db_settings
         self.hooks = hooks
 
         self.daemon = True
@@ -98,11 +103,11 @@ class KamihiWeb(Thread):
     def _create_app(self) -> None:
         self.app = Starlette(
             on_startup=[
-                lambda: connect(host=self.bot_settings.db_url),
+                lambda: connect(self.db_settings),
                 lambda: logger.info(
                     "Web server started on http://{host}:{port}",
-                    host=self.bot_settings.web.host,
-                    port=self.bot_settings.web.port,
+                    host=self.settings.host,
+                    port=self.settings.port,
                 ),
             ],
             on_shutdown=[lambda: disconnect()],
@@ -130,8 +135,8 @@ class KamihiWeb(Thread):
 
         uvicorn.run(
             self.app,
-            host=self.bot_settings.web.host,
-            port=self.bot_settings.web.port,
+            host=self.settings.host,
+            port=self.settings.port,
             log_config={
                 "version": 1,
                 "disable_existing_loggers": False,
