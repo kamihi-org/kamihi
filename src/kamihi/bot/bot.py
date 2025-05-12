@@ -25,7 +25,8 @@ from functools import partial
 
 from loguru import logger
 from multipledispatch import dispatch
-from telegram.ext import CommandHandler
+from telegram import BotCommand
+from telegram.ext import CallbackContext, CommandHandler
 
 from kamihi.base.config import KamihiSettings
 from kamihi.bot.action import Action
@@ -33,6 +34,7 @@ from kamihi.db.db import connect_to_db, disconnect_from_db
 from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
 from kamihi.users.models.user import User
+from kamihi.users.users import get_users, is_user_authorized
 from kamihi.web.web import KamihiWeb
 
 
@@ -139,6 +141,33 @@ class Bot:
         """
         User.set_model(cls)
 
+    async def _set_scopes(self, context: CallbackContext) -> None:  # noqa: ARG002
+        """
+        Set the command scopes for the bot.
+
+        This method sets the command scopes for the bot based on the registered
+        actions.
+
+        Args:
+            context (CallbackContext): The context of the callback. Not used but required for this function to be registered as a job.
+
+        """
+        # Constructs the scopes list
+        scopes = {}
+        for user in get_users():
+            scopes[user.telegram_id] = []
+            for action in self.valid_actions:
+                if is_user_authorized(user, action.name):
+                    scopes[user.telegram_id].extend(
+                        [
+                            BotCommand(command=command, description=action.description or f"Action {action.name}")
+                            for command in action.commands
+                        ]
+                    )
+
+        # Sets the scopes for the bot
+        await self._client.set_scopes(scopes)
+
     def start(self) -> None:
         """Start the bot."""
         # Cleans up the database of actions that are not present in code
@@ -155,6 +184,10 @@ class Bot:
         # Loads the Telegram client
         self._client = TelegramClient(self.settings, self._handlers)
         logger.trace("Telegram client initialized")
+
+        # Sets the command scopes for the bot
+        self._client.register_run_once_job(self._client.reset_scopes, 0)
+        self._client.register_run_once_job(self._set_scopes, 1)
 
         # Loads the web server
         self._web = KamihiWeb(self.settings)

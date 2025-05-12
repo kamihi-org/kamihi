@@ -49,7 +49,7 @@ class AuthHandler(BaseHandler):
         if update.message and update.effective_user:
             user = get_user_from_telegram_id(update.effective_user.id)
 
-            if user and (user.is_admin or is_user_authorized(user, self.name)):
+            if user and is_user_authorized(user, self.name):
                 return True
 
         return False
