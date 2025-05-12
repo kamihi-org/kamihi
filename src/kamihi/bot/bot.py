@@ -73,7 +73,7 @@ class Bot:
         self._actions = []
 
         # Connects to the database
-        connect(self.settings.db_url)
+        connect(host=self.settings.db_url)
 
     @dispatch([(str, Callable)])
     def action(self, *args: str | Callable, description: str = None) -> Action | Callable:
