@@ -126,6 +126,20 @@ class WebSettings(BaseModel):
     port: int = Field(default=4242)
 
 
+class DatabaseSettings(BaseModel):
+    """
+    Defines the database settings schema.
+
+    Attributes:
+        host (str): The URL of the database.
+        name (str): The name of the database.
+
+    """
+
+    host: str = Field(default="mongodb://localhost:27017", pattern=r"^mongodb://[a-zA-Z0-9_.-]+:[0-9]{1,5}$")
+    name: str = Field(default="kamihi")
+
+
 class KamihiSettings(BaseSettings):
     """
     Defines the configuration schema for the Kamihi framework.
@@ -151,7 +165,7 @@ class KamihiSettings(BaseSettings):
     log: LogSettings = Field(default_factory=LogSettings)
 
     # Database settings
-    db_url: str = Field(default="mongodb://localhost:27017/kamihi")
+    db: DatabaseSettings = Field(default_factory=DatabaseSettings)
 
     # Telegram settings
     token: str | None = Field(default=None, pattern=r"^\d+:[0-9A-Za-z_-]{35}$", exclude=True)
