@@ -28,8 +28,8 @@ from .bot import Bot as _Bot
 # Load the settings and configure logging
 _settings = KamihiSettings()
 _configure_logging(logger, _settings.log)
-logger.trace("Settings and logging initialized.")
-logger.info("Starting Kamihi version: {version}", version=__version__)
+logger.trace("Initialized settings and logging")
+logger.bind(version=__version__).info("Starting Kamihi")
 
 # Initialize the bot
 bot = _Bot(_settings)
