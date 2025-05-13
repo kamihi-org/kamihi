@@ -1,17 +1,8 @@
 """
-TODO: one-line module description.
-
-TODO: Additional details about the module, its purpose, and any necessary
-background information. Explain what functions or classes are included.
+Custom handler for Telegram bot that checks if a user is authorized to use a wrapped handler.
 
 License:
     MIT
-
-Examples:
-    [Examples of how to use the module/classes/functions]
-
-Attributes:
-    [List any relevant module-level attributes with types and descriptions]
 
 """
 
