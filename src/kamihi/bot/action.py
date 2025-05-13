@@ -142,9 +142,9 @@ class Action:
         )
 
     @classmethod
-    def clean_up(cls, names: list[str]) -> None:
+    def clean_up(cls, keep: list[str]) -> None:
         """Clean up the action from the database."""
-        RegisteredAction.objects(name__nin=names).delete()
+        RegisteredAction.objects(name__nin=keep).delete()
 
     async def __call__(self, update: Update, context: CallbackContext) -> None:
         """Execute the action."""

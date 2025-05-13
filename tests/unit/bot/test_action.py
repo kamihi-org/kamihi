@@ -16,7 +16,9 @@ from logot import Logot, logged
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CommandHandler
 
+from kamihi.bot import RegisteredAction
 from kamihi.bot.action import Action
+from kamihi.tg.handlers import AuthHandler
 
 
 async def func():
@@ -138,6 +140,57 @@ def test_action_init_function_varargs(logot: Logot, parameter, kind) -> None:
     logot.assert_logged(logged.warning("Failed to register"))
 
     assert action.is_valid() is False
+
+
+def test_action_handler():
+    """Test the Action class handler property."""
+    action = Action(name="test_action", commands=["test"], description="Test action", func=func)
+
+    assert isinstance(action.handler, AuthHandler)
+    assert isinstance(action.handler.handler, CommandHandler)
+
+    assert action.handler.name == "test_action"
+    assert action.handler.handler.callback == action.__call__
+    assert list(action.handler.handler.commands) == ["test"]
+
+
+def test_action_handler_invalid():
+    """Test the Action class handler property when invalid."""
+    action = Action(name="test_action", commands=["test"], description="Test action", func=func)
+    action._valid = False
+
+    assert action.handler is None
+
+
+def test_action_save_to_db():
+    """Test the Action class save_to_db method on new action creation."""
+    Action(name="test_action", commands=["test"], description="Test action", func=func)
+
+    assert RegisteredAction.objects.count() == 1
+    assert RegisteredAction.objects(name="test_action").first().name == "test_action"
+    assert RegisteredAction.objects(name="test_action").first().description == "Test action"
+
+
+def test_action_save_to_db_existing():
+    """Test the Action class save_to_db method on existing action update."""
+    Action(name="test_action", commands=["test"], description="Test action", func=func)
+    Action(name="test_action", commands=["test"], description="Updated description", func=func)
+
+    assert RegisteredAction.objects.count() == 1
+    assert RegisteredAction.objects(name="test_action").first().description == "Updated description"
+
+
+def test_action_clean_up():
+    """Test the Action class clean_up method."""
+    Action(name="test_action", commands=["test"], description="Test action", func=func)
+    Action(name="test_action_2", commands=["test_2"], description="Test action 2", func=func)
+
+    assert RegisteredAction.objects.count() == 2
+
+    Action.clean_up(["test_action"])
+
+    assert RegisteredAction.objects.count() == 1
+    assert RegisteredAction.objects(name="test_action_2").first() is None
 
 
 @pytest.mark.asyncio
