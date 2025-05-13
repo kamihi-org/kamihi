@@ -9,8 +9,7 @@ License:
 import pytest
 
 from kamihi.bot.models import RegisteredAction
-from kamihi.users import Role, Permission
-from kamihi.users.models import User
+from kamihi.users.models import User, Role, Permission
 from kamihi.users import get_users, get_user_from_telegram_id, is_user_authorized
 
 
