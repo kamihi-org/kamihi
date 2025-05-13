@@ -136,7 +136,10 @@ class DatabaseSettings(BaseModel):
 
     """
 
-    host: str = Field(default="mongodb://localhost:27017", pattern=r"^mongodb://[a-zA-Z0-9_.-]+:[0-9]{1,5}$")
+    host: str = Field(
+        default="mongodb://localhost:27017",
+        pattern=r"^mongodb(\+srv)?://([a-zA-Z0-9_.-]+(:[a-zA-Z0-9_.-]+)?@)?[a-zA-Z0-9_.-]+(:[0-9]{1,5})?$",
+    )
     name: str = Field(default="kamihi")
 
 
