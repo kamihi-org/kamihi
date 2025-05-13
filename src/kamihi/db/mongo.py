@@ -36,7 +36,6 @@ def connect(settings: DatabaseSettings) -> None:
         db=settings.name,
         host=settings.host,
         alias="default",
-        connect=False,
     )
 
 
