@@ -16,7 +16,7 @@ from logot import Logot, logged
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CommandHandler
 
-from kamihi.bot import RegisteredAction
+from kamihi.bot.models import RegisteredAction
 from kamihi.bot.action import Action
 from kamihi.tg.handlers import AuthHandler
 
