@@ -16,7 +16,6 @@ Attributes:
 
 import re
 
-import pytest
 from playwright.async_api import Page, expect
 
 
