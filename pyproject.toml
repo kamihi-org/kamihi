@@ -59,7 +59,7 @@ dev = [
     "pytest>=8.3.5",
     "pytest-asyncio>=0.26.0",
     "pytest-cov>=6.0.0",
-    "pytest-playwright>=0.7.0",
+    "pytest-playwright-asyncio>=0.7.0",
     "ruff>=0.11.0",
 ]
 docs = [
@@ -146,7 +146,9 @@ version_files = [
 [tool.pytest.ini_options]
 addopts = "--cov=src --cov-report=xml --cov-report=term-missing"
 testpaths = ["tests/"]
-asyncio_default_fixture_loop_scope = "function"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 logot_capturer = "logot.loguru.LoguruCapturer"
 
 [tool.coverage.run]
