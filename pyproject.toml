@@ -54,10 +54,12 @@ dev = [
     "commitizen>=4.4.1",
     "logot[loguru]>=1.3.0",
     "mongomock>=4.3.0",
+    "playwright>=1.52.0",
     "pre-commit>=4.1.0",
     "pytest>=8.3.5",
     "pytest-asyncio>=0.26.0",
     "pytest-cov>=6.0.0",
+    "pytest-playwright>=0.7.0",
     "ruff>=0.11.0",
 ]
 docs = [
