@@ -306,3 +306,21 @@ def test_timezone_obj_property():
     settings = KamihiSettings()
     assert settings.timezone == "UTC"
     assert settings.timezone_obj == pytz.timezone("UTC")
+
+
+@pytest.mark.parametrize(
+    "host",
+    [
+        "mongodb://localhost",
+        "mongodb://localhost:27017",
+        "mongodb+srv://cluster0.mongodb.net",
+        "mongodb://user:password@localhost:27017",
+        "mongodb://user:password@localhost:27017",
+    ],
+)
+def test_db_host(host: str):
+    """Test that the database host is set correctly."""
+    # Test with a specific host
+    with patch.dict(os.environ, {"KAMIHI_DB__HOST": host}):
+        settings = KamihiSettings()
+        assert settings.db.host == host

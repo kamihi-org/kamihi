@@ -17,8 +17,11 @@ from telegram import Update
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
-from kamihi.bot.utils import COMMAND_REGEX
-from kamihi.tg.send import reply_text
+from kamihi.tg import reply_text
+from kamihi.tg.handlers import AuthHandler
+
+from .models import RegisteredAction
+from .utils import COMMAND_REGEX
 
 
 class Action:
@@ -31,17 +34,17 @@ class Action:
         name (str): The name of the action.
         commands (list[str]): List of commands associated.
         description (str): Description of the action.
-        func (Callable): The function to be executed when the action is called.
 
     """
 
     name: str
     commands: list[str]
     description: str
-    func: Callable
 
+    _func: Callable
     _valid: bool = True
     _logger: loguru.Logger
+    _db_object: RegisteredAction | None
 
     def __init__(self, name: str, commands: list[str], description: str, func: Callable) -> None:
         """
@@ -57,16 +60,18 @@ class Action:
         self.name = name
         self.commands = commands
         self.description = description
-        self.func = func
 
+        self._func = func
         self._logger = logger.bind(action=self.name)
 
         self._validate_commands()
         self._validate_function()
 
         if self.is_valid():
+            self._db_object = self.save_to_db()
             self._logger.debug("Successfully registered")
         else:
+            self._db_object = None
             self._logger.warning("Failed to register")
 
     def _validate_commands(self) -> None:
@@ -96,15 +101,15 @@ class Action:
     def _validate_function(self) -> None:
         """Validate the function passed."""
         # Check if the function is a coroutine
-        if not inspect.iscoroutinefunction(self.func):
+        if not inspect.iscoroutinefunction(self._func):
             self._logger.warning(
                 "Function should be a coroutine, define it with 'async def {name}()' instead of 'def {name}()'.",
-                name=self.func.__name__,
+                name=self._func.__name__,
             )
             self._valid = False
 
         # Check if the function has valid parameters
-        parameters = inspect.signature(self.func).parameters
+        parameters = inspect.signature(self._func).parameters
         for name, param in parameters.items():
             if name not in ("update", "context", "logger"):
                 self._logger.warning(
@@ -121,13 +126,25 @@ class Action:
                 self._valid = False
 
     @property
-    def handler(self) -> CommandHandler:
+    def handler(self) -> AuthHandler:
         """Construct a CommandHandler for the action."""
-        return CommandHandler(self.commands, self.__call__) if self.is_valid() else None
+        return AuthHandler(CommandHandler(self.commands, self.__call__), self.name) if self.is_valid() else None
 
     def is_valid(self) -> bool:
         """Check if the action is valid."""
         return self._valid
+
+    def save_to_db(self) -> RegisteredAction:
+        """Save the action to the database."""
+        return RegisteredAction.objects(name=self.name).upsert_one(
+            name=self.name,
+            description=self.description,
+        )
+
+    @classmethod
+    def clean_up(cls, keep: list[str]) -> None:
+        """Clean up the action from the database."""
+        RegisteredAction.objects(name__nin=keep).delete()
 
     async def __call__(self, update: Update, context: CallbackContext) -> None:
         """Execute the action."""
@@ -136,7 +153,7 @@ class Action:
             return
 
         self._logger.debug("Executing")
-        parameters = inspect.signature(self.func).parameters
+        parameters = inspect.signature(self._func).parameters
         pos_args = []
         keyword_args = {}
 
@@ -156,7 +173,7 @@ class Action:
             else:
                 keyword_args[name] = value
 
-        result = await self.func(*pos_args, **keyword_args)
+        result = await self._func(*pos_args, **keyword_args)
         if result is not None:
             await reply_text(update, context, result)
         else:
@@ -167,4 +184,4 @@ class Action:
 
     def __repr__(self) -> str:
         """Return a string representation of the Action object."""
-        return f"Action '{self.name}' ({', '.join(f'/{cmd}' for cmd in self.commands)}) [-> {self.func.__name__}]"
+        return f"Action '{self.name}' ({', '.join(f'/{cmd}' for cmd in self.commands)}) [-> {self._func.__name__}]"

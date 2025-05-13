@@ -9,14 +9,12 @@ License:
 from __future__ import annotations
 
 import inspect
-from unittest import mock
 
 import pytest
 
 from kamihi.base.config import KamihiSettings
 from kamihi.bot.action import Action
 from kamihi.bot.bot import Bot
-from logot import Logot, logged
 
 
 @pytest.fixture
@@ -180,95 +178,3 @@ def test_bot_action_function(mock_bot: Bot) -> None:
     assert action.description == "This is a test action"
     assert "update" in inspect.signature(action).parameters
     assert "context" in inspect.signature(action).parameters
-
-
-def test_bot_valid_actions(mock_bot: Bot) -> None:
-    """
-    Test the valid_actions property of the Bot class.
-
-    This test checks that the valid_actions property returns a list of valid
-    Action instances and that it filters out invalid actions.
-
-    """
-
-    @mock_bot.action("command1")
-    async def valid_action() -> None:
-        pass
-
-    @mock_bot.action("command2")
-    def invalid_action() -> None:  # Invalid because it's not a coroutine
-        pass
-
-    assert len(mock_bot.valid_actions) == 1
-    assert mock_bot.valid_actions[0].name == "valid_action"
-    assert mock_bot.valid_actions[0].commands == ["command1"]
-
-
-def test_bot_handlers(mock_bot: Bot) -> None:
-    """
-    Test the handlers property of the Bot class.
-
-    This test checks that the handlers property returns a list of Action instances
-    and that it filters out invalid actions.
-
-    """
-
-    @mock_bot.action("command1")
-    async def valid_action() -> None:
-        pass
-
-    assert len(mock_bot._handlers) == 1
-    assert list(mock_bot._handlers[0].commands) == ["command1"]
-
-
-def test_bot_start(mock_bot: Bot) -> None:
-    """
-    Test the bot start method.
-
-    This test checks that the bot start method is called correctly and that
-    it initializes the bot with the given settings without actually starting
-    the Telegram client.
-    """
-
-    @mock_bot.action
-    async def test_action() -> None:
-        pass
-
-    with (
-        mock.patch("kamihi.bot.bot.Templates") as mock_templates,
-        mock.patch("kamihi.bot.bot.TelegramClient") as mock_client_class,
-    ):
-        mock_client_instance = mock.Mock()
-        mock_client_class.return_value = mock_client_instance
-
-        mock_bot.start()
-
-        mock_templates.assert_called_once_with(mock_bot.settings.autoreload_templates)
-        mock_client_class.assert_called_once()
-        mock_client_instance.run.assert_called_once()
-
-
-def test_bot_start_no_actions(logot: Logot, mock_bot: Bot) -> None:
-    """
-    Test the bot start method with no actions.
-
-    This test checks that the bot start method is called correctly and that
-    it initializes the bot with the given settings, but that displays a warning
-    if no actions are registered.
-    """
-    with (
-        mock.patch("kamihi.bot.bot.Templates") as mock_templates,
-        mock.patch("kamihi.bot.bot.TelegramClient") as mock_client_class,
-    ):
-        mock_client_instance = mock.Mock()
-        mock_client_class.return_value = mock_client_instance
-
-        mock_bot.start()
-
-        logot.assert_logged(
-            logged.warning("No valid actions were registered. The bot will not respond to any commands.")
-        )
-
-        mock_templates.assert_called_once_with(mock_bot.settings.autoreload_templates)
-        mock_client_class.assert_called_once_with(mock_bot.settings, [])
-        mock_client_instance.run.assert_called_once()

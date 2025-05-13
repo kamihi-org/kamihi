@@ -21,9 +21,65 @@ from __future__ import annotations
 import sys
 
 import loguru
+from pymongo import monitoring
+from pymongo.monitoring import CommandFailedEvent
 
-from kamihi.base.config import LogSettings
-from kamihi.base.manual_send import ManualSender
+from .config import LogSettings
+from .manual_send import ManualSender
+
+
+class MongoLogger(monitoring.CommandListener):
+    """
+    MongoDB command logger.
+
+    This class listens to MongoDB commands and logs them using the loguru
+    logger.
+
+    Args:
+        logger: The loguru logger instance to use for logging.
+
+    """
+
+    def __init__(self, logger: loguru.Logger) -> None:
+        """
+        Initialize the MongoLogger.
+
+        Args:
+            logger: The loguru logger instance to use for logging.
+
+        """
+        super().__init__()
+        self.logger = logger
+
+    def started(self, event: monitoring.CommandStartedEvent) -> None:
+        """Log the start of a command."""
+        self.logger.trace(
+            "Executing request",
+            command_name=event.command_name,
+            request_id=event.request_id,
+            connection_id=event.connection_id,
+        )
+
+    def succeeded(self, event: monitoring.CommandSucceededEvent) -> None:
+        """Log the success of a command."""
+        self.logger.trace(
+            "Request succeeded",
+            command_name=event.command_name,
+            request_id=event.request_id,
+            connection_id=event.connection_id,
+            micoseconds=event.duration_micros,
+        )
+
+    def failed(self, event: CommandFailedEvent) -> None:
+        """Log the failure of a command."""
+        self.logger.debug(
+            "Request failed",
+            command_name=event.command_name,
+            request_id=event.request_id,
+            connection_id=event.connection_id,
+            micoseconds=event.duration_micros,
+            error=event.failure,
+        )
 
 
 def _extra_formatter(record: loguru.Record) -> None:
@@ -37,7 +93,7 @@ def _extra_formatter(record: loguru.Record) -> None:
         record: The log record to format.
 
     """
-    if record.get("extra") and record["level"].no <= 10:
+    if record.get("extra"):
         record["extra"]["compact"] = ", ".join(
             f"{key}={repr(value)}" for key, value in record["extra"].items() if key != "compact"
         )
@@ -109,3 +165,5 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
             filter={"apprise": False},
             enqueue=True,
         )
+
+    monitoring.register(MongoLogger(logger))

@@ -25,15 +25,18 @@ from functools import partial
 
 from loguru import logger
 from multipledispatch import dispatch
-from sqlalchemy import Engine
+from telegram import BotCommand
 from telegram.ext import CommandHandler
 
 from kamihi.base.config import KamihiSettings
-from kamihi.bot.action import Action
-from kamihi.db.db import create_tables, get_engine
+from kamihi.db.mongo import connect, disconnect
 from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
-from kamihi.web.web import KamihiWeb
+from kamihi.users import get_users, is_user_authorized
+from kamihi.users.models import User
+from kamihi.web import KamihiWeb
+
+from .action import Action
 
 
 class Bot:
@@ -55,10 +58,9 @@ class Bot:
     settings: KamihiSettings
     templates: Templates
 
-    _db: Engine
     _client: TelegramClient
     _web: KamihiWeb
-    _actions: list[Action]
+    _actions: list[Action] = []
 
     def __init__(self, settings: KamihiSettings) -> None:
         """
@@ -69,7 +71,9 @@ class Bot:
 
         """
         self.settings = settings
-        self._actions = []
+
+        # Connects to the database
+        connect(self.settings.db)
 
     @dispatch([(str, Callable)])
     def action(self, *args: str | Callable, description: str = None) -> Action | Callable:
@@ -93,10 +97,11 @@ class Bot:
         func: Callable = args.pop()
         commands: list[str] = args or [func.__name__]
 
+        # Create and store the action
         action = Action(func.__name__, commands, description, func)
-
         self._actions.append(action)
 
+        # The action is returned so it can be used by the user if needed
         return action
 
     @dispatch([str])
@@ -117,42 +122,108 @@ class Bot:
         """
         return functools.partial(self.action, *commands, description=description)
 
+    def user_class(self, cls: type[User]) -> None:  # skipcq: PYL-R0201
+        """
+        Set the user model for the bot.
+
+        This method is used as a decorator to set the user model for the bot.
+
+        Args:
+            cls: The user class to set.
+
+        """
+        User.set_model(cls)
+
     @property
-    def valid_actions(self) -> list[Action]:
+    def _valid_actions(self) -> list[Action]:
         """Return the valid actions for the bot."""
         return [action for action in self._actions if action.is_valid()]
 
     @property
     def _handlers(self) -> list[CommandHandler]:
         """Return the handlers for the bot."""
-        return [action.handler for action in self.valid_actions]
+        return [action.handler for action in self._valid_actions]
+
+    @property
+    def _scopes(self) -> dict[int, list[BotCommand]]:
+        """Return the current scopes for the bot."""
+        scopes = {}
+        for user in get_users():
+            scopes[user.telegram_id] = []
+            for action in self._valid_actions:
+                if is_user_authorized(user, action.name):
+                    scopes[user.telegram_id].extend(
+                        [
+                            BotCommand(command=command, description=action.description or f"Action {action.name}")
+                            for command in action.commands
+                        ]
+                    )
+
+        return scopes
+
+    async def _set_scopes(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003, ARG002
+        """
+        Set the command scopes for the bot.
+
+        This method sets the command scopes for the bot based on the registered
+        actions.
+
+        Args:
+            *args: Positional arguments. Not used but required for using the method as a callback.
+            **kwargs: Keyword arguments. Not used but required for using the method as a callback.
+
+        """
+        await self._client.set_scopes(self._scopes)
+
+    async def _reset_scopes(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003, ARG002
+        """
+        Reset the command scopes for the bot.
+
+        Args:
+            *args: Positional arguments. Not used but required for using the method as a callback.
+            **kwargs: Keyword arguments. Not used but required for using the method as a callback.
+
+        """
+        await self._client.reset_scopes(*args, **kwargs)
 
     def start(self) -> None:
         """Start the bot."""
-        # Loads the database
-        self._db = get_engine(self.settings.db_url)
-        logger.trace("Database initialized")
-
-        # Creates the database tables
-        create_tables(self._db)
-        logger.trace("Database tables created")
-
-        # Loads the templates
-        self.templates = Templates(self.settings.autoreload_templates)
-        logger.trace("Templates initialized")
+        # Cleans up the database of actions that are not present in code
+        Action.clean_up([action.name for action in self._actions])
+        logger.debug("Removed actions not present in code from database")
 
         # Warns the user if there are no valid actions registered
-        if not self.valid_actions:
+        if not self._valid_actions:
             logger.warning("No valid actions were registered. The bot will not respond to any commands.")
 
         # Loads the Telegram client
         self._client = TelegramClient(self.settings, self._handlers)
-        logger.trace("Telegram client initialized")
+        logger.trace("Initialized Telegram client")
+
+        # Sets the command scopes for the bot
+        self._client.register_run_once_job(self._reset_scopes, 1)
+        self._client.register_run_once_job(self._set_scopes, 2)
+        logger.trace("Initialized command scopes jobs")
 
         # Loads the web server
-        self._web = KamihiWeb(self.settings, self._db)
-        logger.trace("Web server initialized")
+        self._web = KamihiWeb(
+            self.settings.web,
+            self.settings.db,
+            {
+                "after_create": [self._set_scopes],
+                "after_edit": [self._set_scopes],
+                "after_delete": [self._set_scopes],
+            },
+        )
+        logger.trace("Initialized web server")
         self._web.start()
+
+        # Loads the template engine
+        self.templates = Templates(self.settings.autoreload_templates)
+        logger.trace("Initialized templating engine")
 
         # Runs the client
         self._client.run()
+
+        # When the client is stopped, stop the database connection
+        disconnect()

@@ -16,7 +16,9 @@ from logot import Logot, logged
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CommandHandler
 
+from kamihi.bot.models import RegisteredAction
 from kamihi.bot.action import Action
+from kamihi.tg.handlers import AuthHandler
 
 
 async def func():
@@ -36,7 +38,7 @@ def test_action_init(logot: Logot, action: Action) -> None:
     assert action.name == "test_action"
     assert action.commands == ["test"]
     assert action.description == "Test action"
-    assert action.func is func
+    assert action._func is func
 
 
 @pytest.mark.parametrize(
@@ -71,7 +73,7 @@ def test_action_init_duplicate_commands(logot: Logot) -> None:
     assert action.name == "test_action"
     assert action.commands == ["test"]
     assert action.description == "Test action"
-    assert action.func is func
+    assert action._func is func
     assert action.is_valid() is True
 
 
@@ -89,7 +91,7 @@ def test_action_init_sync_function(logot: Logot):
     assert action.name == "test_action"
     assert action.commands == ["test"]
     assert action.description == "Test action"
-    assert action.func is test_func
+    assert action._func is test_func
     assert action.is_valid() is False
 
 
@@ -140,19 +142,55 @@ def test_action_init_function_varargs(logot: Logot, parameter, kind) -> None:
     assert action.is_valid() is False
 
 
-def test_action_handler(action: Action) -> None:
+def test_action_handler():
     """Test the Action class handler property."""
-    assert action.handler is not None
-    assert isinstance(action.handler, CommandHandler)
-    assert list(action.handler.commands) == action.commands
-    assert action.handler.callback == action.__call__
+    action = Action(name="test_action", commands=["test"], description="Test action", func=func)
+
+    assert isinstance(action.handler, AuthHandler)
+    assert isinstance(action.handler.handler, CommandHandler)
+
+    assert action.handler.name == "test_action"
+    assert action.handler.handler.callback == action.__call__
+    assert list(action.handler.handler.commands) == ["test"]
 
 
-def test_action_invalid_handler(action: Action) -> None:
-    """Test the Action class handler property with invalid handler."""
+def test_action_handler_invalid():
+    """Test the Action class handler property when invalid."""
+    action = Action(name="test_action", commands=["test"], description="Test action", func=func)
     action._valid = False
 
     assert action.handler is None
+
+
+def test_action_save_to_db():
+    """Test the Action class save_to_db method on new action creation."""
+    Action(name="test_action", commands=["test"], description="Test action", func=func)
+
+    assert RegisteredAction.objects.count() == 1
+    assert RegisteredAction.objects(name="test_action").first().name == "test_action"
+    assert RegisteredAction.objects(name="test_action").first().description == "Test action"
+
+
+def test_action_save_to_db_existing():
+    """Test the Action class save_to_db method on existing action update."""
+    Action(name="test_action", commands=["test"], description="Test action", func=func)
+    Action(name="test_action", commands=["test"], description="Updated description", func=func)
+
+    assert RegisteredAction.objects.count() == 1
+    assert RegisteredAction.objects(name="test_action").first().description == "Updated description"
+
+
+def test_action_clean_up():
+    """Test the Action class clean_up method."""
+    Action(name="test_action", commands=["test"], description="Test action", func=func)
+    Action(name="test_action_2", commands=["test_2"], description="Test action 2", func=func)
+
+    assert RegisteredAction.objects.count() == 2
+
+    Action.clean_up(["test_action"])
+
+    assert RegisteredAction.objects.count() == 1
+    assert RegisteredAction.objects(name="test_action_2").first() is None
 
 
 @pytest.mark.asyncio
@@ -284,7 +322,7 @@ async def test_action_invalid_call(logot: Logot, action: Action, mock_update, mo
 async def test_action_call_with_result(logot: Logot, action: Action, mock_update, mock_context, return_value) -> None:
     """Test the Action class call method with a result."""
     str_func = AsyncMock(return_value=return_value)
-    action.func = str_func
+    action._func = str_func
 
     with pytest.raises(ApplicationHandlerStop):
         await action(mock_update, mock_context)

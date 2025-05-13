@@ -10,16 +10,20 @@ import inspect
 import logging
 from pathlib import Path
 from threading import Thread
+from typing import Literal
 
 import uvicorn
 from loguru import logger
-from sqlalchemy import Engine
 from starlette.applications import Starlette
 from starlette_admin import CustomView
-from starlette_admin.contrib.sqlmodel import Admin, ModelView
+from starlette_admin.contrib.mongoengine import Admin
 
-from kamihi.base.config import KamihiSettings
-from kamihi.db.models import User
+from kamihi.base.config import DatabaseSettings, WebSettings
+from kamihi.bot.models import RegisteredAction
+from kamihi.db.mongo import connect, disconnect
+from kamihi.users.models import Permission, Role, User
+
+from .views import HooksView, ReadOnlyView
 
 WEB_PATH = Path(__file__).parent
 
@@ -31,7 +35,7 @@ class _InterceptHandler(logging.Handler):  # skipcq: PY-A6006
             frame = frame.f_back
             depth += 1
 
-        level = logger.level("TRACE").name if record.name == "uvicorn.access" else logger.level(record.levelname).name
+        level = logger.level("TRACE").name
 
         logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
@@ -45,33 +49,71 @@ class KamihiWeb(Thread):
     connection and configuration.
 
     Attributes:
-        bot_settings (KamihiSettings): The settings for the Kamihi bot.
-        engine (Database): The database connection for the Kamihi bot.
+        settings (WebSettings): The settings for the Kamihi bot.
+        db_settings (DatabaseSettings): The database settings for the Kamihi bot.
         app (Starlette): The application instance.
         admin (Admin): The Starlette-Admin instance for the admin interface.
 
     """
 
-    bot_settings: KamihiSettings
-    engine: Engine
+    settings: WebSettings
+    db_settings: DatabaseSettings
+    hooks: dict[
+        Literal[
+            "before_create",
+            "after_create",
+            "before_edit",
+            "after_edit",
+            "before_delete",
+            "after_delete",
+        ],
+        list[callable],
+    ]
+
     app: Starlette | None
     admin: Admin | None
 
-    def __init__(self, settings: KamihiSettings, engine: Engine) -> None:
+    def __init__(
+        self,
+        settings: WebSettings,
+        db_settings: DatabaseSettings,
+        hooks: dict[
+            Literal[
+                "before_create",
+                "after_create",
+                "before_edit",
+                "after_edit",
+                "before_delete",
+                "after_delete",
+            ],
+            list[callable],
+        ] = None,
+    ) -> None:
         """Initialize the KamihiWeb instance."""
         super().__init__()
-        self.bot_settings = settings
+        self.settings = settings
+        self.db_settings = db_settings
+        self.hooks = hooks
+
         self.daemon = True
-        self.engine = engine
 
         self.app = None
         self.admin = None
 
     def _create_app(self) -> None:
-        self.app = Starlette()
+        self.app = Starlette(
+            on_startup=[
+                lambda: connect(self.db_settings),
+                lambda: logger.info(
+                    "Web server started on http://{host}:{port}",
+                    host=self.settings.host,
+                    port=self.settings.port,
+                ),
+            ],
+            on_shutdown=[disconnect],
+        )
 
         admin = Admin(
-            self.engine,
             title="Kamihi",
             base_url="/",
             templates_dir=str(WEB_PATH / "templates"),
@@ -79,7 +121,11 @@ class KamihiWeb(Thread):
             index_view=CustomView(label="Home", icon="fa fa-home", path="/", template_path="home.html"),
             favicon_url="/statics/images/favicon.ico",
         )
-        admin.add_view(ModelView(User, icon="fas fa-user"))
+
+        admin.add_view(HooksView(User.get_model(), icon="fas fa-user", hooks=self.hooks))
+        admin.add_view(HooksView(Role, icon="fas fa-tags", hooks=self.hooks))
+        admin.add_view(ReadOnlyView(RegisteredAction, name="Actions", icon="fas fa-circle-play", hooks=self.hooks))
+        admin.add_view(HooksView(Permission, icon="fas fa-check", hooks=self.hooks))
 
         admin.mount_to(self.app)
 
@@ -89,8 +135,8 @@ class KamihiWeb(Thread):
 
         uvicorn.run(
             self.app,
-            host=self.bot_settings.web.host,
-            port=self.bot_settings.web.port,
+            host=self.settings.host,
+            port=self.settings.port,
             log_config={
                 "version": 1,
                 "disable_existing_loggers": False,

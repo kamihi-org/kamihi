@@ -8,6 +8,7 @@ License:
 
 """
 
-from kamihi.tg.client import TelegramClient
+from .client import TelegramClient
+from .send import reply_text, send_text
 
-__all__ = ["TelegramClient"]
+__all__ = ["TelegramClient", "reply_text", "send_text"]
