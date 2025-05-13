@@ -30,7 +30,7 @@ def get_users() -> list[User]:
         list[User]: A list of all users in the database.
 
     """
-    return User.objects()
+    return list(User.objects)
 
 
 def get_user_from_telegram_id(telegram_id: int) -> User | None:
