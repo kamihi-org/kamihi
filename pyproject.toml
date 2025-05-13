@@ -1,6 +1,6 @@
 [project]
 name = "kamihi"
-version = "0.6.0"
+version = "0.7.0"
 description = "Framework for building Telegram bots in Python"
 authors = [
     { name = "kiinami", email = "kinami@posteo.net" }

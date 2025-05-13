@@ -1,3 +1,9 @@
+## 0.7.0 (2025-05-13)
+
+### Feat
+
+- **users**: initial user functionality (#39)
+
 ## 0.6.0 (2025-05-05)
 
 ### Feat
