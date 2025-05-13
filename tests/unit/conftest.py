@@ -14,6 +14,8 @@ import pytest
 from mongoengine import connect
 from telegram import Update, Bot, Message
 
+from kamihi.db.mongo import disconnect
+
 
 @pytest.fixture
 def mock_update():
@@ -40,3 +42,4 @@ def mock_mongodb():
     connect("kamihi_test", host="mongodb://localhost", alias="default", mongo_client_class=mongomock.MongoClient)
     with mock.patch("kamihi.bot.bot.connect"), mock.patch("kamihi.db.mongo.connect"):
         yield
+    disconnect()
