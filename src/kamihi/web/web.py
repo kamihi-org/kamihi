@@ -18,7 +18,7 @@ from starlette.applications import Starlette
 from starlette_admin import CustomView
 from starlette_admin.contrib.mongoengine import Admin
 
-from kamihi.base.config import DatabaseSettings, KamihiSettings, WebSettings
+from kamihi.base.config import DatabaseSettings, WebSettings
 from kamihi.bot.models import RegisteredAction
 from kamihi.db.mongo import connect, disconnect
 from kamihi.users.models import Permission, Role, User
@@ -49,7 +49,7 @@ class KamihiWeb(Thread):
     connection and configuration.
 
     Attributes:
-        settings (KamihiSettings): The settings for the Kamihi bot.
+        settings (WebSettings): The settings for the Kamihi bot.
         db_settings (DatabaseSettings): The database settings for the Kamihi bot.
         app (Starlette): The application instance.
         admin (Admin): The Starlette-Admin instance for the admin interface.
@@ -110,7 +110,7 @@ class KamihiWeb(Thread):
                     port=self.settings.port,
                 ),
             ],
-            on_shutdown=[lambda: disconnect()],
+            on_shutdown=[disconnect],
         )
 
         admin = Admin(

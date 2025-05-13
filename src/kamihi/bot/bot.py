@@ -122,7 +122,7 @@ class Bot:
         """
         return functools.partial(self.action, *commands, description=description)
 
-    def user_class(self, cls: type[User]) -> None:
+    def user_class(self, cls: type[User]) -> None:  # skipcq: PYL-R0201
         """
         Set the user model for the bot.
 

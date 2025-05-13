@@ -6,7 +6,7 @@ License:
 
 """
 
-from mongoengine import *
+from mongoengine import BooleanField, Document, IntField
 from starlette.requests import Request
 
 

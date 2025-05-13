@@ -99,7 +99,8 @@ class TelegramClient:
         This method clears all command scopes and sets the default commands.
 
         Args:
-            context (CallbackContext): The context of the callback. Not used but required for this function to be registered as a job.
+            context (CallbackContext): The context of the callback. Not used but required for
+                this function to be registered as a job.
 
         """
         with logger.catch(exception=TelegramError, message="Failed to reset scopes"):

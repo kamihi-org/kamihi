@@ -11,6 +11,5 @@ License:
 
 from .action import Action
 from .bot import Bot
-from .models import RegisteredAction
 
 __all__ = ["Bot", "Action"]

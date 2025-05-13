@@ -9,14 +9,12 @@ License:
 from __future__ import annotations
 
 import inspect
-from unittest import mock
 
 import pytest
 
 from kamihi.base.config import KamihiSettings
 from kamihi.bot.action import Action
 from kamihi.bot.bot import Bot
-from logot import Logot, logged
 
 
 @pytest.fixture

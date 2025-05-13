@@ -6,7 +6,7 @@ License:
 
 """
 
-from mongoengine import *
+from mongoengine import PULL, Document, ListField, ReferenceField
 
 from kamihi.bot.models import RegisteredAction
 

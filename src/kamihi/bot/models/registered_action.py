@@ -6,7 +6,7 @@ License:
 
 """
 
-from mongoengine import *
+from mongoengine import Document, StringField
 
 
 class RegisteredAction(Document):
