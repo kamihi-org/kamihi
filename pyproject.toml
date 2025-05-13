@@ -61,6 +61,7 @@ dev = [
     "pytest-cov>=6.0.0",
     "pytest-playwright-asyncio>=0.7.0",
     "ruff>=0.11.0",
+    "telethon>=1.40.0",
 ]
 docs = [
     "mike>=2.1.3",
