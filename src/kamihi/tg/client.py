@@ -16,6 +16,9 @@ Examples:
 
 from __future__ import annotations
 
+import os
+from threading import Event
+
 from loguru import logger
 from telegram import BotCommand, BotCommandScopeChat, Update
 from telegram.constants import ParseMode
@@ -54,6 +57,7 @@ class TelegramClient:
 
     """
 
+    _base_url: str = "https://api.telegram.org/bot"
     _builder: ApplicationBuilder
     _app: Application
 
@@ -66,8 +70,12 @@ class TelegramClient:
             handlers (list[BaseHandler]): List of handlers to register.
 
         """
+        if os.environ.get("PYTEST_VERSION") is not None:
+            self._base_url = "https://api.telegram.org/bot{token}/test"
+
         # Set up the application with all the settings
         self._builder = Application.builder()
+        self._builder.base_url(self._base_url)
         self._builder.token(settings.token)
         self._builder.defaults(
             Defaults(
