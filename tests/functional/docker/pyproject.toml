@@ -1,0 +1,11 @@
+[project]
+name = "kamihi-test"
+version = "0.1.0"
+description = "Test project for the Kamihi framework"
+requires-python = ">=3.12"
+dependencies = [
+    "kamihi",
+]
+
+[tool.uv.sources]
+kamihi = { path = "/lib/kamihi" }
