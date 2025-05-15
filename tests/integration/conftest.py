@@ -15,30 +15,19 @@ Attributes:
 """
 
 import json
-import multiprocessing
 import os
-import threading
 import time
-from collections.abc import Callable
-from contextlib import contextmanager
-from tempfile import TemporaryFile, NamedTemporaryFile
 from textwrap import dedent
 from typing import Any, AsyncGenerator
-from unittest import mock
 
-import mongomock
 import pytest
 from dotenv import load_dotenv
-from mongoengine import connect, disconnect
+from pytest_docker_tools.wrappers import Container
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.tl.custom import Conversation
 
-from kamihi.base.config import LogSettings
-from kamihi.bot import Bot
-from kamihi.bot.models import RegisteredAction
-
-from pytest_docker_tools import build, container, image, fetch, volume, fxtr
+from pytest_docker_tools import build, container, fetch, volume, fxtr
 
 load_dotenv()
 
@@ -140,6 +129,7 @@ mongo_image = fetch(repository="mongo:latest")
 
 
 mongo = container(
+    name="kamihi_test_mongo",
     image="{mongo_image.id}",
 )
 
@@ -147,10 +137,11 @@ mongo = container(
 kamihi_image = build(path=".", dockerfile="tests/integration/docker/Dockerfile")
 
 
-kamihi_volume = volume(initial_content=fxtr("user_code"))
+kamihi_volume = volume(initial_content=fxtr("user_code"), name="kamihi_test_volume")
 
 
 kamihi_container = container(
+    name="kamihi_test",
     image="{kamihi_image.id}",
     ports={"4242/tcp": None},
     environment={
@@ -159,6 +150,7 @@ kamihi_container = container(
         "KAMIHI_LOG__STDOUT_LEVEL": "TRACE",
         "KAMIHI_LOG__STDOUT_SERIALIZE": "True",
         "KAMIHI_DB__HOST": "mongodb://{mongo.ips.primary}",
+        "KAMIHI_WEB__HOST": "0.0.0.0",
     },
     volumes={
         "{kamihi_volume.name}": {"bind": "/app/src"},
@@ -168,6 +160,13 @@ kamihi_container = container(
 
 
 @pytest.fixture
-def kamihi(kamihi_container, wait_for_log):
+def kamihi(kamihi_container: Container, wait_for_log) -> Container:
     wait_for_log("SUCCESS", "Started!")
     return kamihi_container
+
+
+@pytest.fixture
+async def admin_page(kamihi: Container, wait_for_log, page):
+    wait_for_log("TRACE", "Uvicorn running on http://0.0.0.0:4242 (Press CTRL+C to quit)")
+    await page.goto(f"http://127.0.0.1:{kamihi.ports['4242/tcp'][0]}/")
+    return page
