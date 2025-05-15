@@ -57,6 +57,7 @@ class TelegramClient:
 
     """
 
+    _bot_settings: KamihiSettings
     _base_url: str = "https://api.telegram.org/bot"
     _builder: ApplicationBuilder
     _app: Application
@@ -70,7 +71,9 @@ class TelegramClient:
             handlers (list[BaseHandler]): List of handlers to register.
 
         """
-        if settings.testing:
+        self._bot_settings = settings
+
+        if self._bot_settings.testing:
             self._base_url = "https://api.telegram.org/bot{token}/test"
 
         # Set up the application with all the settings
@@ -111,6 +114,10 @@ class TelegramClient:
                 this function to be registered as a job.
 
         """
+        if self._bot_settings.testing:
+            logger.debug("Testing mode, skipping resetting scopes")
+            return
+
         with logger.catch(exception=TelegramError, message="Failed to reset scopes"):
             await self._app.bot.set_my_commands(commands=[])
             logger.debug("Scopes erased")
@@ -123,6 +130,10 @@ class TelegramClient:
             scopes (dict[int, list[BotCommand]]): The command scopes to set.
 
         """
+        if self._bot_settings.testing:
+            logger.debug("Testing mode, skipping setting scopes")
+            return
+
         for user_id, commands in scopes.items():
             lg = logger.bind(user_id=user_id, commands=[command.command for command in commands])
             with lg.catch(
