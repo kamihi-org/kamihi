@@ -35,7 +35,7 @@ jobs:
         run: |
           uv run pytest
         env:
-          KAMIHI_TOKEN: ${{ secrets.TOKEN }}
+          KAMIHI_TESTING__BOT_TOKEN: ${{ secrets.TOKEN }}
           KAMIHI_TESTING__BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
           KAMIHI_TESTING__USER_ID: ${{ secrets.USER_ID }}
           KAMIHI_TESTING__TG_PHONE_NUMBER: ${{ secrets.TG_PHONE_NUMBER }}
