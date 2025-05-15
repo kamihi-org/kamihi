@@ -13,3 +13,7 @@ Examples:
 Attributes:
     [List any relevant module-level attributes with types and descriptions]
 """
+
+
+def test_kamihi(kamihi):
+    pass

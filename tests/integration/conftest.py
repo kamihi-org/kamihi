@@ -22,10 +22,10 @@ import time
 from collections.abc import Callable
 from contextlib import contextmanager
 from tempfile import TemporaryFile, NamedTemporaryFile
+from textwrap import dedent
 from typing import Any, AsyncGenerator
 from unittest import mock
 
-import loguru
 import mongomock
 import pytest
 from dotenv import load_dotenv
@@ -38,8 +38,11 @@ from kamihi.base.config import LogSettings
 from kamihi.bot import Bot
 from kamihi.bot.models import RegisteredAction
 
+from pytest_docker_tools import build, container, image, fetch, volume, fxtr
+
 load_dotenv()
 
+BOT_TOKEN = os.getenv("KAMIHI_TESTING__BOT_TOKEN")
 BOT_USERNAME = os.getenv("KAMIHI_TESTING__BOT_USERNAME")
 USER_ID = int(os.getenv("KAMIHI_TESTING__USER_ID"))
 PHONE_NUMBER = os.getenv("KAMIHI_TESTING__TG_PHONE_NUMBER")
@@ -49,15 +52,6 @@ SESSION = os.getenv("KAMIHI_TESTING__TG_SESSION")
 DC_ID = int(os.getenv("KAMIHI_TESTING__TG_DC_ID"))
 DC_IP = os.getenv("KAMIHI_TESTING__TG_DC_IP")
 WAIT_TIME = int(os.getenv("KAMIHI_TESTING__WAIT_TIME", 0.5))
-
-
-@pytest.fixture(scope="session", autouse=True)
-def mock_mongodb():
-    """Fixture to provide a mock MongoDB instance."""
-    connect("kamihi_test", host="mongodb://localhost", alias="default", mongo_client_class=mongomock.MongoClient)
-    with mock.patch("kamihi.bot.bot.connect"), mock.patch("kamihi.db.mongo.connect"):
-        yield
-    disconnect()
 
 
 @pytest.fixture(scope="session")
@@ -105,57 +99,27 @@ async def conversation(tg_client) -> AsyncGenerator[Conversation, Any]:
 
 
 @pytest.fixture
-def temp_path():
-    """Fixture to create a temporary file."""
-    with NamedTemporaryFile(delete=False) as temp_file:
-        yield temp_file.name
-    os.remove(temp_file.name)
-
-
-@pytest.fixture
-def wait_for_log_entry(temp_path):
-    """
-    A pytest fixture that returns a function to wait for a specific JSON log entry
-    to be written to a given file path within a timeout.
-
-    Args:
-        temp_path: A pytest fixture providing a temporary directory path.
-
-    Returns:
-        A callable function with the signature:
-        `def _wait_for_log(log_file_path: str, expected_log: dict, timeout: int = 5)`
-    """
-
+def wait_for_log(kamihi_container):
     def _wait_for_log(level: str, message: str, timeout: int = 5):
-        """
-        Waits for a specific JSON log entry to appear in the given log file.
-
-        Args:
-            expected_log: A dictionary representing the log entry to wait for.
-            timeout: The maximum time to wait in seconds (default is 5).
-
-        Raises:
-            TimeoutError: If the expected log entry is not found within the timeout.
-        """
         start_time = time.time()
         while time.time() - start_time < timeout:
             try:
-                with open(temp_path, "r") as f:
-                    for line in f:
-                        try:
-                            log_entry = json.loads(line.strip())
+                for line in kamihi_container.logs().split("\n"):
+                    try:
+                        log_entry = json.loads(line.strip())
+                        if isinstance(log_entry, dict) and "record" in log_entry:
+                            # Check if the log entry matches the expected level and message
                             if (
                                 log_entry["record"]["level"]["name"] == level
                                 and message in log_entry["record"]["message"]
                             ):
                                 return log_entry
-                        except json.JSONDecodeError:
-                            # Handle potential non-JSON lines or incomplete writes
-                            pass
+                    except json.JSONDecodeError:
+                        pass
             except FileNotFoundError:
-                pass  # File might not exist yet
+                pass
 
-            time.sleep(0.1)  # Wait a bit before checking again
+            time.sleep(0.1)
 
         raise TimeoutError(f"Timeout waiting for {level} log with message '{message}' after {timeout} seconds.")
 
@@ -163,79 +127,47 @@ def wait_for_log_entry(temp_path):
 
 
 @pytest.fixture
-def run_bot(temp_path):
-    """Fixture that returns a function that can be used to start the bot in another thread."""
+def user_code():
+    return {
+        "main.py": dedent("""
+                         from kamihi import bot
+                         bot.start()
+                         """).encode()
+    }
 
-    def _start_bot(configure_function: Callable[[Bot], Bot]):
-        connect("kamihi_test", host="mongodb://localhost", alias="default", mongo_client_class=mongomock.MongoClient)
-        with (
-            mock.patch("kamihi.bot.bot.connect"),
-            mock.patch("kamihi.db.mongo.connect"),
-            mock.patch("kamihi.web.web.connect"),
-        ):
-            from loguru import logger
 
-            from kamihi import __version__, KamihiSettings
-            from kamihi.base.logging import configure_logging
+mongo_image = fetch(repository="mongo:latest")
 
-            settings = KamihiSettings(
-                log=LogSettings(
-                    stdout_level="TRACE", file_enable=True, file_level="TRACE", file_path=temp_path, file_serialize=True
-                )
-            )
-            configure_logging(logger, settings.log)
-            logger.trace("Initialized settings and logging")
-            logger.bind(version=__version__ + "-test").info("Starting Kamihi")
 
-            # Initialize the bot
-            bot_instance = Bot(settings)
+mongo = container(
+    image="{mongo_image.id}",
+)
 
-            bot_instance = configure_function(bot_instance)
 
-            bot_instance.start()
-        disconnect()
+kamihi_image = build(path=".", dockerfile="tests/integration/docker/Dockerfile")
 
-    @contextmanager
-    def _contextmanager(configure_function: Callable[[Bot], [Bot]]):
-        thread = multiprocessing.Process(target=_start_bot, args=(configure_function,), daemon=True)
-        thread.start()
 
-        yield
+kamihi_volume = volume(initial_content=fxtr("user_code"))
 
-        thread.terminate()
-        thread.join()
 
-    return _contextmanager
+kamihi_container = container(
+    image="{kamihi_image.id}",
+    ports={"4242/tcp": None},
+    environment={
+        "KAMIHI_TESTING": "True",
+        "KAMIHI_TOKEN": BOT_TOKEN,
+        "KAMIHI_LOG__STDOUT_LEVEL": "TRACE",
+        "KAMIHI_LOG__STDOUT_SERIALIZE": "True",
+        "KAMIHI_DB__HOST": "mongodb://{mongo.ips.primary}",
+    },
+    volumes={
+        "{kamihi_volume.name}": {"bind": "/app/src"},
+    },
+    command="uv run /app/src/main.py",
+)
 
 
 @pytest.fixture
-def create_user():
-    """Fixture to create a user in the database."""
-    from kamihi.users.models import User
-
-    def _create_user(telegram_id: int, is_admin: bool = False):
-        user = User(
-            telegram_id=telegram_id,
-            is_admin=is_admin,
-        )
-        user.save()
-        return user
-
-    return _create_user
-
-
-@pytest.fixture
-def create_permission_for_user():
-    """Fixture to create a permission in the database."""
-    from kamihi.users.models import Permission, User
-
-    def _create_permission(action_name: str, user: User):
-        permission = Permission(
-            action=RegisteredAction.objects(name=action_name).first(),
-            users=[user],
-            roles=[],
-        )
-        permission.save()
-        return permission
-
-    return _create_permission
+def kamihi(kamihi_container, wait_for_log):
+    wait_for_log("SUCCESS", "Started!")
+    return kamihi_container

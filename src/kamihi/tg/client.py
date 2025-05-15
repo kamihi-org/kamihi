@@ -70,7 +70,7 @@ class TelegramClient:
             handlers (list[BaseHandler]): List of handlers to register.
 
         """
-        if os.environ.get("PYTEST_VERSION") is not None:
+        if settings.testing:
             self._base_url = "https://api.telegram.org/bot{token}/test"
 
         # Set up the application with all the settings

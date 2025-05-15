@@ -159,6 +159,7 @@ class KamihiSettings(BaseSettings):
     """
 
     # General settings
+    testing: bool = Field(default=False)
     timezone: str = Field(default="UTC", validate_default=True)
 
     # Template settings
