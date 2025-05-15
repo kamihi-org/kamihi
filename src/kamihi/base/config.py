@@ -151,7 +151,7 @@ class KamihiSettings(BaseSettings):
         timezone (str): The timezone for the application.
         autoreload_templates (bool): Whether to enable template auto-reloading.
         log (LogSettings): The logging settings.
-        db_url (str): The database URL.
+        db (DatabaseSettings): The database settings.
         token (str | None): The Telegram bot token.
         responses (ResponseSettings): The response settings.
         web (WebSettings): The web settings.
