@@ -17,7 +17,6 @@ nav:
       - Installation: tutorials/installation.md
       - Quick start: tutorials/quick-start.md
       - Changelog: changelog.md
-      - Contributing: contributing.md
       - Special thanks: thanks.md
   - Guides:
       - guides/index.md
@@ -29,6 +28,8 @@ nav:
           - Configure the timezone: guides/config/configure-timezone.md
       - Actions:
           - Set commands: guides/actions/commands.md
+      - Users:
+          - Extend the user model: guides/users/extend.md
       - Logging:
           - Set up basic logging: guides/logging/setup-basic.md
           - Configure notifications: guides/logging/configure-notifications.md
