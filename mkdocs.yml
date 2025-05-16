@@ -8,7 +8,6 @@ repo_name: kamihi-dev/kamihi
 watch:
   - mkdocs.yml
   - CHANGELOG.md
-  - CONTRIBUTING.md
   - src/kamihi
 
 nav:
@@ -36,6 +35,13 @@ nav:
           - Configure structured logging: guides/logging/configure-structured.md
           - Configure file log rotation and retention: guides/logging/configure-rotation-retention.md
   #  - "Explanation":
+  - Developers:
+      - dev/index.md
+      - Architecture: dev/architecture.md
+      - Directories: dev/directories.md
+      - Development setup: dev/setup.md
+      - Testing: dev/testing.md
+
 
 theme:
   name: material

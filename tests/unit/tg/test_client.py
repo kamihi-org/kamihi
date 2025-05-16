@@ -48,6 +48,7 @@ def mock_settings():
     settings = Mock(spec=KamihiSettings)
     settings.token = "test_token"
     settings.timezone_obj = None
+    settings.testing = True
     settings.model_dump_json.return_value = "{}"
 
     # Create a nested mock for responses
@@ -66,6 +67,7 @@ def client(mock_builder, mock_app):
         settings = Mock(spec=KamihiSettings)
         settings.token = "test_token"
         settings.timezone_obj = None
+        settings.testing = True
         settings.model_dump_json.return_value = "{}"
 
         # Create a nested mock for responses

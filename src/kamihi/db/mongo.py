@@ -24,8 +24,7 @@ def connect(settings: DatabaseSettings) -> None:
 
     """
     mongo_connect(
-        db=settings.name,
-        host=settings.host,
+        host=settings.host + "/" + settings.name,
         alias="default",
     )
 

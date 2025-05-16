@@ -39,7 +39,7 @@ The documentation is available at [kamihi-dev.github.io/kamihi](https://kamihi-d
 ## Contributing
 
 We welcome contributions to Kamihi! If you have an idea for a new feature, bug fix, or improvement, please open an 
-issue or submit a pull request. For more information on how to contribute, please see the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+issue or submit a pull request. For more information on how to contribute, check out [this page](https://kamihi-dev.github.io/kamihi/dev/) on the docs.
 
 ## License
 
