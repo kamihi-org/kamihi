@@ -13,9 +13,7 @@ from telethon.tl.custom import Conversation
 
 
 class TestActionDecoratorNoParentheses:
-    """
-    Test the action decorator without parentheses.
-    """
+    """Test the action decorator without parentheses."""
 
     @pytest.fixture
     def user_code(self):

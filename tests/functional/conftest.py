@@ -19,11 +19,10 @@ from playwright.async_api import Page
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pytest_docker_tools.wrappers import Container
+from pytest_docker_tools import build, container, fetch, volume, fxtr
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.tl.custom import Conversation
-
-from pytest_docker_tools import build, container, fetch, volume, fxtr
 
 from kamihi.bot.models import RegisteredAction
 from kamihi.users import User, Permission
