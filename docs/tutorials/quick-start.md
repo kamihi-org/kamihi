@@ -24,8 +24,8 @@ Just replace the token with the one you got from BotFather. That's it! You've cr
 To run the bot, just execute the script. You can do this in your terminal or command prompt. Just navigate to the
 directory where you saved the script and run:
 
-```sh
-python your_script.py
+```bash
+uv run your_script.py # or `python your_script.py`
 ```
 
 ## Making the bot do something
@@ -45,12 +45,23 @@ async def start():
 bot.start()
 ```
 
-You can restart the bot and send the `/start` command to it. The bot will respond with the message you return in the
-`start` action.
+You can restart the bot and send the `/start` command to it now, but the bot will not answer you with the message we programmed. That is because first, you have to register yourself as an user and give yourself permission to use that command.
+
+## Registering your first user
+
+While the bot was running, you may have noticed that in the logs it notifies you that there is an administrator interface at [http://localhost:4242](http://localhost:4242). It is in here that you can add users, permissions and the such.
+
+Navigating to that page, you will find a simple interface to manage your bot. You can select the section 'Users' and add a new one with your Telegram ID, which you can obtain from the logs of the bot, or by messaging [this bot](https://t.me/myidbot) on Telegram.
+
+If you mark your user as administrator, you will immediately be able to use the `/start` command you made in the previous section.
+
+You can also navigate to the section 'Permissions' and add one for that action and your user.
 
 ## Configuring the bot
 
-Having the token hardcoded in your script is not good practice. You can instead use environment variables, an
+This first bot is looking very nice, but we can polish it a bit more.
+
+Having the token hardcoded in your script is not a good practice. You can instead use environment variables, an
 environment variable file or a configuration file to store this and any other configuration options:
 
 === "Configuration file"
@@ -86,7 +97,4 @@ The bot will automatically read the token from the configuration file, `.env` fi
 
 ## What now?
 
-Now that you have a basic bot up and running, you can start adding more actions and features to it. We have just
-scratched the surface of what you can do with Kamihi. Check out
-the [guides](https://kamihi-dev.github.io/kamihi/guides/)
-for more in-depth information on how to use Kamihi and its features.
+Now that you have a basic bot up and running, you can start adding more actions to it. We have just scratched the surface of what you can do with Kamihi. Check out the [guides](https://kamihi-dev.github.io/kamihi/guides/) for more in-depth information on how to use Kamihi to the fullest.
