@@ -17,7 +17,6 @@ nav:
       - Installation: tutorials/installation.md
       - Quick start: tutorials/quick-start.md
       - Changelog: changelog.md
-      - Contributing: contributing.md
       - Special thanks: thanks.md
   - Guides:
       - guides/index.md
