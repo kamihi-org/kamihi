@@ -25,7 +25,6 @@ from loguru import logger
 from .base.config import KamihiSettings
 from .base.logging import configure_logging as _configure_logging
 from .bot import Bot as _Bot
-from .users.models import User as BaseUser
 
 if os.environ.get("PYTEST_VERSION") is None:
     # Load the settings and configure logging
@@ -37,4 +36,4 @@ if os.environ.get("PYTEST_VERSION") is None:
     # Initialize the bot
     bot = _Bot(_settings)
 
-    __all__ = ["__version__", "bot", "KamihiSettings", "BaseUser"]
+    __all__ = ["__version__", "bot", "KamihiSettings"]
