@@ -13,7 +13,7 @@ A command is a string sent to your bot through Telegram that executes an action.
 
 ## User
 
-An user is someone that has been registered in the framework. Only they can use the actions you define.
+A user is someone that has been registered in the framework. Only they can use the actions you define.
 
 ## Role
 
