@@ -45,7 +45,7 @@ async def start():
 bot.start()
 ```
 
-You can restart the bot and send the `/start` command to it now, but the bot will not answer you with the message we programmed. That is because first, you have to register yourself as an user and give yourself permission to use that command.
+You can restart the bot and send the `/start` command to it now, but the bot will not answer you with the message we programmed. That is because first, you have to register yourself as a user and give yourself permission to use that command.
 
 ## Registering your first user
 
