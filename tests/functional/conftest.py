@@ -8,11 +8,13 @@ License:
 
 import json
 import time
+from pathlib import Path
 from textwrap import dedent
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, Generator
 
 import pytest
 from dotenv import load_dotenv
+from mongoengine import connect, disconnect
 from playwright.async_api import Page
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -22,6 +24,9 @@ from telethon.sessions import StringSession
 from telethon.tl.custom import Conversation
 
 from pytest_docker_tools import build, container, fetch, volume, fxtr
+
+from kamihi.bot.models import RegisteredAction
+from kamihi.users import User, Permission
 
 
 class TestingSettings(BaseSettings):
@@ -102,14 +107,9 @@ async def tg_client(test_settings):
 
 
 @pytest.fixture(scope="session")
-async def conversation(test_settings, tg_client) -> AsyncGenerator[Conversation, Any]:
+async def chat(test_settings, tg_client) -> AsyncGenerator[Conversation, Any]:
     """Open conversation with the bot."""
     async with tg_client.conversation(test_settings.bot_username, timeout=10, max_messages=10000) as conv:
-        conv: Conversation
-
-        await conv.send_message("/start")
-        await conv.get_response()  # Welcome message
-        time.sleep(0.5)
         yield conv
 
 
@@ -117,7 +117,7 @@ async def conversation(test_settings, tg_client) -> AsyncGenerator[Conversation,
 def user_code():
     """Fixture to provide the user code for the bot."""
     return {
-        "main.py": dedent("""
+        "main.py": dedent("""\
                          from kamihi import bot
                          bot.start()
                          """).encode()
@@ -128,10 +128,7 @@ mongo_image = fetch(repository="mongo:latest")
 """Fixture that fetches the mongodb container image."""
 
 
-mongo = container(
-    name="kamihi_test_mongo",
-    image="{mongo_image.id}",
-)
+mongo_container = container(image="{mongo_image.id}")
 """Fixture that provides the mongodb container."""
 
 
@@ -139,12 +136,11 @@ kamihi_image = build(path=".", dockerfile="tests/functional/docker/Dockerfile")
 """Fixture that builds the kamihi container image."""
 
 
-kamihi_volume = volume(initial_content=fxtr("user_code"), name="kamihi_test_volume")
+kamihi_volume = volume(initial_content=fxtr("user_code"))
 """Fixture that creates a volume for the kamihi container."""
 
 
 kamihi_container = container(
-    name="kamihi_test",
     image="{kamihi_image.id}",
     ports={"4242/tcp": None},
     environment={
@@ -152,7 +148,7 @@ kamihi_container = container(
         "KAMIHI_TOKEN": "{test_settings.bot_token}",
         "KAMIHI_LOG__STDOUT_LEVEL": "TRACE",
         "KAMIHI_LOG__STDOUT_SERIALIZE": "True",
-        "KAMIHI_DB__HOST": "mongodb://{mongo.ips.primary}",
+        "KAMIHI_DB__HOST": "mongodb://{mongo_container.ips.primary}",
         "KAMIHI_WEB__HOST": "0.0.0.0",
     },
     volumes={
@@ -166,6 +162,7 @@ kamihi_container = container(
 @pytest.fixture
 def wait_for_log(kamihi_container):
     """Fixture that provides a function to wait for specific logs in the Kamihi container."""
+
     def _wait_for_log(level: str, message: str, timeout: int = 5) -> dict:
         """
         Wait for a specific log entry in the Kamihi container.
@@ -189,23 +186,34 @@ def wait_for_log(kamihi_container):
                     log_entry = json.loads(line.strip())
                     if isinstance(log_entry, dict) and "record" in log_entry:
                         # Check if the log entry matches the expected level and message
-                        if (
-                            log_entry["record"]["level"]["name"] == level
-                            and message in log_entry["record"]["message"]
-                        ):
+                        if log_entry["record"]["level"]["name"] == level and message in log_entry["record"]["message"]:
                             return log_entry
                 except json.JSONDecodeError:
                     pass
             time.sleep(0.1)
         raise TimeoutError(f"Timeout waiting for {level} log with message '{message}' after {timeout} seconds.")
+
     return _wait_for_log
 
 
 @pytest.fixture
-def kamihi(kamihi_container: Container, wait_for_log) -> Container:
+def kamihi(kamihi_container: Container, wait_for_log, request) -> Generator[Container, Any, None]:
     """Fixture that provides the Kamihi container after ensuring it is ready."""
     wait_for_log("SUCCESS", "Started!")
-    return kamihi_container
+
+    yield kamihi_container
+
+    test_results_path = Path.cwd() / "test-results" / "logs"
+    test_results_path.mkdir(parents=True, exist_ok=True)
+    test_name = request.node.module.__name__ + "." + request.node.name
+    test_name = Path(
+        test_name.replace("tests.functional", str(test_results_path) + "/functional")
+        .replace(".", "/")
+        .replace(":", "/")
+    )
+    test_name.parent.mkdir(parents=True, exist_ok=True)
+    with open(test_name.with_suffix(".log"), "w") as log_file:
+        log_file.write(kamihi_container.logs())
 
 
 @pytest.fixture
@@ -214,3 +222,34 @@ async def admin_page(kamihi: Container, wait_for_log, page) -> Page:
     wait_for_log("TRACE", "Uvicorn running on http://0.0.0.0:4242 (Press CTRL+C to quit)")
     await page.goto(f"http://127.0.0.1:{kamihi.ports['4242/tcp'][0]}/")
     return page
+
+
+@pytest.fixture(autouse=True)
+def mongodb(kamihi: Container, mongo_container: Container) -> Generator[None, Any, None]:
+    """Fixture that provides the MongoDB container."""
+    connect(host=f"mongodb://{mongo_container.ips.primary}/kamihi", alias="default")
+
+    yield
+
+    disconnect()
+
+
+@pytest.fixture
+async def user_in_db(kamihi: Container, test_settings):
+    """Fixture that creates a user in the MongoDB database."""
+    user = User(telegram_id=test_settings.user_id, is_admin=False).save()
+
+    yield user
+
+    user.delete()
+
+
+@pytest.fixture
+async def add_permission_for_user(kamihi: Container, test_settings):
+    """Fixture that returns a function to add permissions to a user for an action in the MongoDB database."""
+
+    def _add_permission(user: User, action_name: str):
+        action = RegisteredAction.objects(name=action_name).first()
+        Permission(action=action, users=[user], roles=[]).save()
+
+    yield _add_permission
