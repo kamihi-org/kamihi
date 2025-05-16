@@ -338,8 +338,6 @@
       
         
       
-        
-      
     
     
     
@@ -500,6 +498,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#registering-your-first-user" class="md-nav__link">
+    <span class="md-ellipsis">
+      Registering your first user
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#configuring-the-bot" class="md-nav__link">
     <span class="md-ellipsis">
       Configuring the bot
@@ -556,29 +563,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../contributing/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Contributing
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../thanks/" class="md-nav__link">
         
   
@@ -613,6 +597,8 @@
       
         
           
+        
+      
         
       
         
@@ -933,12 +919,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -960,7 +940,7 @@
   
   
   <span class="md-ellipsis">
-    Logging
+    Users
     
   </span>
   
@@ -970,6 +950,90 @@
         
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            Users
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/users/extend/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Extend the user model
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Logging
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_6">
             <span class="md-nav__icon md-icon"></span>
             Logging
           </label>
@@ -2418,6 +2482,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#registering-your-first-user" class="md-nav__link">
+    <span class="md-ellipsis">
+      Registering your first user
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#configuring-the-bot" class="md-nav__link">
     <span class="md-ellipsis">
       Configuring the bot
@@ -2473,7 +2546,7 @@ send him the <code>/newbot</code> command and follow the instructions. He'll giv
 <h2 id="running-the-bot">Running the bot<a class="headerlink" href="#running-the-bot" title="Permanent link">⚓︎</a></h2>
 <p>To run the bot, just execute the script. You can do this in your terminal or command prompt. Just navigate to the
 directory where you saved the script and run:</p>
-<div class="highlight"><pre><span></span><code>python<span class="w"> </span>your_script.py
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>your_script.py<span class="w"> </span><span class="c1"># or `python your_script.py`</span>
 </code></pre></div>
 <h2 id="making-the-bot-do-something">Making the bot do something<a class="headerlink" href="#making-the-bot-do-something" title="Permanent link">⚓︎</a></h2>
 <p>Right now, your bot doesn't do anything other that apologize for not being able to do anything. We can change this
@@ -2488,10 +2561,15 @@ by making our first action. Let's make the bot respond to the <code>/start</code
 
 <span class="n">bot</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 </code></pre></div>
-<p>You can restart the bot and send the <code>/start</code> command to it. The bot will respond with the message you return in the
-<code>start</code> action.</p>
+<p>You can restart the bot and send the <code>/start</code> command to it now, but the bot will not answer you with the message we programmed. That is because first, you have to register yourself as a user and give yourself permission to use that command.</p>
+<h2 id="registering-your-first-user">Registering your first user<a class="headerlink" href="#registering-your-first-user" title="Permanent link">⚓︎</a></h2>
+<p>While the bot was running, you may have noticed that in the logs it notifies you that there is an administrator interface at <a href="http://localhost:4242">http://localhost:4242</a>. It is in here that you can add users, permissions and the such.</p>
+<p>Navigating to that page, you will find a simple interface to manage your bot. You can select the section 'Users' and add a new one with your Telegram ID, which you can obtain from the logs of the bot, or by messaging <a href="https://t.me/myidbot">this bot</a> on Telegram.</p>
+<p>If you mark your user as administrator, you will immediately be able to use the <code>/start</code> command you made in the previous section.</p>
+<p>You can also navigate to the section 'Permissions' and add one for that action and your user.</p>
 <h2 id="configuring-the-bot">Configuring the bot<a class="headerlink" href="#configuring-the-bot" title="Permanent link">⚓︎</a></h2>
-<p>Having the token hardcoded in your script is not good practice. You can instead use environment variables, an
+<p>This first bot is looking very nice, but we can polish it a bit more.</p>
+<p>Having the token hardcoded in your script is not a good practice. You can instead use environment variables, an
 environment variable file or a configuration file to store this and any other configuration options:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Configuration file</label><label for="__tabbed_1_2"><code>.env</code> file</label><label for="__tabbed_1_3">Environment variables</label></div>
 <div class="tabbed-content">
@@ -2523,10 +2601,7 @@ environment variable file or a configuration file to store this and any other co
 </code></pre></div></p>
 <p>The bot will automatically read the token from the configuration file, <code>.env</code> file or environment variable and use it.</p>
 <h2 id="what-now">What now?<a class="headerlink" href="#what-now" title="Permanent link">⚓︎</a></h2>
-<p>Now that you have a basic bot up and running, you can start adding more actions and features to it. We have just
-scratched the surface of what you can do with Kamihi. Check out
-the <a href="https://kamihi-dev.github.io/kamihi/guides/">guides</a>
-for more in-depth information on how to use Kamihi and its features.</p>
+<p>Now that you have a basic bot up and running, you can start adding more actions to it. We have just scratched the surface of what you can do with Kamihi. Check out the <a href="https://kamihi-dev.github.io/kamihi/guides/">guides</a> for more in-depth information on how to use Kamihi to the fullest.</p>
 
 
 

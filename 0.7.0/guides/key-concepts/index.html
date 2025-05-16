@@ -336,8 +336,6 @@
       
         
       
-        
-      
     
     
     
@@ -459,29 +457,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../contributing/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Contributing
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../thanks/" class="md-nav__link">
         
   
@@ -518,6 +493,8 @@
       
         
           
+        
+      
         
       
         
@@ -641,6 +618,33 @@
   <a href="#command" class="md-nav__link">
     <span class="md-ellipsis">
       Command
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#user" class="md-nav__link">
+    <span class="md-ellipsis">
+      User
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#role" class="md-nav__link">
+    <span class="md-ellipsis">
+      Role
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permission" class="md-nav__link">
+    <span class="md-ellipsis">
+      Permission
     </span>
   </a>
   
@@ -903,12 +907,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -933,7 +931,7 @@
   
   
   <span class="md-ellipsis">
-    Logging
+    Users
     
   </span>
   
@@ -943,6 +941,93 @@
         
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            Users
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../users/extend/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Extend the user model
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Logging
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_6">
             <span class="md-nav__icon md-icon"></span>
             Logging
           </label>
@@ -2372,6 +2457,33 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#user" class="md-nav__link">
+    <span class="md-ellipsis">
+      User
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#role" class="md-nav__link">
+    <span class="md-ellipsis">
+      Role
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permission" class="md-nav__link">
+    <span class="md-ellipsis">
+      Permission
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2402,6 +2514,12 @@
 <p class="admonition-title">Info</p>
 <p>An action may have many commands assigned.</p>
 </div>
+<h2 id="user">User<a class="headerlink" href="#user" title="Permanent link">⚓︎</a></h2>
+<p>A user is someone that has been registered in the framework. Only they can use the actions you define.</p>
+<h2 id="role">Role<a class="headerlink" href="#role" title="Permanent link">⚓︎</a></h2>
+<p>A role is, in essence, a group of users. Roles are most commonly used to grant them permission to use actions. Many users can have one role, and users can also have many roles.</p>
+<h2 id="permission">Permission<a class="headerlink" href="#permission" title="Permanent link">⚓︎</a></h2>
+<p>A permission is a record that tells the bot which users and roles can use which actions. You can have many permissions for each action, each targeting as many users and roles as you want.</p>
 
 
 
