@@ -16,9 +16,6 @@ Examples:
 
 from __future__ import annotations
 
-import os
-from threading import Event
-
 from loguru import logger
 from telegram import BotCommand, BotCommandScopeChat, Update
 from telegram.constants import ParseMode
