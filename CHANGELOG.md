@@ -1,3 +1,9 @@
+## 0.7.1 (2025-05-18)
+
+### Fix
+
+- **tg**: auth handler now calls check update of wrapped handler (#44)
+
 ## 0.7.0 (2025-05-13)
 
 ### Feat
