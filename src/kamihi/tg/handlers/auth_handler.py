@@ -52,4 +52,4 @@ class AuthHandler(BaseHandler):
                 )
                 return False
 
-        return True
+        return self.handler.check_update(update)
