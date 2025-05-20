@@ -9,7 +9,7 @@ License:
 from __future__ import annotations
 
 from inspect import Signature, Parameter
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from logot import Logot, logged
@@ -19,6 +19,7 @@ from telegram.ext import ApplicationHandlerStop, CommandHandler
 from kamihi.bot.models import RegisteredAction
 from kamihi.bot.action import Action
 from kamihi.tg.handlers import AuthHandler
+from kamihi.users import User
 
 
 async def func():
@@ -283,6 +284,39 @@ async def test_action_call_logger(logot: Logot, mock_update, mock_context, kind)
     with pytest.raises(ApplicationHandlerStop):
         await action(mock_update, mock_context)
         assert mock_function.assert_called_once_with(logger=action._logger)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "kind",
+    [
+        Parameter.POSITIONAL_OR_KEYWORD,
+        Parameter.POSITIONAL_ONLY,
+        Parameter.KEYWORD_ONLY,
+    ],
+)
+async def test_action_call_user(logot: Logot, mock_update, mock_context, kind) -> None:
+    """Test the Action class call method with user parameter."""
+    mock_function = AsyncMock()
+    mock_function.__signature__ = Signature([Parameter("user", kind=kind)])
+    mock_function.__name__ = "test_function"
+    mock_function.return_value = "test result"
+
+    mock_user = User(telegram_id=123456789, is_admin=True)
+
+    mock_get_user = AsyncMock()
+    mock_get_user.return_value = mock_user
+    patch("kamihi.bot.action.get_user_from_telegram_id", mock_get_user)
+
+    mock_update.effective_user.id = 123456789
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ApplicationHandlerStop):
+        await action(mock_update, mock_context)
+        assert mock_function.assert_called_once_with(user=mock_user)
 
 
 @pytest.mark.asyncio
