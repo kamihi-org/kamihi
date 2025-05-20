@@ -19,6 +19,7 @@ from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
 from kamihi.tg import reply_text
 from kamihi.tg.handlers import AuthHandler
+from kamihi.users import get_user_from_telegram_id
 
 from .models import RegisteredAction
 from .utils import COMMAND_REGEX
@@ -111,7 +112,7 @@ class Action:
         # Check if the function has valid parameters
         parameters = inspect.signature(self._func).parameters
         for name, param in parameters.items():
-            if name not in ("update", "context", "logger"):
+            if name not in ("update", "context", "logger", "user"):
                 self._logger.warning(
                     "Invalid parameter '{name}' in function",
                     name=name,
@@ -165,6 +166,8 @@ class Action:
                     value = context
                 case "logger":
                     value = self._logger
+                case "user":
+                    value = get_user_from_telegram_id(update.effective_user.id)
                 case _:
                     value = None
 
