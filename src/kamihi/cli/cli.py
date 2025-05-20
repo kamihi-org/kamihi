@@ -6,23 +6,31 @@ License:
 
 """
 
+from pathlib import Path
+
 import typer
 
-from .commands import action_app, init_app, run_app, user_app
+from .commands import action_app, init_app, run_app, user_app, version_app
 
 app = typer.Typer()
+app.add_typer(version_app)
 app.add_typer(action_app, name="action")
 app.add_typer(init_app, name="init")
 app.add_typer(run_app, name="run")
 app.add_typer(user_app, name="user")
 
 
-@app.command()
-def version() -> None:
-    """Print the version of the Kamihi framework and exits."""
-    from kamihi import __version__
+data = {}
 
-    print(__version__)  # noqa: T201
+
+@app.callback()
+def main() -> None:
+    """
+    Kamihi CLI utility.
+
+    This utility provides commands to manage and interact with the Kamihi framework.
+    """
+    data["cwd"] = Path.cwd()
 
 
 if __name__ == "__main__":
