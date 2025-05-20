@@ -1,5 +1,5 @@
 """
-Functional tests for the Kamihi CLI version command.
+Unit tests for the Kamihi CLI version command.
 
 License:
     MIT
