@@ -1,3 +1,9 @@
+## 0.8.0 (2025-05-20)
+
+### Feat
+
+- **bot**: user can now be requested in action function parameters (#48)
+
 ## 0.7.1 (2025-05-18)
 
 ### Fix
