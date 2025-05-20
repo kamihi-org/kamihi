@@ -5,3 +5,7 @@ License:
     MIT
 
 """
+
+from .cli import app
+
+__all__ = ["app"]

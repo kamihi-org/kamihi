@@ -17,5 +17,13 @@ app.add_typer(run_app, name="run")
 app.add_typer(user_app, name="user")
 
 
+@app.command()
+def version() -> None:
+    """Print the version of the Kamihi framework and exits."""
+    from kamihi import __version__
+
+    print(__version__)  # noqa: T201
+
+
 if __name__ == "__main__":
     app()
