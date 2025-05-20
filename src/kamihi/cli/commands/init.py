@@ -6,6 +6,55 @@ License:
 
 """
 
+from pathlib import Path
+from typing import Annotated
+
 import typer
+from copier import run_copy
+
+from kamihi import __version__ as kamihi_version
 
 app = typer.Typer()
+
+
+@app.command()
+def init(
+    ctx: typer.Context,
+    name: str = typer.Argument(..., help="Name of the project."),
+    path: Annotated[
+        Path | None,
+        typer.Option(
+            exists=True,
+            file_okay=False,
+            dir_okay=True,
+            writable=True,
+            resolve_path=True,
+            help="Path to the project directory.",
+        ),
+    ] = None,
+    description: str = typer.Option(
+        "Kamihi project",
+        help="Description of the project.",
+    ),
+) -> None:
+    """
+    Initialize a new Kamihi project.
+
+    This command creates a new Kamihi project in the current directory or the specified path.
+
+    Args:
+        ctx (typer.Context): The context object for the command.
+        name (str): The name of the project.
+        path (Path | None): The path to the project directory. If not specified, the current directory is used.
+        description (str): A description of the project.
+
+    """
+    run_copy(
+        "gh:kamihi-dev/kamihi-template",
+        str((path or ctx.obj.project) / name),
+        data={
+            "project_name": name,
+            "project_description": description,
+            "kamihi_version": kamihi_version,
+        },
+    )
