@@ -50,7 +50,7 @@ def init(
 
     """
     run_copy(
-        "gh:kamihi-dev/kamihi-template",
+        "gh:kamihi-dev/kamihi-project-template",
         str((path or ctx.obj.project) / name),
         data={
             "project_name": name,
