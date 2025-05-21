@@ -7,18 +7,6 @@ License:
 """
 
 import os
-from pathlib import Path
-
-import pytest
-
-
-@pytest.fixture
-def temp_cwd(tmp_path):
-    """Fixture to change the current working directory to a temporary path."""
-    original_cwd = Path.cwd()
-    os.chdir(tmp_path)
-    yield tmp_path
-    os.chdir(original_cwd)
 
 
 def test_init(local_cli, temp_cwd):
