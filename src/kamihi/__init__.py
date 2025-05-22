@@ -19,25 +19,24 @@ Attributes:
 from loguru import logger
 
 from .base.config import KamihiSettings
-from .base.logging import configure_logging as _configure_logging
-from .bot import Bot as _Bot
+from .base.logging import configure_logging
+from .bot import Bot
 from .users.models import User as BaseUser
 
 __version__ = "0.8.0"
 
 
-bot: _Bot
+bot: Bot
 
 
-def _init_bot() -> _Bot:
+def _init_bot(settings: KamihiSettings) -> Bot:
     """Start the Kamihi bot."""
     global bot
 
-    _settings = KamihiSettings()
-    _configure_logging(logger, _settings.log)
+    configure_logging(logger, settings.log)
     logger.trace("Initialized settings and logging")
 
-    bot = _Bot(_settings)
+    bot = Bot(settings)
     logger.bind(version=__version__).info("Kamihi bot initialized")
     return bot
 
