@@ -9,9 +9,13 @@ License:
 import importlib
 import sys
 from pathlib import Path
+from typing import Annotated
 
 import typer
 from loguru import logger
+
+from kamihi import KamihiSettings, _init_bot
+from kamihi.base.config import LogLevel, WebSettings
 
 app = typer.Typer()
 
@@ -96,15 +100,40 @@ def import_models(models_dir: Path) -> None:
 @app.command()
 def run(
     ctx: typer.Context,
+    config: Annotated[
+        Path | None,
+        typer.Option(
+            ..., help="Path to the configuration file", exists=True, file_okay=True, dir_okay=False, readable=True
+        ),
+    ] = None,
+    log_level: Annotated[
+        LogLevel | None,
+        typer.Option(
+            "--log-level",
+            "-l",
+            help="Set the logging level for all loggers.",
+        ),
+    ] = None,
+    web_host: Annotated[
+        str | None,
+        typer.Option(..., "--host", "-h", help="Host of the admin web panel"),
+    ] = WebSettings.model_fields["host"].default,
+    web_port: Annotated[
+        int | None,
+        typer.Option(..., "--port", "-p", help="Port of the admin web panel"),
+    ] = WebSettings.model_fields["port"].default,
 ) -> None:
-    """
-    Run the Kamihi framework.
+    """Run a project with the Kamihi framework."""
+    settings = KamihiSettings.from_yaml(config) if config else KamihiSettings()
+    settings.web.host = web_host
+    settings.web.port = web_port
+    if log_level:
+        settings.log.stdout_level = log_level
+        settings.log.stderr_level = log_level
+        settings.log.file_level = log_level
+        settings.log.notification_level = log_level
 
-    This command starts the Kamihi framework, allowing you to interact with it.
-    """
-    from kamihi import _init_bot
-
-    bot = _init_bot()
+    bot = _init_bot(settings)
 
     import_actions(ctx.obj.cwd / "actions")
     import_models(ctx.obj.cwd / "models")

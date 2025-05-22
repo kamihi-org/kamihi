@@ -11,8 +11,11 @@ License:
 
 import os
 import re
+from enum import StrEnum
+from pathlib import Path
 
 import pytz
+import yaml
 from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import (
     BaseSettings,
@@ -23,6 +26,32 @@ from pydantic_settings import (
 from pytz.tzinfo import DstTzInfo
 
 _LEVEL_PATTERN = r"^(TRACE|DEBUG|INFO|SUCCESS|WARNING|ERROR|CRITICAL)$"
+
+
+class LogLevel(StrEnum):
+    """
+    Enum for log levels.
+
+    This enum defines the log levels used in the logging configuration.
+
+    Attributes:
+        TRACE: Trace level logging.
+        DEBUG: Debug level logging.
+        INFO: Info level logging.
+        SUCCESS: Success level logging.
+        WARNING: Warning level logging.
+        ERROR: Error level logging.
+        CRITICAL: Critical level logging.
+
+    """
+
+    TRACE = "TRACE"
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    SUCCESS = "SUCCESS"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
 
 
 class LogSettings(BaseModel):
@@ -52,22 +81,22 @@ class LogSettings(BaseModel):
     """
 
     stdout_enable: bool = Field(default=True)
-    stdout_level: str = Field(default="INFO")
+    stdout_level: LogLevel = LogLevel.INFO
     stdout_serialize: bool = Field(default=False)
 
     stderr_enable: bool = Field(default=False)
-    stderr_level: str = Field(default="ERROR")
+    stderr_level: LogLevel = LogLevel.ERROR
     stderr_serialize: bool = Field(default=False)
 
     file_enable: bool = Field(default=False)
-    file_level: str = Field(default="DEBUG")
+    file_level: LogLevel = LogLevel.DEBUG
     file_path: str = Field(default="kamihi.log")
     file_serialize: bool = Field(default=False)
     file_rotation: str = Field(default="1 MB")
     file_retention: str = Field(default="7 days")
 
     notification_enable: bool = Field(default=False)
-    notification_level: str = Field(default="SUCCESS")
+    notification_level: LogLevel = LogLevel.SUCCESS
     notification_urls: list[str] = Field(default_factory=list)
 
     @field_validator("stdout_level", "stderr_level", "file_level", "notification_level")
@@ -262,3 +291,21 @@ class KamihiSettings(BaseSettings):
             ),
             file_secret_settings,
         )
+
+    @classmethod
+    def from_yaml(cls, path: Path) -> "KamihiSettings":
+        """
+        Load settings from a custom YAML file.
+
+        Args:
+            path (Path): The path to the YAML file.
+
+        Returns:
+            KamihiSettings: An instance of KamihiSettings with the loaded settings.
+
+        """
+        if path.exists() and path.is_file():
+            with path.open("r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+            return cls(**data)
+        return cls()
