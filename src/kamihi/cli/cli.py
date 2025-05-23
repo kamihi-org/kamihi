@@ -58,7 +58,7 @@ def main(
     This utility provides commands to manage and interact with the Kamihi framework.
     """
     ctx.obj = Context()
-    if config:
+    if config is not None:
         ctx.obj.config = config
 
 

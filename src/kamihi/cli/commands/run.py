@@ -51,8 +51,8 @@ def import_actions(actions_dir: Path) -> None:
 
     """
     if not actions_dir.is_dir():
-        logger.critical("The 'actions' directory does not exist.")
-        sys.exit(1)
+        logger.warning("No actions directory found.")
+        return
 
     logger.trace(f"Scanning for actions in {actions_dir}")
 
@@ -121,7 +121,7 @@ def run(
     ] = None,
 ) -> None:
     """Run a project with the Kamihi framework."""
-    settings = KamihiSettings.from_yaml(ctx.obj.config) if ctx.obj.config else KamihiSettings()
+    settings = KamihiSettings.from_yaml(ctx.obj.config) if ctx.obj.config is not None else KamihiSettings()
     if web_host:
         settings.web.host = web_host
     if web_port:
