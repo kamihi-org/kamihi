@@ -16,18 +16,17 @@ class TestActionDecoratorNoParentheses:
     """Test the action decorator without parentheses."""
 
     @pytest.fixture
-    def user_code(self):
+    def actions_code(self):
         """Fixture to provide the user code for the bot."""
         return {
-            "main.py": dedent("""\
-                              from kamihi import bot
-                             
-                              @bot.action
-                              async def start():
-                                  return "test"
-                             
-                              bot.start()
-                              """).encode()
+            "start/__init__.py": "".encode(),
+            "start/start.py": dedent("""\
+                from kamihi import bot
+                
+                @bot.action
+                async def start():
+                    return "test"
+            """).encode(),
         }
 
     @pytest.mark.asyncio
@@ -47,22 +46,25 @@ class TestActionMultipleDefined:
     """Test the action decorator with multiple defined actions."""
 
     @pytest.fixture
-    def user_code(self):
+    def actions_code(self):
         """Fixture to provide the user code for the bot."""
         return {
-            "main.py": dedent("""\
-                              from kamihi import bot
-                             
-                              @bot.action
-                              async def start():
-                                  return "Hello! I'm your friendly bot. How can I help you today?"
-                             
-                              @bot.action
-                              async def start2():
-                                  return "Hello! I'm not your friendly bot."
-                             
-                              bot.start()
-                              """).encode()
+            "start/__init__.py": "".encode(),
+            "start/start.py": dedent("""\
+                from kamihi import bot
+                
+                @bot.action
+                async def start():
+                    return "Hello! I'm your friendly bot. How can I help you today?"
+            """).encode(),
+            "start2/__init__.py": "".encode(),
+            "start2/start2.py": dedent("""\
+                from kamihi import bot
+                
+                @bot.action
+                async def start2():
+                    return "Hello! I'm not your friendly bot."
+            """).encode(),
         }
 
     @pytest.mark.asyncio

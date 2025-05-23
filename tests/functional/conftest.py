@@ -15,7 +15,7 @@ from typing import Any, AsyncGenerator, Generator
 import pytest
 from dotenv import load_dotenv
 from mongoengine import connect, disconnect
-from playwright.async_api import Page
+from playwright.async_api import Page, expect
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pytest_docker_tools.wrappers import Container
@@ -123,6 +123,29 @@ def user_code():
     }
 
 
+@pytest.fixture
+def actions_code():
+    """Fixture to provide the actions volume for the bot."""
+    return {
+        "start/__init__.py": "".encode(),
+        "start/start.py": dedent("""\
+            from kamihi import bot
+                              
+            @bot.action
+            async def start():
+                return "test"
+        """).encode(),
+    }
+
+
+@pytest.fixture
+def models_code():
+    """Fixture to provide the actions volume for the bot."""
+    return {
+        "__init__.py": "".encode(),
+    }
+
+
 mongo_image = fetch(repository="mongo:latest")
 """Fixture that fetches the mongodb container image."""
 
@@ -131,12 +154,15 @@ mongo_container = container(image="{mongo_image.id}")
 """Fixture that provides the mongodb container."""
 
 
-kamihi_image = build(path=".", dockerfile="tests/functional/docker/Dockerfile")
+kamihi_image = build(path=".", dockerfile="tests/functional/Dockerfile")
 """Fixture that builds the kamihi container image."""
 
 
-kamihi_volume = volume(initial_content=fxtr("user_code"))
-"""Fixture that creates a volume for the kamihi container."""
+kamihi_actions_volume = volume(initial_content=fxtr("actions_code"))
+"""Fixture that creates a volume for actions in the kamihi container."""
+
+kamihi_models_volume = volume(initial_content=fxtr("models_code"))
+"""Fixture that creates a volume for models in the kamihi container."""
 
 
 kamihi_container = container(
@@ -151,9 +177,10 @@ kamihi_container = container(
         "KAMIHI_WEB__HOST": "0.0.0.0",
     },
     volumes={
-        "{kamihi_volume.name}": {"bind": "/app/src"},
+        "{kamihi_actions_volume.name}": {"bind": "/app/actions"},
+        "{kamihi_models_volume.name}": {"bind": "/app/models"},
     },
-    command="uv run /app/src/main.py",
+    command="kamihi run",
 )
 """Fixture that provides the Kamihi container."""
 
@@ -201,6 +228,8 @@ def kamihi(kamihi_container: Container, wait_for_log, request) -> Generator[Cont
     wait_for_log("SUCCESS", "Started!")
 
     yield kamihi_container
+
+    kamihi_container.kill(signal="SIGKILL")
 
     test_results_path = Path.cwd() / "test-results" / "logs"
     test_results_path.mkdir(parents=True, exist_ok=True)
@@ -250,5 +279,6 @@ async def add_permission_for_user(kamihi: Container, test_settings):
     def _add_permission(user: User, action_name: str):
         action = RegisteredAction.objects(name=action_name).first()
         Permission(action=action, users=[user], roles=[]).save()
+        assert Permission.objects(action=action, users=user).first() is not None
 
     yield _add_permission

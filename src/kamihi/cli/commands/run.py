@@ -117,16 +117,18 @@ def run(
     web_host: Annotated[
         str | None,
         typer.Option(..., "--host", "-h", help="Host of the admin web panel"),
-    ] = WebSettings.model_fields["host"].default,
+    ] = None,
     web_port: Annotated[
         int | None,
         typer.Option(..., "--port", "-p", help="Port of the admin web panel"),
-    ] = WebSettings.model_fields["port"].default,
+    ] = None,
 ) -> None:
     """Run a project with the Kamihi framework."""
     settings = KamihiSettings.from_yaml(config) if config else KamihiSettings()
-    settings.web.host = web_host
-    settings.web.port = web_port
+    if web_host:
+        settings.web.host = web_host
+    if web_port:
+        settings.web.port = web_port
     if log_level:
         settings.log.stdout_level = log_level
         settings.log.stderr_level = log_level

@@ -18,18 +18,25 @@ class TestActionParametersUser:
     """Test action decorator on function with user parameter."""
 
     @pytest.fixture
-    def user_code(self):
+    def actions_code(self):
         """Fixture to provide the user code for the bot."""
         return {
-            "main.py": dedent("""\
-                              from kamihi import bot, BaseUser
+            "start/__init__.py": "".encode(),
+            "start/start.py": dedent("""\
+                from kamihi import bot
                              
-                              @bot.action
-                              async def start(user: BaseUser):
-                                  return f"Hello, user with ID {user.telegram_id}!"
-                             
-                              bot.start()
-                              """).encode()
+                @bot.action
+                async def start(user):
+                    return f"Hello, user with ID {user.telegram_id}!"
+            """).encode(),
+            "start2/__init__.py": "".encode(),
+            "start2/start2.py": dedent("""\
+                from kamihi import bot
+                
+                @bot.action
+                async def start2():
+                    return "Hello! I'm not your friendly bot."
+            """).encode(),
         }
 
     @pytest.mark.asyncio
@@ -47,23 +54,31 @@ class TestActionParametersUserCustom:
     """Test action decorator on function with user parameter and custom user class."""
 
     @pytest.fixture
-    def user_code(self):
+    def actions_code(self):
         """Fixture to provide the user code for the bot."""
         return {
-            "main.py": dedent("""\
-                              from kamihi import bot, BaseUser
-                              from mongoengine import StringField
+            "start/__init__.py": "".encode(),
+            "start/start.py": dedent("""\
+                from kamihi import bot
                              
-                              @bot.user_class
-                              class User(BaseUser):
-                                  name: str = StringField()
-                             
-                              @bot.action
-                              async def start(user: User):
-                                  return f"Hello, {user.name}!"
-                             
-                              bot.start()
-                              """).encode()
+                @bot.action
+                async def start(user):
+                    return f"Hello, {user.name}!"
+            """).encode(),
+        }
+
+    @pytest.fixture
+    def models_code(self):
+        """Fixture to provide the actions volume for the bot."""
+        return {
+            "user.py": dedent("""\
+                from kamihi import bot, BaseUser
+                from mongoengine import StringField
+                 
+                @bot.user_class
+                class User(BaseUser):
+                    name: str = StringField()
+            """).encode(),
         }
 
     @pytest.fixture
