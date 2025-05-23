@@ -37,7 +37,6 @@ def _init_bot(settings: KamihiSettings) -> Bot:
     logger.trace("Initialized settings and logging")
 
     bot = Bot(settings)
-    logger.bind(version=__version__).info("Kamihi bot initialized")
     return bot
 
 
