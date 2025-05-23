@@ -87,4 +87,4 @@ def add(
     user = User.get_model()(telegram_id=telegram_id, is_admin=is_admin, **data)
     user.save()
 
-    lg.bind(telegram_id=telegram_id, is_admin=is_admin, **data).info("User added successfully.")
+    lg.bind(telegram_id=telegram_id, is_admin=is_admin, **data).success("User added successfully.")
