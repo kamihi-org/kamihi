@@ -13,7 +13,7 @@ import os
 import signal
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, AsyncGenerator, Generator
+from typing import Any, AsyncGenerator, Generator, Mapping
 
 import pytest
 from dotenv import load_dotenv
@@ -21,6 +21,7 @@ from mongoengine import connect, disconnect
 from playwright.async_api import Page
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pymongo import MongoClient
 from pytest_docker_tools.wrappers import Container
 from pytest_docker_tools import build, container, fetch, volume, fxtr
 from telethon import TelegramClient
@@ -136,49 +137,64 @@ async def chat(test_settings, tg_client) -> AsyncGenerator[Conversation, Any]:
 
 
 @pytest.fixture
-def user_code():
-    """Fixture to provide the user code for the bot."""
+def pyproject() -> dict:
+    """Fixture to provide the path to the pyproject.toml file."""
     return {
-        "main.py": dedent("""\
-                         from kamihi import bot
-                         bot.start()
-                         """).encode()
+        "pyproject.toml": dedent("""\
+            [project]
+            name = "kftp"
+            version = "0.0.0"
+            description = "kftp"
+            requires-python = ">=3.12"
+            dependencies = [
+                "kamihi",
+            ]
+            
+            [tool.uv.sources]
+            kamihi = { path = "/lib/kamihi" }
+        """).encode()
     }
 
 
 @pytest.fixture
-def actions_code():
-    """Fixture to provide the actions volume for the bot."""
-    return {
-        "start/__init__.py": "".encode(),
-        "start/start.py": dedent("""\
-            from kamihi import bot
-                              
-            @bot.action
-            async def start():
-                return "test"
-        """).encode(),
-    }
+def config_file() -> dict:
+    """Fixture to provide the path to the kamihi.yaml file."""
+    return {"kamihi.yaml": "".encode()}
 
 
 @pytest.fixture
-def models_code():
-    """Fixture to provide the actions volume for the bot."""
-    return {
-        "__init__.py": "".encode(),
-    }
+def actions_folder() -> dict:
+    """Fixture to provide the path to the actions folder."""
+    return {}
 
 
 @pytest.fixture
-def config_code():
-    """Fixture to provide the config volume for the bot."""
-    return "".encode()
+def models_folder() -> dict:
+    """Fixture to provide the path to the models folder."""
+    return {}
+
+
+@pytest.fixture
+def app_folder(pyproject, config_file, actions_folder, models_folder) -> dict:
+    """Fixture to provide the path to the app folder."""
+    res = dict()
+    res.update(pyproject)
+    res.update(config_file)
+    res.update(actions_folder)
+    res.update(models_folder)
+    return res
 
 
 @pytest.fixture
 def run_command():
     """Fixture to provide the command for the bot."""
     return "kamihi run"
+
+
+@pytest.fixture
+def sync_and_run_command(run_command):
+    """Fixture to provide the command for the bot."""
+    return f"uv run {run_command}"
 
 
 mongo_image = fetch(repository="mongo:latest")
@@ -197,16 +213,8 @@ kamihi_image = build(path=".", dockerfile="tests/functional/Dockerfile")
 """Fixture that builds the kamihi container image."""
 
 
-kamihi_actions_volume = volume(initial_content=fxtr("actions_code"))
-"""Fixture that creates a volume for actions in the kamihi container."""
-
-
-kamihi_models_volume = volume(initial_content=fxtr("models_code"))
-"""Fixture that creates a volume for models in the kamihi container."""
-
-
-kamihi_config_volume = volume(initial_content=fxtr("config_code"))
-"""Fixture that creates a volume for the kamihi config in the kamihi container."""
+kamihi_volume = volume(initial_content=fxtr("app_folder"))
+"""Fixture that creates a volume for the kamihi container."""
 
 
 kamihi_container = container(
@@ -221,11 +229,10 @@ kamihi_container = container(
         "KAMIHI_WEB__HOST": "0.0.0.0",
     },
     volumes={
-        "{kamihi_actions_volume.name}": {"bind": "/app/actions"},
-        "{kamihi_models_volume.name}": {"bind": "/app/models"},
-        "{kamihi_config_volume.name}": {"bind": "/app/kamihi.yml"},
+        "{kamihi_volume.name}": {"bind": "/app"},
+        str(Path("~/.cache/uv").expanduser()): {"bind": "/root/.cache/uv"},
     },
-    command="{run_command}",
+    command="{sync_and_run_command}",
 )
 """Fixture that provides the Kamihi container."""
 
@@ -235,7 +242,7 @@ def wait_for_log(kamihi_container):
     """Fixture that provides a function to wait for specific logs in the Kamihi container."""
 
     @timeout(5)
-    def _wait_for_log(level: str, message: str) -> dict:
+    def _wait_for_log(level: str, message: str, stream: Generator = None) -> dict | None:
         """
         Wait for a specific log entry in the Kamihi container.
 
@@ -250,7 +257,9 @@ def wait_for_log(kamihi_container):
         Returns:
             dict: The log entry that matches the specified level and message.
         """
-        for line in kamihi_container._container.logs(stream=True):
+        if stream is None:
+            stream = kamihi_container._container.logs(stream=True)
+        for line in stream:
             try:
                 log_entry = json.loads(line.decode().strip())
                 if isinstance(log_entry, dict) and "record" in log_entry:
@@ -270,6 +279,7 @@ def kamihi(kamihi_container: Container, wait_for_log, request) -> Generator[Cont
 
     yield kamihi_container
 
+    kamihi_container.kill(signal="SIGINT")
     kamihi_container.kill(signal="SIGINT")
     wait_for_log("SUCCESS", "Stopped!")
 
@@ -294,33 +304,40 @@ async def admin_page(kamihi: Container, wait_for_log, page) -> Page:
     return page
 
 
-@pytest.fixture(autouse=True)
-def mongodb(kamihi: Container, mongo_container: Container) -> Generator[None, Any, None]:
+@pytest.fixture
+def mongodb(kamihi: Container, mongo_container: Container) -> Generator[MongoClient, None, None]:
     """Fixture that provides the MongoDB container."""
-    connect(host=f"mongodb://{mongo_container.ips.primary}/kamihi", alias="default")
+    client = MongoClient(f"mongodb://{mongo_container.ips.primary}:27017")
 
-    yield
+    yield client.kamihi
 
-    disconnect()
+    client.close()
 
 
 @pytest.fixture
-async def user_in_db(kamihi: Container, test_settings):
+def user_custom_data():
+    """Fixture to provide the user custom data."""
+    return {}
+
+
+@pytest.fixture
+async def user_in_db(kamihi: Container, test_settings, user_custom_data, wait_for_log, mongodb):
     """Fixture that creates a user in the MongoDB database."""
-    user = User(telegram_id=test_settings.user_id, is_admin=False).save()
+    _, log_stream = kamihi.exec_run(
+        f"kamihi user add {test_settings.user_id} --data '{json.dumps(user_custom_data)}'", stream=True
+    )
+    wait_for_log("SUCCESS", "User added successfully.", stream=log_stream)
 
-    yield user
-
-    user.delete()
+    yield mongodb.user.find_one({"telegram_id": test_settings.user_id})
 
 
 @pytest.fixture
-async def add_permission_for_user(kamihi: Container, test_settings):
+async def add_permission_for_user(kamihi: Container, test_settings, mongodb):
     """Fixture that returns a function to add permissions to a user for an action in the MongoDB database."""
 
-    def _add_permission(user: User, action_name: str):
-        action = RegisteredAction.objects(name=action_name).first()
-        Permission(action=action, users=[user], roles=[]).save()
-        assert Permission.objects(action=action, users=user).first() is not None
+    def _add_permission(user: dict, action_name: str):
+        action_id = mongodb.registered_action.find_one({"name": action_name})["_id"]
+        user_id = mongodb.user.find_one({"telegram_id": user["telegram_id"]})["_id"]
+        mongodb.permission.insert_one({"action": action_id, "users": [user_id], "roles": []})
 
     yield _add_permission
