@@ -73,19 +73,23 @@ def import_actions(actions_dir: Path) -> None:
             lg.error(f"Action directory found, but no '__init__.py' file exists.")
 
 
-def import_models(models_dir: Path) -> None:
+def import_models(models_dir: Path) -> bool:
     """
     Import all Python files from a specified directory.
 
     Args:
         models_dir (str): The path to the directory containing Python files.
 
+    Returns:
+        bool: True if models were imported successfully, False otherwise.
+
     """
     if not models_dir.is_dir():
-        logger.critical("The 'models' directory does not exist.")
-        sys.exit(1)
+        logger.debug("No models directory found.")
+        return False
 
     logger.trace(f"Scanning for models in {models_dir}")
+    res = False
 
     for model_file in models_dir.iterdir():
         model_file: Path
@@ -95,17 +99,14 @@ def import_models(models_dir: Path) -> None:
         if model_file.is_file() and model_file.suffix == ".py":
             lg.trace(f"Importing model from {model_file}")
             import_file(model_file, f"kamihi.models.{model_name}")
+            res = True
+
+    return res
 
 
 @app.command()
 def run(
     ctx: typer.Context,
-    config: Annotated[
-        Path | None,
-        typer.Option(
-            ..., help="Path to the configuration file", exists=True, file_okay=True, dir_okay=False, readable=True
-        ),
-    ] = None,
     log_level: Annotated[
         LogLevel | None,
         typer.Option(
@@ -124,7 +125,7 @@ def run(
     ] = None,
 ) -> None:
     """Run a project with the Kamihi framework."""
-    settings = KamihiSettings.from_yaml(config) if config else KamihiSettings()
+    settings = KamihiSettings.from_yaml(ctx.obj.config) if ctx.obj.config else KamihiSettings()
     if web_host:
         settings.web.host = web_host
     if web_port:

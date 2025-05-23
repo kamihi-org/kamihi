@@ -7,6 +7,7 @@ License:
 """
 
 from pathlib import Path
+from typing import Annotated
 
 import typer
 
@@ -32,11 +33,24 @@ class Context:
         self.cwd: Path = Path.cwd()
         self.templates: Path = Path(__file__).parent / "templates"
         self.project: Path = self.cwd
+        self.config: Path = self.project / "kamihi.yaml"
 
 
 @app.callback()
 def main(
     ctx: typer.Context,
+    config: Annotated[
+        Path | None,
+        typer.Option(
+            ...,
+            help="Path to the Kamihi configuration file",
+            exists=True,
+            file_okay=True,
+            dir_okay=False,
+            readable=True,
+            show_default="kamihi.yaml",
+        ),
+    ] = None,
 ) -> None:
     """
     Kamihi CLI utility.
@@ -44,6 +58,8 @@ def main(
     This utility provides commands to manage and interact with the Kamihi framework.
     """
     ctx.obj = Context()
+    if config:
+        ctx.obj.config = config
 
 
 if __name__ == "__main__":
