@@ -6,8 +6,11 @@ License:
 
 """
 
+import errno
+import functools
 import json
-import time
+import os
+import signal
 from pathlib import Path
 from textwrap import dedent
 from typing import Any, AsyncGenerator, Generator
@@ -15,7 +18,7 @@ from typing import Any, AsyncGenerator, Generator
 import pytest
 from dotenv import load_dotenv
 from mongoengine import connect, disconnect
-from playwright.async_api import Page, expect
+from playwright.async_api import Page
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pytest_docker_tools.wrappers import Container
@@ -25,7 +28,27 @@ from telethon.sessions import StringSession
 from telethon.tl.custom import Conversation
 
 from kamihi.bot.models import RegisteredAction
-from kamihi.users import User, Permission
+from kamihi.users.models import User, Permission
+
+
+def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
+    def decorator(func):
+        def _handle_timeout(signum, frame):
+            raise TimeoutError(error_message)
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            signal.signal(signal.SIGALRM, _handle_timeout)
+            signal.alarm(seconds)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                signal.alarm(0)
+            return result
+
+        return wrapper
+
+    return decorator
 
 
 class TestingSettings(BaseSettings):
@@ -146,11 +169,27 @@ def models_code():
     }
 
 
+@pytest.fixture
+def config_code():
+    """Fixture to provide the config volume for the bot."""
+    return "".encode()
+
+
+@pytest.fixture
+def run_command():
+    """Fixture to provide the command for the bot."""
+    return "kamihi run"
+
+
 mongo_image = fetch(repository="mongo:latest")
 """Fixture that fetches the mongodb container image."""
 
 
-mongo_container = container(image="{mongo_image.id}")
+mongo_volume = volume()
+"""Fixture that creates a volume for the mongodb container."""
+
+
+mongo_container = container(image="{mongo_image.id}", volumes={"{mongo_volume.name}": {"bind": "/data/db"}})
 """Fixture that provides the mongodb container."""
 
 
@@ -161,8 +200,13 @@ kamihi_image = build(path=".", dockerfile="tests/functional/Dockerfile")
 kamihi_actions_volume = volume(initial_content=fxtr("actions_code"))
 """Fixture that creates a volume for actions in the kamihi container."""
 
+
 kamihi_models_volume = volume(initial_content=fxtr("models_code"))
 """Fixture that creates a volume for models in the kamihi container."""
+
+
+kamihi_config_volume = volume(initial_content=fxtr("config_code"))
+"""Fixture that creates a volume for the kamihi config in the kamihi container."""
 
 
 kamihi_container = container(
@@ -179,8 +223,9 @@ kamihi_container = container(
     volumes={
         "{kamihi_actions_volume.name}": {"bind": "/app/actions"},
         "{kamihi_models_volume.name}": {"bind": "/app/models"},
+        "{kamihi_config_volume.name}": {"bind": "/app/kamihi.yml"},
     },
-    command="kamihi run",
+    command="{run_command}",
 )
 """Fixture that provides the Kamihi container."""
 
@@ -189,7 +234,8 @@ kamihi_container = container(
 def wait_for_log(kamihi_container):
     """Fixture that provides a function to wait for specific logs in the Kamihi container."""
 
-    def _wait_for_log(level: str, message: str, timeout: int = 5) -> dict:
+    @timeout(5)
+    def _wait_for_log(level: str, message: str) -> dict:
         """
         Wait for a specific log entry in the Kamihi container.
 
@@ -200,24 +246,19 @@ def wait_for_log(kamihi_container):
         Args:
             level (str): The log level to wait for (e.g., "INFO", "ERROR").
             message (str): The message to wait for in the log entry.
-            timeout (int): The maximum time to wait for the log entry (in seconds).
 
         Returns:
             dict: The log entry that matches the specified level and message.
         """
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            for line in kamihi_container.logs().split("\n"):
-                try:
-                    log_entry = json.loads(line.strip())
-                    if isinstance(log_entry, dict) and "record" in log_entry:
-                        # Check if the log entry matches the expected level and message
-                        if log_entry["record"]["level"]["name"] == level and message in log_entry["record"]["message"]:
-                            return log_entry
-                except json.JSONDecodeError:
-                    pass
-            time.sleep(0.1)
-        raise TimeoutError(f"Timeout waiting for {level} log with message '{message}' after {timeout} seconds.")
+        for line in kamihi_container._container.logs(stream=True):
+            try:
+                log_entry = json.loads(line.decode().strip())
+                if isinstance(log_entry, dict) and "record" in log_entry:
+                    # Check if the log entry matches the expected level and message
+                    if log_entry["record"]["level"]["name"] == level and message in log_entry["record"]["message"]:
+                        return log_entry
+            except json.JSONDecodeError:
+                pass
 
     return _wait_for_log
 
@@ -229,7 +270,8 @@ def kamihi(kamihi_container: Container, wait_for_log, request) -> Generator[Cont
 
     yield kamihi_container
 
-    kamihi_container.kill(signal="SIGKILL")
+    kamihi_container.kill(signal="SIGINT")
+    wait_for_log("SUCCESS", "Stopped!")
 
     test_results_path = Path.cwd() / "test-results" / "logs"
     test_results_path.mkdir(parents=True, exist_ok=True)
