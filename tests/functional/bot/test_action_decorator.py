@@ -12,15 +12,13 @@ import pytest
 from telethon.tl.custom import Conversation
 
 
-class TestActionDecoratorNoParentheses:
-    """Test the action decorator without parentheses."""
-
-    @pytest.fixture
-    def actions_code(self):
-        """Fixture to provide the user code for the bot."""
-        return {
-            "start/__init__.py": "".encode(),
-            "start/start.py": dedent("""\
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        {
+            "actions/start/__init__.py": "".encode(),
+            "actions/start/start.py": dedent("""\
                 from kamihi import bot
                 
                 @bot.action
@@ -28,37 +26,35 @@ class TestActionDecoratorNoParentheses:
                     return "test"
             """).encode(),
         }
+    ],
+)
+async def test_action_decorator_no_parentheses(
+    kamihi, user_in_db, add_permission_for_user, chat: Conversation, actions_folder
+):
+    """Test the action decorator without parentheses."""
+    add_permission_for_user(user_in_db, "start")
 
-    @pytest.mark.asyncio
-    async def test_action_decorator_no_parentheses(
-        self, kamihi, user_in_db, add_permission_for_user, chat: Conversation
-    ):
-        """Test the action decorator without parentheses."""
-        add_permission_for_user(user_in_db, "start")
+    await chat.send_message("/start")
+    response = await chat.get_response()
 
-        await chat.send_message("/start")
-        response = await chat.get_response()
-
-        assert response.text == "test"
+    assert response.text == "test"
 
 
-class TestActionMultipleDefined:
-    """Test the action decorator with multiple defined actions."""
-
-    @pytest.fixture
-    def actions_code(self):
-        """Fixture to provide the user code for the bot."""
-        return {
-            "start/__init__.py": "".encode(),
-            "start/start.py": dedent("""\
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        {
+            "actions/start/__init__.py": "".encode(),
+            "actions/start/start.py": dedent("""\
                 from kamihi import bot
                 
                 @bot.action
                 async def start():
                     return "Hello! I'm your friendly bot. How can I help you today?"
             """).encode(),
-            "start2/__init__.py": "".encode(),
-            "start2/start2.py": dedent("""\
+            "actions/start2/__init__.py": "".encode(),
+            "actions/start2/start2.py": dedent("""\
                 from kamihi import bot
                 
                 @bot.action
@@ -66,19 +62,19 @@ class TestActionMultipleDefined:
                     return "Hello! I'm not your friendly bot."
             """).encode(),
         }
+    ],
+)
+async def test_action_multiple_defined(kamihi, user_in_db, add_permission_for_user, chat: Conversation, actions_folder):
+    """Test the action decorator with multiple defined actions."""
+    add_permission_for_user(user_in_db, "start")
+    add_permission_for_user(user_in_db, "start2")
 
-    @pytest.mark.asyncio
-    async def test_action_multiple_defined(self, kamihi, user_in_db, add_permission_for_user, chat: Conversation):
-        """Test the action decorator with multiple defined actions."""
-        add_permission_for_user(user_in_db, "start")
-        add_permission_for_user(user_in_db, "start2")
+    await chat.send_message("/start")
+    response = await chat.get_response()
 
-        await chat.send_message("/start")
-        response = await chat.get_response()
+    assert response.text == "Hello! I'm your friendly bot. How can I help you today?"
 
-        assert response.text == "Hello! I'm your friendly bot. How can I help you today?"
+    await chat.send_message("/start2")
+    response = await chat.get_response()
 
-        await chat.send_message("/start2")
-        response = await chat.get_response()
-
-        assert response.text == "Hello! I'm not your friendly bot."
+    assert response.text == "Hello! I'm not your friendly bot."

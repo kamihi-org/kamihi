@@ -10,8 +10,6 @@ import pytest
 
 
 @pytest.mark.parametrize("run_command", ["kamihi run"])
-def test_run(kamihi, wait_for_log):
+def test_run(kamihi, wait_for_log, run_command):
     """Test the run command."""
     wait_for_log("SUCCESS", "Started!")
-    files = kamihi.get_files("/app")
-    assert files["kamihi.yml"] == b""

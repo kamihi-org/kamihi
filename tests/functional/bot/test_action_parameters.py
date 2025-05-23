@@ -14,96 +14,77 @@ from pytest_docker_tools.wrappers import Container
 from telethon.tl.custom import Conversation
 
 
-class TestActionParametersUser:
-    """Test action decorator on function with user parameter."""
-
-    @pytest.fixture
-    def actions_code(self):
-        """Fixture to provide the user code for the bot."""
-        return {
-            "start/__init__.py": "".encode(),
-            "start/start.py": dedent("""\
-                from kamihi import bot
-                             
-                @bot.action
-                async def start(user):
-                    return f"Hello, user with ID {user.telegram_id}!"
-            """).encode(),
-            "start2/__init__.py": "".encode(),
-            "start2/start2.py": dedent("""\
-                from kamihi import bot
-                
-                @bot.action
-                async def start2():
-                    return "Hello! I'm not your friendly bot."
-            """).encode(),
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        {
+            "actions/start/__init__.py": "".encode(),
+            "actions/start/start.py": dedent("""\
+            from kamihi import bot
+                         
+            @bot.action
+            async def start(user):
+                return f"Hello, user with ID {user.telegram_id}!"
+        """).encode(),
         }
+    ],
+)
+async def test_action_parameter_user(kamihi, user_in_db, add_permission_for_user, chat: Conversation, actions_folder):
+    """Test the action decorator without parentheses."""
+    add_permission_for_user(user_in_db, "start")
 
-    @pytest.mark.asyncio
-    async def test_action_parameter_user(self, kamihi, user_in_db, add_permission_for_user, chat: Conversation):
-        """Test the action decorator without parentheses."""
-        add_permission_for_user(user_in_db, "start")
+    await chat.send_message("/start")
+    response = await chat.get_response()
 
-        await chat.send_message("/start")
-        response = await chat.get_response()
-
-        assert response.text == f"Hello, user with ID {user_in_db.telegram_id}!"
+    assert response.text == f"Hello, user with ID {user_in_db['telegram_id']}!"
 
 
-class TestActionParametersUserCustom:
-    """Test action decorator on function with user parameter and custom user class."""
-
-    @pytest.fixture
-    def actions_code(self):
-        """Fixture to provide the user code for the bot."""
-        return {
-            "start/__init__.py": "".encode(),
-            "start/start.py": dedent("""\
-                from kamihi import bot
-                             
-                @bot.action
-                async def start(user):
-                    return f"Hello, {user.name}!"
-            """).encode(),
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        {
+            "actions/start/__init__.py": "".encode(),
+            "actions/start/start.py": dedent("""\
+            from kamihi import bot
+                         
+            @bot.action
+            async def start(user):
+                return f"Hello, {user.name}!"
+        """).encode(),
         }
-
-    @pytest.fixture
-    def models_code(self):
-        """Fixture to provide the actions volume for the bot."""
-        return {
-            "user.py": dedent("""\
+    ],
+)
+@pytest.mark.parametrize(
+    "models_folder",
+    [
+        {
+            "models/user.py": dedent("""\
                 from kamihi import bot, BaseUser
                 from mongoengine import StringField
                  
                 @bot.user_class
-                class User(BaseUser):
+                class MyCustomUser(BaseUser):
                     name: str = StringField()
             """).encode(),
         }
+    ],
+)
+@pytest.mark.parametrize("user_custom_data", [{"name": "John Doe"}])
+async def test_action_parameter_user_custom(
+    kamihi,
+    user_in_db,
+    add_permission_for_user,
+    chat: Conversation,
+    actions_folder,
+    models_folder,
+    user_custom_data,
+):
+    """Test the action decorator without parentheses."""
+    add_permission_for_user(user_in_db, "start")
 
-    @pytest.fixture
-    async def user_in_db(self, kamihi: Container, test_settings):
-        """Fixture that creates a user in the MongoDB database."""
-        from kamihi import BaseUser
+    await chat.send_message("/start")
+    response = await chat.get_response()
 
-        class User(BaseUser):
-            name: str = StringField()
-
-        user = User(
-            telegram_id=test_settings.user_id,
-            name="John Doe",
-        ).save()
-
-        yield user
-
-        user.delete()
-
-    @pytest.mark.asyncio
-    async def test_action_parameter_user_custom(self, kamihi, user_in_db, add_permission_for_user, chat: Conversation):
-        """Test the action decorator without parentheses."""
-        add_permission_for_user(user_in_db, "start")
-
-        await chat.send_message("/start")
-        response = await chat.get_response()
-
-        assert response.text == f"Hello, {user_in_db.name}!"
+    assert response.text == f"Hello, {user_in_db['name']}!"

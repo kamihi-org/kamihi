@@ -8,23 +8,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Using copier, generate a project from the template.
-RUN uvx copier copy gh:kamihi-dev/kamihi-project-template /app --data project_name=kftb --data project_description=kftb
-WORKDIR /app
-
-# Remove example files
-RUN rm -rf /app/actions/start /app/actions/models/user.py /app/kamihi.yml
-
-# Point the template to the local kamihi library
-RUN echo '\n[tool.uv.sources]\nkamihi = { path = "/lib/kamihi" }' >> pyproject.toml
-
 # Copy the current local version of Kamihi to the image.
 COPY . /lib/kamihi
 
-# Install the template project dependencies.
+# Add environment variables for future dependencies installation.
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
-
-RUN uv sync --no-dev
-
 ENV PATH="/app/.venv/bin:$PATH"
+
+# Sets the working directory to /app.
+WORKDIR /app
