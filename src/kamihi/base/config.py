@@ -307,5 +307,6 @@ class KamihiSettings(BaseSettings):
         if path.exists() and path.is_file():
             with path.open("r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
-            return cls(**data)
+            if data and isinstance(data, dict):
+                return cls(**data)
         return cls()
