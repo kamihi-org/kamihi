@@ -70,7 +70,7 @@ def add(
         **data or {},
     )
 
-    models_imported = import_models(ctx.obj.cwd / "models")
+    import_models(ctx.obj.cwd / "models")
 
     if User.get_model() == User:
         lg.warning("No custom user model found. Using default User model and ignoring extra data provided.")

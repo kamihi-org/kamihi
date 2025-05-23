@@ -73,7 +73,7 @@ def import_actions(actions_dir: Path) -> None:
             lg.error(f"Action directory found, but no '__init__.py' file exists.")
 
 
-def import_models(models_dir: Path) -> bool:
+def import_models(models_dir: Path) -> None:
     """
     Import all Python files from a specified directory.
 
@@ -86,10 +86,9 @@ def import_models(models_dir: Path) -> bool:
     """
     if not models_dir.is_dir():
         logger.debug("No models directory found.")
-        return False
+        return
 
     logger.trace(f"Scanning for models in {models_dir}")
-    res = False
 
     for model_file in models_dir.iterdir():
         model_file: Path
@@ -99,9 +98,6 @@ def import_models(models_dir: Path) -> bool:
         if model_file.is_file() and model_file.suffix == ".py":
             lg.trace(f"Importing model from {model_file}")
             import_file(model_file, f"kamihi.models.{model_name}")
-            res = True
-
-    return res
 
 
 @app.command()
