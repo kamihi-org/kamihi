@@ -219,7 +219,6 @@ kamihi_volume = volume(initial_content=fxtr("app_folder"))
 
 kamihi_container = container(
     image="{kamihi_image.id}",
-    ports={"4242/tcp": None},
     environment={
         "KAMIHI_TESTING": "True",
         "KAMIHI_TOKEN": "{test_settings.bot_token}",
@@ -273,6 +272,40 @@ def wait_for_log(kamihi_container):
 
 
 @pytest.fixture
+def message_after_stopped(kamihi_container, wait_for_log):
+    """Fixture that provides a function to expect logs after the Kamihi container has stopped."""
+
+    def _expect_after_stopped(message: str, stream: Generator = None) -> None:
+        """
+        Expect a specific log entry after the Kamihi container has stopped.
+
+        This function will check the logs of the Kamihi container for a specific log entry
+        with the given level and message after the container has been stopped.
+
+        Args:
+            level (str): The log level to wait for (e.g., "INFO", "ERROR").
+            message (str): The message to wait for in the log entry.
+        """
+        if stream is None:
+            stream = kamihi_container._container.logs(stream=True)
+
+        # We save them so we are sure the container has stopped
+        # (since then the loop will end)
+        res = []
+        for line in stream:
+            res.append(line.decode().strip())
+
+        for line in res:
+            if message in line:
+                return
+
+        print(f"Logs after stopping the container:\n\n{'\n\t'.join(res)}")
+        raise AssertionError(f"Expected log message '{message}' not found.")
+
+    return _expect_after_stopped
+
+
+@pytest.fixture
 def kamihi(kamihi_container: Container, wait_for_log, request) -> Generator[Container, Any, None]:
     """Fixture that provides the Kamihi container after ensuring it is ready."""
     wait_for_log("SUCCESS", "Started!")
@@ -300,7 +333,7 @@ def kamihi(kamihi_container: Container, wait_for_log, request) -> Generator[Cont
 async def admin_page(kamihi: Container, wait_for_log, page) -> Page:
     """Fixture that provides the admin page of the Kamihi web interface."""
     wait_for_log("TRACE", "Uvicorn running on http://0.0.0.0:4242 (Press CTRL+C to quit)")
-    await page.goto(f"http://127.0.0.1:{kamihi.ports['4242/tcp'][0]}/")
+    await page.goto(f"http://{kamihi.ips.primary}:4242/")
     return page
 
 
