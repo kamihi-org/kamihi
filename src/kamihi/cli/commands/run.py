@@ -127,18 +127,18 @@ def run(
     log_level: Annotated[
         LogLevel | None,
         typer.Option(
-            "--log-level",
-            "-l",
-            help="Set the logging level for all loggers.",
+            "--log-level", "-l", help="Set the logging level for console loggers.", show_default=LogLevel.INFO
         ),
     ] = None,
     web_host: Annotated[
         str | None,
-        typer.Option(..., "--host", "-h", help="Host of the admin web panel"),
+        typer.Option(
+            ..., "--host", "-h", help="Host of the admin web panel", callback=host_callback, show_default="localhost"
+        ),
     ] = None,
     web_port: Annotated[
         int | None,
-        typer.Option(..., "--port", "-p", help="Port of the admin web panel"),
+        typer.Option(..., "--port", "-p", help="Port of the admin web panel", min=0, max=65535, show_default="4242"),
     ] = None,
 ) -> None:
     """Run a project with the Kamihi framework."""
