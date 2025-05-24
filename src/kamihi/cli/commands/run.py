@@ -115,7 +115,7 @@ def host_callback(
 
     """
     try:
-        if hostname(value):
+        if hostname(value, may_have_port=False):
             return value
     except ValidationError as e:
         raise typer.BadParameter("Host must be a string.") from e
