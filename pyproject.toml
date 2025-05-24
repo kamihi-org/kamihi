@@ -44,6 +44,7 @@ dependencies = [
     "typer>=0.15.3",
     "types-pytz>=2025.2.0.20250326",
     "uvicorn>=0.34.2",
+    "validators>=0.35.0",
 ]
 
 [project.urls]

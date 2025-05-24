@@ -13,6 +13,7 @@ from typing import Annotated
 
 import typer
 from loguru import logger
+from validators import ValidationError, hostname
 
 from kamihi import KamihiSettings, _init_bot
 from kamihi.base.config import LogLevel, WebSettings
@@ -98,6 +99,26 @@ def import_models(models_dir: Path) -> None:
         if model_file.is_file() and model_file.suffix == ".py":
             lg.trace(f"Importing model from {model_file}")
             import_file(model_file, f"kamihi.models.{model_name}")
+
+
+def host_callback(
+    value: str | None,
+) -> str | None:
+    """
+    Ensure the host value is valid.
+
+    Args:
+        value (str | None): The host value.
+
+    Returns:
+        str | None: The validated host value.
+
+    """
+    try:
+        if hostname(value):
+            return value
+    except ValidationError as e:
+        raise typer.BadParameter("Host must be a string.") from e
 
 
 @app.command()
