@@ -244,7 +244,7 @@ class KamihiContainer(Container):
             stream = self.logs(stream=True)
         for line in stream:
             line = line.decode().strip()
-            res.append(line)
+            print("\t" + line)
             if parse_json:
                 log_entry = self.parse_log_json(line)
                 if (
@@ -261,10 +261,6 @@ class KamihiContainer(Container):
                 log_entry = line
                 if message in log_entry:
                     return log_entry
-
-        print("\nCommand logs:")
-        print("\t" + "\n\t".join(res))
-        raise EndOfLogsException()
 
     def wait_for_message(self, message: str, stream: CancellableStream = None) -> str:
         """
