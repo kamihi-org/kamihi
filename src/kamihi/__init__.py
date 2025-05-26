@@ -31,7 +31,7 @@ bot: Bot
 
 def _init_bot(settings: KamihiSettings) -> Bot:
     """Start the Kamihi bot."""
-    global bot
+    global bot  # skipcq: PYL-W0603
 
     configure_logging(logger, settings.log)
     logger.trace("Initialized settings and logging")
