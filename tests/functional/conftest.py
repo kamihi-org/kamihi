@@ -276,7 +276,7 @@ class KamihiContainer(Container):
     def assert_logged(self, level: str, message: str) -> dict | None:
         """Assert that the log entry was found."""
         for line in self.logs():
-            log_entry = self.parse_log_json(line.decode())
+            log_entry = self.parse_log_json(line)
             if (
                 log_entry
                 and log_entry["record"]["level"]["name"] == level
