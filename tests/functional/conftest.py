@@ -239,25 +239,35 @@ class KamihiContainer(Container):
         Returns:
             dict: The log entry that matches the specified level and message.
         """
+        res = []
         if stream is None:
             stream = self.logs(stream=True)
         for line in stream:
+            line = line.decode().strip()
+            res.append(line)
             if parse_json:
-                log_entry = self.parse_log_json(line.decode())
+                log_entry = self.parse_log_json(line)
                 if (
                     log_entry
                     and log_entry["record"]["level"]["name"] == level
                     and message in log_entry["record"]["message"]
                 ):
                     if extra_values:
-                        if all(item in log_entry["record"].get("extra", {}).items() for item in extra_values.items()):
+                        if all(
+                                item in log_entry["record"].get("extra", {}).items()
+                                for item
+                                in extra_values.items()
+                        ):
                             return log_entry
                     else:
                         return log_entry
             else:
-                log_entry = line.decode().strip()
+                log_entry = line
                 if message in log_entry:
                     return log_entry
+
+        print("\nCommand logs:")
+        print("\t" + "\n\t".join(res))
         raise EndOfLogsException()
 
     def wait_for_message(self, message: str, stream: CancellableStream = None) -> str:
