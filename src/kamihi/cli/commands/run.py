@@ -16,7 +16,7 @@ from loguru import logger
 from validators import ValidationError, hostname
 
 from kamihi import KamihiSettings, _init_bot
-from kamihi.base.config import LogLevel, WebSettings
+from kamihi.base.config import LogLevel
 
 app = typer.Typer()
 
@@ -114,11 +114,9 @@ def host_callback(
         str | None: The validated host value.
 
     """
-    try:
-        if hostname(value, may_have_port=False):
-            return value
-    except ValidationError as e:
-        raise typer.BadParameter("Host must be a string.") from e
+    if value and isinstance(hostname(value, may_have_port=False), ValidationError):
+        raise typer.BadParameter("Invalid host value")
+    return value
 
 
 @app.command()
@@ -138,7 +136,7 @@ def run(
     ] = None,
     web_port: Annotated[
         int | None,
-        typer.Option(..., "--port", "-p", help="Port of the admin web panel", min=0, max=65535, show_default="4242"),
+        typer.Option(..., "--port", "-p", help="Port of the admin web panel", min=1024, max=65535, show_default="4242"),
     ] = None,
 ) -> None:
     """Run a project with the Kamihi framework."""

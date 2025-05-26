@@ -10,7 +10,10 @@ import errno
 import functools
 import json
 import os
+import queue
 import signal
+import threading
+import time
 from pathlib import Path
 from textwrap import dedent
 from typing import Any, AsyncGenerator, Generator
@@ -28,26 +31,6 @@ from pytest_docker_tools import build, container, fetch, volume, fxtr
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.tl.custom import Conversation
-
-
-def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
-    def decorator(func):
-        def _handle_timeout(signum, frame):
-            raise AssertionError(f"Timed out")
-
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            signal.signal(signal.SIGALRM, _handle_timeout)
-            signal.alarm(seconds)
-            try:
-                result = func(*args, **kwargs)
-            finally:
-                signal.alarm(0)
-            return result
-
-        return wrapper
-
-    return decorator
 
 
 class TestingSettings(BaseSettings):
@@ -226,37 +209,23 @@ class KamihiContainer(Container):
         except json.JSONDecodeError or AssertionError:
             return None
 
-    def wait_for_message(self, message: str, stream: CancellableStream = None) -> str | None:
+    def wait_for_log(
+        self,
+        message: str,
+        level: str = "INFO",
+        stream: CancellableStream = None,
+        timeout: int = 10,
+        parse_json: bool = True,
+    ) -> dict | None:
         """
-        Wait for a specific message in the Kamihi container logs, without parsing it as JSON.
+        Wait for a specific log entry in the Kamihi container.
 
         Args:
-            message (str): The message to wait for.
-            stream (Generator, optional): A generator that yields log lines from the container.
-
-        Returns:
-            dict: The log entry that matches the specified message.
-        """
-        if stream is None:
-            stream = self.logs(stream=True)
-        for line in stream:
-            log_entry = line.decode().strip()
-            if message in log_entry:
-                return log_entry
-        return None
-
-    @timeout(10)
-    def wait_for_log(self, level: str, message: str, stream: CancellableStream = None) -> dict | None:
-        """
-        Wait for a specific JSON log entry in the Kamihi container.
-
-        This method overrides the default wait_for_log method to ensure that
-        the Kamihi container is ready before proceeding with tests.
-
-        Args:
-            level (str): The log level to wait for (e.g., "INFO", "ERROR").
             message (str): The message to wait for in the log entry.
+            level (str): The log level to wait for (e.g., "INFO", "ERROR").
             stream (Generator, optional): A generator that yields log lines from the container.
+            timeout (int): The maximum time to wait for the log entry in seconds.
+            parse_json (bool): Whether to parse the log entry as JSON.
 
         Returns:
             dict: The log entry that matches the specified level and message.
@@ -264,13 +233,32 @@ class KamihiContainer(Container):
         if stream is None:
             stream = self.logs(stream=True)
         for line in stream:
-            log_entry = self.parse_log_json(line.decode())
-            if (
-                log_entry
-                and log_entry["record"]["level"]["name"] == level
-                and message in log_entry["record"]["message"]
-            ):
-                return log_entry
+            if parse_json:
+                log_entry = self.parse_log_json(line.decode())
+                if (
+                        log_entry
+                        and log_entry["record"]["level"]["name"] == level
+                        and message in log_entry["record"]["message"]
+                ):
+                    return log_entry
+            else:
+                log_entry = line.decode().strip()
+                if message in log_entry:
+                    return log_entry
+
+    def wait_for_message(self, message: str, stream: CancellableStream = None, timeout: int = 10) -> str | None:
+        """
+        Wait for a specific message in the Kamihi container logs, without parsing it as JSON.
+
+        Args:
+            message (str): The message to wait for.
+            stream (Generator, optional): A generator that yields log lines from the container.
+            timeout (int): The maximum time to wait for the message in seconds.
+
+        Returns:
+            dict: The log entry that matches the specified message.
+        """
+        return self.wait_for_log(message, stream=stream, timeout=timeout, parse_json=False)
 
     def assert_logged(self, level: str, message: str) -> dict | None:
         """Assert that the log entry was found."""
@@ -301,15 +289,17 @@ class KamihiContainer(Container):
         This method overrides the default wait_until_started method to ensure that
         the Kamihi container is ready before proceeding with tests.
         """
-        self.wait_for_log("SUCCESS", "Started!")
+        self.wait_for_log("Started!", "SUCCESS")
 
-    def run(self, command: str, **kwargs) -> CancellableStream:
+    def run(self, command: str) -> CancellableStream:
         """
         Run a command in the Kamihi container and return the output stream.
         """
-        return self._container.exec_run(command, **kwargs, stream=True).output
+        return self._container.exec_run(command, stream=True).output
 
-    def run_and_wait_for_log(self, command: str, level: str, message: str, **kwargs) -> dict | None:
+    def run_and_wait_for_log(
+        self, command: str, message: str, level: str = "INFO", timeout: int = 10, parse_json: bool = True
+    ) -> dict | None:
         """
         Run a command in the Kamihi container and wait for a specific log entry.
 
@@ -317,30 +307,29 @@ class KamihiContainer(Container):
             command (str): The command to run in the container.
             level (str): The log level to wait for (e.g., "INFO", "ERROR").
             message (str): The message to wait for in the log entry.
-            **kwargs: Additional keyword arguments to pass to the exec_run method.
+            timeout (int): The maximum time to wait for the log entry in seconds.
+            parse_json (bool): Whether to parse the log entry as JSON.
 
         Returns:
             dict: The log entry that matches the specified level and message.
         """
-        stream = self.run(command, **kwargs)
-        return self.wait_for_log(level, message, stream=stream)
+        stream = self.run(command)
+        return self.wait_for_log(message, level, stream=stream, timeout=timeout, parse_json=parse_json)
 
-    def run_and_wait_for_message(self, command: str, message: str, **kwargs) -> dict | None:
+    def run_and_wait_for_message(self, command: str, message: str, timeout: int = 10) -> dict | None:
         """
         Run a command in the Kamihi container and wait for a specific log message.
 
         Args:
             command (str): The command to run in the container.
             message (str): The message to wait for in the log entry.
-            **kwargs: Additional keyword arguments to pass to the exec_run method.
+            timeout (int): The maximum time to wait for the log entry in seconds.
 
         Returns:
             dict: The log entry that matches the specified message.
         """
-        stream = self.run(command, **kwargs)
-        return self.wait_for_message(message, stream=stream)
+        return self.run_and_wait_for_log(command, message, timeout=timeout, parse_json=False)
 
-    @timeout(10)
     def stop(self) -> None:
         """
         Stop the Kamihi container gracefully.
@@ -350,7 +339,7 @@ class KamihiContainer(Container):
         """
         self.kill(signal="SIGINT")
         self.kill(signal="SIGINT")
-        self.wait_for_log("SUCCESS", "Stopped!")
+        self.wait_for_log("Stopped!", "SUCCESS")
 
 
 mongo_image = fetch(repository="mongo:latest")
@@ -394,13 +383,15 @@ kamihi_container = container(
 
 
 @pytest.fixture
-def kamihi(kamihi_container: KamihiContainer, request) -> Generator[Container, None, None]:
+def kamihi(kamihi_container: KamihiContainer, run_command, request) -> Generator[Container, None, None]:
     """Fixture that ensures the Kamihi container is started and ready."""
-    kamihi_container.wait_until_started()
+    if "kamihi run" in run_command:
+        kamihi_container.wait_until_started()
 
     yield kamihi_container
 
-    kamihi_container.stop()
+    if run_command == "kamihi run":
+        kamihi_container.stop()
     if request.node.rep_setup.failed:
         print(f"\nLogs of the container:\n\n{'\n\t'.join(kamihi_container.logs(stream=False))}")
 
@@ -451,3 +442,17 @@ async def add_permission_for_user(test_settings, mongodb):
         mongodb.permission.insert_one({"action": action_id, "users": [user_id], "roles": []})
 
     yield _add_permission
+
+
+@pytest.fixture(scope="session")
+def cleanup():
+    """
+    Fixture to clean up the host environment after tests.
+
+    This fixture is used to remove, containers, volumes, and images created during the tests.
+    """
+    yield
+
+    print(docker.from_env().containers.prune())
+    print(docker.from_env().volumes.prune())
+    print(docker.from_env().images.prune({"dangling": True}))
