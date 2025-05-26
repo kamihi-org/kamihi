@@ -45,7 +45,7 @@ def test_run_log_level_invalid(kamihi: KamihiContainer, level: str):
     """Test the run command with an invalid log level."""
     kamihi.run_and_wait_for_message(
         f"kamihi run --log-level={level}",
-        "Error: Invalid value for '--log-level'",
+        "Invalid value for '--log-level'",
     )
 
 
@@ -78,7 +78,7 @@ def test_run_web_host_invalid(kamihi: KamihiContainer, host):
     """Test the run command with various invalid web host options."""
     kamihi.run_and_wait_for_message(
         f"kamihi run --host={host}",
-        "Error: Invalid value for '--host'",
+        "Invalid value for '--host'",
     )
 
 
@@ -97,5 +97,5 @@ def test_run_web_port_invalid(kamihi: KamihiContainer, port):
     """Test the run command with various invalid web port options."""
     kamihi.run_and_wait_for_message(
         f"kamihi run --port={port}",
-        "Error: Invalid value for '--port'",
+        "Invalid value for '--port'",
     )
