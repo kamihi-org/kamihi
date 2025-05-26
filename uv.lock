@@ -528,6 +528,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-docker-tools" },
     { name = "pytest-playwright-asyncio" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist" },
     { name = "ruff" },
     { name = "telethon" },
@@ -577,6 +578,7 @@ dev = [
     { name = "pytest-cov", specifier = ">=6.0.0" },
     { name = "pytest-docker-tools", specifier = ">=3.1.9" },
     { name = "pytest-playwright-asyncio", specifier = ">=0.7.0" },
+    { name = "pytest-timeout", specifier = ">=2.4.0" },
     { name = "pytest-xdist", specifier = ">=3.6.1" },
     { name = "ruff", specifier = ">=0.11.0" },
     { name = "telethon", specifier = ">=1.40.0" },
@@ -1274,6 +1276,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ce/88/2f61cdaa81552795ff43420b5869af17585bc55432b44ef1aa882251890e/pytest_playwright_asyncio-0.7.0.tar.gz", hash = "sha256:bf811e2164a74cc743394a327b68ee71f3f924b1ea3e29220499c8d7b03f6af1", size = 16706, upload-time = "2025-01-31T11:06:06.43Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/bf/22/9fb8eb62fbc0cfb7c608c4f04b0ee5a4188b05cdead119adc031c0d96593/pytest_playwright_asyncio-0.7.0-py3-none-any.whl", hash = "sha256:f0a41b7f2967f7f514bd499026555eca0b3be6423f78831b86587def8fc50572", size = 16835, upload-time = "2025-01-31T11:06:09.811Z" },
+]
+
+[[package]]
+name = "pytest-timeout"
+version = "2.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ac/82/4c9ecabab13363e72d880f2fb504c5f750433b2b6f16e99f4ec21ada284c/pytest_timeout-2.4.0.tar.gz", hash = "sha256:7e68e90b01f9eff71332b25001f85c75495fc4e3a836701876183c4bcfd0540a", size = 17973, upload-time = "2025-05-05T19:44:34.99Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fa/b6/3127540ecdf1464a00e5a01ee60a1b09175f6913f0644ac748494d9c4b21/pytest_timeout-2.4.0-py3-none-any.whl", hash = "sha256:c42667e5cdadb151aeb5b26d114aff6bdf5a907f176a007a30b940d3d865b5c2", size = 14382, upload-time = "2025-05-05T19:44:33.502Z" },
 ]
 
 [[package]]
