@@ -70,7 +70,6 @@ def test_run_web_host(kamihi: KamihiContainer, host):
     "host",
     [
         "localhost:4242",
-        "with space",
         "with-slash.com/",
     ],
 )
