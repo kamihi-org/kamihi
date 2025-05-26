@@ -151,7 +151,7 @@ def models_folder() -> dict:
 @pytest.fixture
 def app_folder(pyproject, config_file, actions_folder, models_folder) -> dict:
     """Fixture to provide the path to the app folder."""
-    res = dict()
+    res = {}
     res.update(pyproject)
     res.update(config_file)
     res.update(actions_folder)
@@ -179,10 +179,11 @@ class KamihiContainer(Container):
     It allows for additional functionality or customization if needed in the future.
     """
 
-    command_logs: dict[str, list[str]] = dict()
+    command_logs: dict[str, list[str]] = {}
     _container: docker.models.containers.Container
 
-    def parse_log_json(self, line: str) -> dict | None:
+    @staticmethod
+    def parse_log_json(line: str) -> dict | None:
         """
         Parse a log line from the Kamihi container.
 
@@ -200,7 +201,7 @@ class KamihiContainer(Container):
             assert "name" in res["record"]["level"], "Log entry does not contain 'name' key in 'level'"
             assert "message" in res["record"], "Log entry does not contain 'message' key"
             return res
-        except json.JSONDecodeError or AssertionError:
+        except (json.JSONDecodeError, AssertionError):
             return None
 
     def wait_for_log(
@@ -295,9 +296,7 @@ class KamihiContainer(Container):
         self.wait_for_log("Started!", "SUCCESS")
 
     def run(self, command: str) -> CancellableStream:
-        """
-        Run a command in the Kamihi container and return the output stream.
-        """
+        """Run a command in the Kamihi container and return the output stream."""
         return self._container.exec_run(command, stream=True).output
 
     def run_and_wait_for_log(

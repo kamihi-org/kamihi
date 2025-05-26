@@ -7,7 +7,6 @@ License:
 """
 
 import os
-from textwrap import dedent
 
 
 def test_action_new(local_cli, tmp_project):

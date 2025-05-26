@@ -19,7 +19,6 @@ Examples:
 from __future__ import annotations
 
 import sys
-from enum import Enum, StrEnum
 
 import loguru
 from pymongo import monitoring

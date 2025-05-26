@@ -9,8 +9,6 @@ License:
 from textwrap import dedent
 
 import pytest
-from mongoengine import StringField
-from pytest_docker_tools.wrappers import Container
 from telethon.tl.custom import Conversation
 
 

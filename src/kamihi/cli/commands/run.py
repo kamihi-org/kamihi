@@ -71,7 +71,7 @@ def import_actions(actions_dir: Path) -> None:
             else:
                 lg.error(f"Action directory found, but no '{action_name}.py' file exists.")
         elif action_dir.is_dir():
-            lg.error(f"Action directory found, but no '__init__.py' file exists.")
+            lg.error("Action directory found, but no '__init__.py' file exists.")
 
 
 def import_models(models_dir: Path) -> None:
