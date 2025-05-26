@@ -11,16 +11,36 @@ from typing import Annotated
 
 import typer
 from loguru import logger
+from mongoengine import FieldDoesNotExist, ValidationError
 
 from kamihi import KamihiSettings, _init_bot
 from kamihi.cli.commands.run import import_models
-from kamihi.users import get_user_from_telegram_id
 from kamihi.users.models import User
 
 app = typer.Typer()
 
 
-def parse_json(data: str) -> dict:
+def telegram_id_callback(value: int) -> int:
+    """
+    Validate the Telegram ID.
+
+    Args:
+        value (int): The Telegram ID to validate.
+
+    Returns:
+        int: The validated Telegram ID.
+
+    Raises:
+        typer.BadParameter: If the Telegram ID is invalid.
+
+    """
+    if not isinstance(value, int) or value <= 0 or len(str(value)) > 16:
+        msg = "Must be a positive integer with up to 16 digits."
+        raise typer.BadParameter(msg)
+    return value
+
+
+def data_callback(data: str) -> dict:
     """
     Parse a JSON string into a dictionary.
 
@@ -43,10 +63,21 @@ def parse_json(data: str) -> dict:
     return {}
 
 
+def onerror(e: BaseException) -> None:  # noqa: ARG001
+    """
+    Handle errors during user validation.
+
+    Args:
+        e (Exception): The exception raised during validation.
+
+    """
+    raise typer.Exit(1)
+
+
 @app.command()
 def add(
     ctx: typer.Context,
-    telegram_id: Annotated[int, typer.Argument(..., help="Telegram ID of the user")],
+    telegram_id: Annotated[int, typer.Argument(..., help="Telegram ID of the user", callback=telegram_id_callback)],
     is_admin: Annotated[bool, typer.Option("--admin", "-a", help="Is the user an admin?")] = False,  # noqa: FBT002
     data: Annotated[
         str | None,
@@ -55,7 +86,7 @@ def add(
             "-d",
             help="Additional data for the user in JSON format. For use with custom user classes.",
             show_default=False,
-            callback=parse_json,
+            callback=data_callback,
         ),
     ] = None,
 ) -> None:
@@ -64,27 +95,23 @@ def add(
     settings.log.file_enable = False
     settings.log.notification_enable = False
     _init_bot(settings)
-    lg = logger.bind(
-        telegram_id=telegram_id,
-        is_admin=is_admin,
-        **data or {},
-    )
+
+    user_data = data or {}
+    user_data["telegram_id"] = telegram_id
+    user_data["is_admin"] = is_admin
+
+    lg = logger.bind(**user_data)
 
     import_models(ctx.obj.cwd / "models")
 
-    if User.get_model() == User:
-        lg.warning("No custom user model found. Using default User model and ignoring extra data provided.")
-        data = {}
-        lg = logger.bind(
-            telegram_id=telegram_id,
-            is_admin=is_admin,
-        )
+    if User.get_model() == User and data:
+        lg.warning("No custom user model found, ignoring extra data provided.")
+        user_data = {"telegram_id": telegram_id, "is_admin": is_admin}
 
-    if get_user_from_telegram_id(telegram_id):
-        lg.error("User with this Telegram ID already exists.")
-        raise typer.Exit(1)
+    with lg.catch(FieldDoesNotExist, message="Custom user model does not have the field provided.", onerror=onerror):
+        user = User.get_model()(**user_data)
+    with lg.catch(ValidationError, message="User inputted is not valid.", onerror=onerror):
+        user.validate()
+        user.save()
 
-    user = User.get_model()(telegram_id=telegram_id, is_admin=is_admin, **data)
-    user.save()
-
-    lg.bind(telegram_id=telegram_id, is_admin=is_admin, **data).success("User added successfully.")
+    lg.success("User added.")
