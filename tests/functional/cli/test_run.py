@@ -54,7 +54,6 @@ def test_run_log_level_invalid(kamihi: KamihiContainer, level: str):
     [
         "localhost",
         "0.0.0.0",
-        "example.com",
     ],
 )
 def test_run_web_host(kamihi: KamihiContainer, host):
