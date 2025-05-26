@@ -7,23 +7,93 @@ License:
 """
 
 import pytest
-from urllib3.exceptions import ReadTimeoutError
+
+from tests.functional.conftest import KamihiContainer
 
 
-@pytest.mark.parametrize("run_command", ["kamihi run"])
-def test_run(kamihi, wait_for_log, run_command):
+@pytest.fixture
+def run_command():
+    """
+    Override the run command to a simple sleep command so
+    we can test the run functionality without needing
+    the full application to start.
+    """
+    return "sleep infinity"
+
+
+def test_run(kamihi: KamihiContainer):
     """Test the run command."""
-    wait_for_log("SUCCESS", "Started!")
+    kamihi.run_and_wait_for_log(
+        "kamihi run --host=localhost --port=4242",
+        "Started!",
+        "SUCCESS",
+    )
 
 
-@pytest.mark.parametrize("run_command", ["kamihi run --log-level=SUCCESS"])
-def test_run_log_level(kamihi, wait_for_log, run_command):
-    """Test the run command with log level set to SUCCESS."""
-    with pytest.raises(ReadTimeoutError):
-        wait_for_log("TRACE", "Application startup complete.")
+@pytest.mark.parametrize("level", ["TRACE", "DEBUG", "INFO", "SUCCESS"])
+def test_run_log_level(kamihi: KamihiContainer, level: str):
+    """Test the run command with all possible log levels."""
+    kamihi.run_and_wait_for_log(
+        f"kamihi run --log-level={level}",
+        "Started!",
+        "SUCCESS",
+    )
 
 
-@pytest.mark.parametrize("run_command", ["kamihi run --log-level=INVALID"])
-def test_run_invalid_log_level(kamihi_container, run_command, message_after_stopped):
+@pytest.mark.parametrize("level", ["INVALID", "debug", "20"])
+def test_run_log_level_invalid(kamihi: KamihiContainer, level: str):
     """Test the run command with an invalid log level."""
-    message_after_stopped("Invalid value for '--log-level' / '-l': 'INVALID' is not one of")
+    kamihi.run_and_wait_for_message(
+        f"kamihi run --log-level={level}",
+        "Error: Invalid value for '--log-level'",
+    )
+
+
+@pytest.mark.parametrize(
+    "host",
+    [
+        "localhost",
+        "0.0.0.0",
+        "192.168.1.1",
+        "::1",
+        "example.com",
+    ],
+)
+def test_run_web_host(kamihi: KamihiContainer, host):
+    """Test the run command with various valid web host options."""
+    logs = kamihi.run(f"kamihi run --host={host}")
+    kamihi.wait_for_log(f"Web server started on http://{host}:4242", "INFO", stream=logs)
+    kamihi.wait_for_log("Started!", "SUCCESS", stream=logs)
+
+
+@pytest.mark.parametrize(
+    "host",
+    [
+        "localhost:4242",
+        "with space",
+        "with-slash.com/",
+    ],
+)
+def test_run_web_host_invalid(kamihi: KamihiContainer, host):
+    """Test the run command with various invalid web host options."""
+    kamihi.run_and_wait_for_message(
+        f"kamihi run --host={host}",
+        "Error: Invalid value for '--host'",
+    )
+
+
+@pytest.mark.parametrize("port", [1024, 4242, 65535])
+def test_run_web_port(kamihi: KamihiContainer, port):
+    """Test the run command with various valid web port options."""
+    logs = kamihi.run(f"kamihi run --port={port}")
+    kamihi.wait_for_log(f"Web server started on http://localhost:{port}", "INFO", stream=logs)
+    kamihi.wait_for_log("Started!", "SUCCESS", stream=logs)
+
+
+@pytest.mark.parametrize("port", [80, 443, -1, 0, 65536, "invalid", "80.80"])
+def test_run_web_port_invalid(kamihi: KamihiContainer, port):
+    """Test the run command with various invalid web port options."""
+    kamihi.run_and_wait_for_message(
+        f"kamihi run --port={port}",
+        "Error: Invalid value for '--port'",
+    )
