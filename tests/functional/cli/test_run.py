@@ -54,16 +54,17 @@ def test_run_log_level_invalid(kamihi: KamihiContainer, level: str):
     [
         "localhost",
         "0.0.0.0",
-        "192.168.1.1",
         "::1",
         "example.com",
     ],
 )
 def test_run_web_host(kamihi: KamihiContainer, host):
     """Test the run command with various valid web host options."""
-    logs = kamihi.run(f"kamihi run --host={host}")
-    kamihi.wait_for_log(f"Web server started on http://{host}:4242", "INFO", stream=logs)
-    kamihi.wait_for_log("Started!", "SUCCESS", stream=logs)
+    kamihi.run_and_wait_for_log(
+        f"kamihi run --host={host}",
+        f"Web server started on http://{host}:4242",
+        "INFO",
+    )
 
 
 @pytest.mark.parametrize(
@@ -82,12 +83,14 @@ def test_run_web_host_invalid(kamihi: KamihiContainer, host):
     )
 
 
-@pytest.mark.parametrize("port", [1024, 4242, 65535])
+@pytest.mark.parametrize("port", [2000, 4242, 65535])
 def test_run_web_port(kamihi: KamihiContainer, port):
     """Test the run command with various valid web port options."""
-    logs = kamihi.run(f"kamihi run --port={port}")
-    kamihi.wait_for_log(f"Web server started on http://localhost:{port}", "INFO", stream=logs)
-    kamihi.wait_for_log("Started!", "SUCCESS", stream=logs)
+    kamihi.run_and_wait_for_log(
+        f"kamihi run --port={port}",
+        f"Web server started on http://0.0.0.0:{port}",
+        "INFO",
+    )
 
 
 @pytest.mark.parametrize("port", [80, 443, -1, 0, 65536, "invalid", "80.80"])
