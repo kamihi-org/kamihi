@@ -174,8 +174,6 @@ def sync_and_run_command(run_command):
 class EndOfLogsException(Exception):
     """Exception raised when the end of logs is reached without finding the expected log entry."""
 
-    pass
-
 
 class KamihiContainer(Container):
     """
