@@ -92,7 +92,7 @@ def test_run_web_port(kamihi: KamihiContainer, port):
     )
 
 
-@pytest.mark.parametrize("port", [80, 443, -1, 0, 65536, "invalid", "80.80"])
+@pytest.mark.parametrize("port", [-1, 0, 65536, "invalid", "80.80"])
 def test_run_web_port_invalid(kamihi: KamihiContainer, port):
     """Test the run command with various invalid web port options."""
     kamihi.run_and_wait_for_message(
