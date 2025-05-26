@@ -171,6 +171,12 @@ def sync_and_run_command(run_command):
     return f"uv run {run_command}"
 
 
+class EndOfLogsException(Exception):
+    """Exception raised when the end of logs is reached without finding the expected log entry."""
+
+    pass
+
+
 class KamihiContainer(Container):
     """
     Custom container class for Kamihi.
@@ -210,7 +216,7 @@ class KamihiContainer(Container):
         extra_values: dict[str, Any] = None,
         stream: CancellableStream = None,
         parse_json: bool = True,
-    ) -> dict | None:
+    ) -> dict | str:
         """
         Wait for a specific log entry in the Kamihi container.
 
@@ -243,8 +249,9 @@ class KamihiContainer(Container):
                 log_entry = line.decode().strip()
                 if message in log_entry:
                     return log_entry
+        raise EndOfLogsException()
 
-    def wait_for_message(self, message: str, stream: CancellableStream = None) -> str | None:
+    def wait_for_message(self, message: str, stream: CancellableStream = None) -> str:
         """
         Wait for a specific message in the Kamihi container logs, without parsing it as JSON.
 
@@ -267,6 +274,7 @@ class KamihiContainer(Container):
                 and message in log_entry["record"]["message"]
             ):
                 return log_entry
+        raise EndOfLogsException()
 
     def logs(self, stream: bool = True) -> CancellableStream | list[str]:
         """
