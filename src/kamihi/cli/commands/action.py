@@ -18,15 +18,7 @@ def new(
     name: str = typer.Argument(..., help="Name of the new action."),
     description: str = typer.Option("", help="Description of the new action."),
 ) -> None:
-    """
-    Create a new action.
-
-    Args:
-        ctx (typer.Context): The context object for the command.
-        name (str): Name of the new action.
-        description (str, optional): Description of the new action.
-
-    """
+    """Create a new action."""
     run_copy(
         "gh:kamihi-dev/kamihi-action-template",
         str(ctx.obj.project),

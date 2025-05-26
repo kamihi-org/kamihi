@@ -37,18 +37,7 @@ def init(
         help="Description of the project.",
     ),
 ) -> None:
-    """
-    Initialize a new Kamihi project.
-
-    This command creates a new Kamihi project in the current directory or the specified path.
-
-    Args:
-        ctx (typer.Context): The context object for the command.
-        name (str): The name of the project.
-        path (Path | None): The path to the project directory. If not specified, the current directory is used.
-        description (str): A description of the project.
-
-    """
+    """Initialize a new Kamihi project."""
     run_copy(
         "gh:kamihi-dev/kamihi-project-template",
         str((path or ctx.obj.project) / name),

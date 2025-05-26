@@ -13,7 +13,7 @@ app = typer.Typer()
 
 @app.command()
 def version() -> None:
-    """Print the version of the Kamihi framework and exits."""
+    """Print the version and exit."""
     from kamihi import __version__
 
     print(__version__)  # noqa: T201
