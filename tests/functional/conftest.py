@@ -213,8 +213,8 @@ class KamihiContainer(Container):
         self,
         message: str,
         level: str = "INFO",
+        extra_values: dict[str, Any] = None,
         stream: CancellableStream = None,
-        timeout: int = 10,
         parse_json: bool = True,
     ) -> dict | None:
         """
@@ -223,8 +223,8 @@ class KamihiContainer(Container):
         Args:
             message (str): The message to wait for in the log entry.
             level (str): The log level to wait for (e.g., "INFO", "ERROR").
+            extra_values (dict[str, Any], optional): Additional key-value pairs to match in the log entry's extra dictionary.
             stream (Generator, optional): A generator that yields log lines from the container.
-            timeout (int): The maximum time to wait for the log entry in seconds.
             parse_json (bool): Whether to parse the log entry as JSON.
 
         Returns:
@@ -236,29 +236,32 @@ class KamihiContainer(Container):
             if parse_json:
                 log_entry = self.parse_log_json(line.decode())
                 if (
-                        log_entry
-                        and log_entry["record"]["level"]["name"] == level
-                        and message in log_entry["record"]["message"]
+                    log_entry
+                    and log_entry["record"]["level"]["name"] == level
+                    and message in log_entry["record"]["message"]
                 ):
-                    return log_entry
+                    if extra_values:
+                        if all(item in log_entry["record"].get("extra", {}).items() for item in extra_values.items()):
+                            return log_entry
+                    else:
+                        return log_entry
             else:
                 log_entry = line.decode().strip()
                 if message in log_entry:
                     return log_entry
 
-    def wait_for_message(self, message: str, stream: CancellableStream = None, timeout: int = 10) -> str | None:
+    def wait_for_message(self, message: str, stream: CancellableStream = None) -> str | None:
         """
         Wait for a specific message in the Kamihi container logs, without parsing it as JSON.
 
         Args:
             message (str): The message to wait for.
             stream (Generator, optional): A generator that yields log lines from the container.
-            timeout (int): The maximum time to wait for the message in seconds.
 
         Returns:
             dict: The log entry that matches the specified message.
         """
-        return self.wait_for_log(message, stream=stream, timeout=timeout, parse_json=False)
+        return self.wait_for_log(message, stream=stream, parse_json=False)
 
     def assert_logged(self, level: str, message: str) -> dict | None:
         """Assert that the log entry was found."""
@@ -298,7 +301,12 @@ class KamihiContainer(Container):
         return self._container.exec_run(command, stream=True).output
 
     def run_and_wait_for_log(
-        self, command: str, message: str, level: str = "INFO", timeout: int = 10, parse_json: bool = True
+        self,
+        command: str,
+        message: str,
+        level: str = "INFO",
+        extra_values: dict[str, Any] = None,
+        parse_json: bool = True,
     ) -> dict | None:
         """
         Run a command in the Kamihi container and wait for a specific log entry.
@@ -307,14 +315,14 @@ class KamihiContainer(Container):
             command (str): The command to run in the container.
             level (str): The log level to wait for (e.g., "INFO", "ERROR").
             message (str): The message to wait for in the log entry.
-            timeout (int): The maximum time to wait for the log entry in seconds.
+            extra_values (dict[str, Any], optional): Additional key-value pairs to match in the log entry's extra dictionary.
             parse_json (bool): Whether to parse the log entry as JSON.
 
         Returns:
             dict: The log entry that matches the specified level and message.
         """
         stream = self.run(command)
-        return self.wait_for_log(message, level, stream=stream, timeout=timeout, parse_json=parse_json)
+        return self.wait_for_log(message, level, extra_values, stream=stream, parse_json=parse_json)
 
     def run_and_wait_for_message(self, command: str, message: str, timeout: int = 10) -> dict | None:
         """
@@ -328,7 +336,7 @@ class KamihiContainer(Container):
         Returns:
             dict: The log entry that matches the specified message.
         """
-        return self.run_and_wait_for_log(command, message, timeout=timeout, parse_json=False)
+        return self.run_and_wait_for_log(command, message, parse_json=False)
 
     def stop(self) -> None:
         """
