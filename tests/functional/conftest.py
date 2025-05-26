@@ -179,7 +179,6 @@ class KamihiContainer(Container):
     It allows for additional functionality or customization if needed in the future.
     """
 
-    command_logs: dict[str, list[str]] = {}
     _container: docker.models.containers.Container
 
     @staticmethod
@@ -211,7 +210,6 @@ class KamihiContainer(Container):
         extra_values: dict[str, Any] = None,
         stream: CancellableStream = None,
         parse_json: bool = True,
-        save_logs_index: str | None = None,
     ) -> dict | None:
         """
         Wait for a specific log entry in the Kamihi container.
@@ -229,11 +227,6 @@ class KamihiContainer(Container):
         if stream is None:
             stream = self.logs(stream=True)
         for line in stream:
-            if save_logs_index:
-                if not self.command_logs.get(save_logs_index):
-                    self.command_logs[save_logs_index] = []
-                self.command_logs[save_logs_index].append(line)
-
             if parse_json:
                 log_entry = self.parse_log_json(line.decode())
                 if (
@@ -321,9 +314,7 @@ class KamihiContainer(Container):
             dict: The log entry that matches the specified level and message.
         """
         stream = self.run(command)
-        return self.wait_for_log(
-            message, level, extra_values, stream=stream, parse_json=parse_json, save_logs_index=command
-        )
+        return self.wait_for_log(message, level, extra_values, stream=stream, parse_json=parse_json)
 
     def run_and_wait_for_message(self, command: str, message: str) -> dict | None:
         """
@@ -401,24 +392,6 @@ def kamihi(kamihi_container: KamihiContainer, run_command, request) -> Generator
 
     if run_command == "kamihi run":
         kamihi_container.stop()
-    if request.node.rep_setup.failed:
-        test_results_path = Path.cwd() / "test-results" / "logs"
-        test_results_path.mkdir(parents=True, exist_ok=True)
-        test_name = request.node.module.__name__ + "." + request.node.name
-        test_name = Path(
-            test_name.replace("tests.functional", str(test_results_path) + "/functional")
-            .replace(".", "/")
-            .replace(":", "/")
-        )
-        test_name.parent.mkdir(parents=True, exist_ok=True)
-        with open(test_name.with_suffix(".log"), "w") as log_file:
-            log_file.write("\n".join(kamihi_container.logs()))
-        print(f"Logs written to {test_name.with_suffix('.log')}")
-        if kamihi_container.command_logs:
-            for key, logs in kamihi_container.command_logs.items():
-                with open(test_name.with_suffix(f".{key}.log"), "w") as log_file:
-                    log_file.write("\n".join(logs))
-                print(f"Command logs written to {test_name.with_suffix(f'.{key}.log')}")
 
 
 @pytest.fixture
