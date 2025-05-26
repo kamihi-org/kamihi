@@ -54,7 +54,7 @@ async def test_user_add_admin(kamihi: KamihiContainer, admin_page: Page):
 async def test_user_add_invalid_telegram_id(kamihi: KamihiContainer, admin_page: Page, telegram_id: str):
     """Test adding a user with an invalid Telegram ID."""
     kamihi.run_and_wait_for_message(
-        f"kamihi user add {telegram_id}",
+        f"kamihi user add '{telegram_id}'",
         "Invalid value for 'TELEGRAM_ID'",
     )
     await admin_page.get_by_role("link", name=" Users").click()
