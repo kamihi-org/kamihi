@@ -185,6 +185,17 @@ class KamihiContainer(Container):
 
     _container: docker.models.containers.Container
 
+    def logs(self, stream: bool = False) -> CancellableStream | list[str]:
+        """
+        Get the logs of the Kamihi container.
+
+        Args:
+            stream (bool): If True, stream the logs. If False, return the logs as a list.
+        """
+        if stream:
+            return self._container.logs(stream=True)
+        return self._container.logs().decode().split("\n")
+
     @staticmethod
     def parse_log_json(line: str) -> dict | None:
         """
@@ -273,17 +284,6 @@ class KamihiContainer(Container):
             ):
                 return log_entry
         raise EndOfLogsException()
-
-    def logs(self, stream: bool = True) -> CancellableStream | list[str]:
-        """
-        Get the logs of the Kamihi container.
-
-        Args:
-            stream (bool): If True, stream the logs. If False, return the logs as a list.
-        """
-        if stream:
-            return self._container.logs(stream=True)
-        return self._container.logs().decode().split("\n")
 
     def wait_until_started(self) -> None:
         """
