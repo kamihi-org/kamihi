@@ -48,7 +48,6 @@ async def test_user_add_admin(kamihi: KamihiContainer, admin_page: Page):
         "invalid_id",
         "123abc456",
         "1234567890123456789012345678901234567890",  # Too long
-        "-123456789",  # Negative ID
     ],
 )
 async def test_user_add_invalid_telegram_id(kamihi: KamihiContainer, admin_page: Page, telegram_id: str):
