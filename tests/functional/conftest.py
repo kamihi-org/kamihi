@@ -6,14 +6,7 @@ License:
 
 """
 
-import errno
-import functools
 import json
-import os
-import queue
-import signal
-import threading
-import time
 from pathlib import Path
 from textwrap import dedent
 from typing import Any, AsyncGenerator, Generator
@@ -186,6 +179,7 @@ class KamihiContainer(Container):
     It allows for additional functionality or customization if needed in the future.
     """
 
+    command_logs: dict[str, list[str]] = dict()
     _container: docker.models.containers.Container
 
     def parse_log_json(self, line: str) -> dict | None:
@@ -216,6 +210,7 @@ class KamihiContainer(Container):
         extra_values: dict[str, Any] = None,
         stream: CancellableStream = None,
         parse_json: bool = True,
+        save_logs_index: str | None = None,
     ) -> dict | None:
         """
         Wait for a specific log entry in the Kamihi container.
@@ -233,6 +228,11 @@ class KamihiContainer(Container):
         if stream is None:
             stream = self.logs(stream=True)
         for line in stream:
+            if save_logs_index:
+                if not self.command_logs.get(save_logs_index):
+                    self.command_logs[save_logs_index] = []
+                self.command_logs[save_logs_index].append(line)
+
             if parse_json:
                 log_entry = self.parse_log_json(line.decode())
                 if (
@@ -313,8 +313,8 @@ class KamihiContainer(Container):
 
         Args:
             command (str): The command to run in the container.
-            level (str): The log level to wait for (e.g., "INFO", "ERROR").
             message (str): The message to wait for in the log entry.
+            level (str): The log level to wait for (e.g., "INFO", "ERROR").
             extra_values (dict[str, Any], optional): Additional key-value pairs to match in the log entry's extra dictionary.
             parse_json (bool): Whether to parse the log entry as JSON.
 
@@ -322,16 +322,17 @@ class KamihiContainer(Container):
             dict: The log entry that matches the specified level and message.
         """
         stream = self.run(command)
-        return self.wait_for_log(message, level, extra_values, stream=stream, parse_json=parse_json)
+        return self.wait_for_log(
+            message, level, extra_values, stream=stream, parse_json=parse_json, save_logs_index=command
+        )
 
-    def run_and_wait_for_message(self, command: str, message: str, timeout: int = 10) -> dict | None:
+    def run_and_wait_for_message(self, command: str, message: str) -> dict | None:
         """
         Run a command in the Kamihi container and wait for a specific log message.
 
         Args:
             command (str): The command to run in the container.
             message (str): The message to wait for in the log entry.
-            timeout (int): The maximum time to wait for the log entry in seconds.
 
         Returns:
             dict: The log entry that matches the specified message.
@@ -393,6 +394,7 @@ kamihi_container = container(
 @pytest.fixture
 def kamihi(kamihi_container: KamihiContainer, run_command, request) -> Generator[Container, None, None]:
     """Fixture that ensures the Kamihi container is started and ready."""
+    kamihi_container.wait_for_message("Bytecode compiled")
     if "kamihi run" in run_command:
         kamihi_container.wait_until_started()
 
@@ -412,6 +414,12 @@ def kamihi(kamihi_container: KamihiContainer, run_command, request) -> Generator
         test_name.parent.mkdir(parents=True, exist_ok=True)
         with open(test_name.with_suffix(".log"), "w") as log_file:
             log_file.write("\n".join(kamihi_container.logs()))
+        print(f"Logs written to {test_name.with_suffix('.log')}")
+        if kamihi_container.command_logs:
+            for key, logs in kamihi_container.command_logs.items():
+                with open(test_name.with_suffix(f".{key}.log"), "w") as log_file:
+                    log_file.write("\n".join(logs))
+                print(f"Command logs written to {test_name.with_suffix(f'.{key}.log')}")
 
 
 @pytest.fixture
@@ -444,7 +452,7 @@ async def user_in_db(kamihi: KamihiContainer, test_settings, user_custom_data, m
     kamihi.run_and_wait_for_log(
         f"kamihi user add {test_settings.user_id} --data '{json.dumps(user_custom_data)}'",
         level="SUCCESS",
-        message="User added successfully.",
+        message="User added.",
     )
 
     yield mongodb.user.find_one({"telegram_id": test_settings.user_id})
