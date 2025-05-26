@@ -65,6 +65,7 @@ dev = [
     "pytest-cov>=6.0.0",
     "pytest-docker-tools>=3.1.9",
     "pytest-playwright-asyncio>=0.7.0",
+    "pytest-timeout>=2.4.0",
     "pytest-xdist>=3.6.1",
     "ruff>=0.11.0",
     "telethon>=1.40.0",
@@ -161,6 +162,7 @@ asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 logot_capturer = "logot.loguru.LoguruCapturer"
 log_cli = true
+timeout = 300
 
 [tool.coverage.run]
 omit = [
