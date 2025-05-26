@@ -7,11 +7,11 @@ License:
 """
 
 import pytest
-from playwright.async_api import expect
+from playwright.async_api import Page, expect
 
 
 @pytest.mark.asyncio
-async def test_create_user(admin_page, test_settings):
+async def test_create_user(admin_page: Page, test_settings):
     """Test the creation of a user through the web interface."""
     await admin_page.get_by_role("link", name=" Users").click()
     await admin_page.get_by_role("link", name="+ New User").click()
