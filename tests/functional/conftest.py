@@ -393,7 +393,17 @@ def kamihi(kamihi_container: KamihiContainer, run_command, request) -> Generator
     if run_command == "kamihi run":
         kamihi_container.stop()
     if request.node.rep_setup.failed:
-        print(f"\nLogs of the container:\n\n{'\n\t'.join(kamihi_container.logs(stream=False))}")
+        test_results_path = Path.cwd() / "test-results" / "logs"
+        test_results_path.mkdir(parents=True, exist_ok=True)
+        test_name = request.node.module.__name__ + "." + request.node.name
+        test_name = Path(
+            test_name.replace("tests.functional", str(test_results_path) + "/functional")
+            .replace(".", "/")
+            .replace(":", "/")
+        )
+        test_name.parent.mkdir(parents=True, exist_ok=True)
+        with open(test_name.with_suffix(".log"), "w") as log_file:
+            log_file.write("\n".join(kamihi_container.logs()))
 
 
 @pytest.fixture
