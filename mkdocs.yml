@@ -85,8 +85,6 @@ plugins:
             summary: true
   - api-autonav:
       modules: [ 'src/kamihi' ]
-  - mkdocs-typer2:
-      pretty: true
   - termynal:
       prompt_literal_start:
         - "$"
