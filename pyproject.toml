@@ -162,7 +162,8 @@ asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 logot_capturer = "logot.loguru.LoguruCapturer"
 log_cli = true
-timeout = 300
+timeout = 10
+timeout_func_only = true
 
 [tool.coverage.run]
 omit = [
