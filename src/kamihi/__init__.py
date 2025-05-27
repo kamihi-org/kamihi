@@ -16,25 +16,28 @@ Attributes:
 
 """
 
-__version__ = "0.8.0"
-
-import os
-
 from loguru import logger
 
 from .base.config import KamihiSettings
-from .base.logging import configure_logging as _configure_logging
-from .bot import Bot as _Bot
+from .base.logging import configure_logging
+from .bot import Bot
 from .users.models import User as BaseUser
 
-if os.environ.get("PYTEST_VERSION") is None:
-    # Load the settings and configure logging
-    _settings = KamihiSettings()
-    _configure_logging(logger, _settings.log)
+__version__ = "0.8.0"
+
+
+bot: Bot
+
+
+def _init_bot(settings: KamihiSettings) -> Bot:
+    """Start the Kamihi bot."""
+    global bot  # skipcq: PYL-W0603
+
+    configure_logging(logger, settings.log)
     logger.trace("Initialized settings and logging")
-    logger.bind(version=__version__).info("Starting Kamihi")
 
-    # Initialize the bot
-    bot = _Bot(_settings)
+    bot = Bot(settings)
+    return bot
 
-    __all__ = ["__version__", "bot", "KamihiSettings", "BaseUser"]
+
+__all__ = ["__version__", "bot", "KamihiSettings", "BaseUser"]

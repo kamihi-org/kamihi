@@ -7,25 +7,23 @@ License:
 """
 
 import json
-import time
 from pathlib import Path
 from textwrap import dedent
 from typing import Any, AsyncGenerator, Generator
 
+import docker.models.containers
 import pytest
+from docker.types import CancellableStream
 from dotenv import load_dotenv
-from mongoengine import connect, disconnect
 from playwright.async_api import Page
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pymongo import MongoClient
 from pytest_docker_tools.wrappers import Container
 from pytest_docker_tools import build, container, fetch, volume, fxtr
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.tl.custom import Conversation
-
-from kamihi.bot.models import RegisteredAction
-from kamihi.users import User, Permission
 
 
 class TestingSettings(BaseSettings):
@@ -113,35 +111,266 @@ async def chat(test_settings, tg_client) -> AsyncGenerator[Conversation, Any]:
 
 
 @pytest.fixture
-def user_code():
-    """Fixture to provide the user code for the bot."""
+def pyproject() -> dict:
+    """Fixture to provide the path to the pyproject.toml file."""
     return {
-        "main.py": dedent("""\
-                         from kamihi import bot
-                         bot.start()
-                         """).encode()
+        "pyproject.toml": dedent("""\
+            [project]
+            name = "kftp"
+            version = "0.0.0"
+            description = "kftp"
+            requires-python = ">=3.12"
+            dependencies = [
+                "kamihi",
+            ]
+            
+            [tool.uv.sources]
+            kamihi = { path = "/lib/kamihi" }
+        """).encode()
     }
+
+
+@pytest.fixture
+def config_file() -> dict:
+    """Fixture to provide the path to the kamihi.yaml file."""
+    return {"kamihi.yaml": "".encode()}
+
+
+@pytest.fixture
+def actions_folder() -> dict:
+    """Fixture to provide the path to the actions folder."""
+    return {}
+
+
+@pytest.fixture
+def models_folder() -> dict:
+    """Fixture to provide the path to the models folder."""
+    return {}
+
+
+@pytest.fixture
+def app_folder(pyproject, config_file, actions_folder, models_folder) -> dict:
+    """Fixture to provide the path to the app folder."""
+    res = {}
+    res.update(pyproject)
+    res.update(config_file)
+    res.update(actions_folder)
+    res.update(models_folder)
+    return res
+
+
+@pytest.fixture
+def run_command():
+    """Fixture to provide the command for the bot."""
+    return "kamihi run"
+
+
+@pytest.fixture
+def sync_and_run_command(run_command):
+    """Fixture to provide the command for the bot."""
+    return f"uv run {run_command}"
+
+
+class EndOfLogsException(Exception):
+    """Exception raised when the end of logs is reached without finding the expected log entry."""
+
+
+class KamihiContainer(Container):
+    """
+    Custom container class for Kamihi.
+
+    This class is used to provide a custom container for the Kamihi application.
+    It allows for additional functionality or customization if needed in the future.
+    """
+
+    _container: docker.models.containers.Container
+
+    def logs(self, stream: bool = False) -> CancellableStream | list[str]:
+        """
+        Get the logs of the Kamihi container.
+
+        Args:
+            stream (bool): If True, stream the logs. If False, return the logs as a list.
+        """
+        if stream:
+            return self._container.logs(stream=True)
+        return self._container.logs().decode().split("\n")
+
+    @staticmethod
+    def parse_log_json(line: str) -> dict | None:
+        """
+        Parse a log line from the Kamihi container.
+
+        Args:
+            line (str): The log line to parse.
+
+        Returns:
+            dict: The parsed log entry as a dictionary.
+        """
+        try:
+            res = json.loads(line.strip())
+            assert isinstance(res, dict), "Log entry is not a dictionary"
+            assert "record" in res, "Log entry does not contain 'record' key"
+            assert "level" in res["record"], "Log entry does not contain 'level' key"
+            assert "name" in res["record"]["level"], "Log entry does not contain 'name' key in 'level'"
+            assert "message" in res["record"], "Log entry does not contain 'message' key"
+            return res
+        except (json.JSONDecodeError, AssertionError):
+            return None
+
+    def wait_for_log(
+        self,
+        message: str,
+        level: str = "INFO",
+        extra_values: dict[str, Any] = None,
+        stream: CancellableStream = None,
+        parse_json: bool = True,
+    ) -> dict | str | None:
+        """
+        Wait for a specific log entry in the Kamihi container.
+
+        Args:
+            message (str): The message to wait for in the log entry.
+            level (str): The log level to wait for (e.g., "INFO", "ERROR").
+            extra_values (dict[str, Any], optional): Additional key-value pairs to match in the log entry's extra dictionary.
+            stream (Generator, optional): A generator that yields log lines from the container.
+            parse_json (bool): Whether to parse the log entry as JSON.
+
+        Returns:
+            dict | str: The log entry or message that matches the specified level and message, or None if not found.
+        """
+        if stream is None:
+            stream = self.logs(stream=True)
+        for line in stream:
+            line = line.decode().strip()
+            print("\t" + line)
+            if parse_json:
+                log_entry = self.parse_log_json(line)
+                if (
+                    log_entry
+                    and log_entry["record"]["level"]["name"] == level
+                    and message in log_entry["record"]["message"]
+                ):
+                    if extra_values:
+                        if all(item in log_entry["record"].get("extra", {}).items() for item in extra_values.items()):
+                            return log_entry
+                    else:
+                        return log_entry
+            else:
+                log_entry = line
+                if message in log_entry:
+                    return log_entry
+        return None
+
+    def wait_for_message(self, message: str, stream: CancellableStream = None) -> str:
+        """
+        Wait for a specific message in the Kamihi container logs, without parsing it as JSON.
+
+        Args:
+            message (str): The message to wait for.
+            stream (Generator, optional): A generator that yields log lines from the container.
+
+        Returns:
+            dict: The log entry that matches the specified message.
+        """
+        return self.wait_for_log(message, stream=stream, parse_json=False)
+
+    def assert_logged(self, level: str, message: str) -> dict | None:
+        """Assert that the log entry was found."""
+        for line in self.logs():
+            log_entry = self.parse_log_json(line)
+            if (
+                log_entry
+                and log_entry["record"]["level"]["name"] == level
+                and message in log_entry["record"]["message"]
+            ):
+                return log_entry
+        raise EndOfLogsException()
+
+    def wait_until_started(self) -> None:
+        """
+        Wait until the Kamihi container is started.
+
+        This method overrides the default wait_until_started method to ensure that
+        the Kamihi container is ready before proceeding with tests.
+        """
+        self.wait_for_log("Started!", "SUCCESS")
+
+    def run(self, command: str) -> CancellableStream:
+        """Run a command in the Kamihi container and return the output stream."""
+        return self._container.exec_run(command, stream=True).output
+
+    def run_and_wait_for_log(
+        self,
+        command: str,
+        message: str,
+        level: str = "INFO",
+        extra_values: dict[str, Any] = None,
+        parse_json: bool = True,
+    ) -> dict | None:
+        """
+        Run a command in the Kamihi container and wait for a specific log entry.
+
+        Args:
+            command (str): The command to run in the container.
+            message (str): The message to wait for in the log entry.
+            level (str): The log level to wait for (e.g., "INFO", "ERROR").
+            extra_values (dict[str, Any], optional): Additional key-value pairs to match in the log entry's extra dictionary.
+            parse_json (bool): Whether to parse the log entry as JSON.
+
+        Returns:
+            dict: The log entry that matches the specified level and message.
+        """
+        stream = self.run(command)
+        return self.wait_for_log(message, level, extra_values, stream=stream, parse_json=parse_json)
+
+    def run_and_wait_for_message(self, command: str, message: str) -> dict | None:
+        """
+        Run a command in the Kamihi container and wait for a specific log message.
+
+        Args:
+            command (str): The command to run in the container.
+            message (str): The message to wait for in the log entry.
+
+        Returns:
+            dict: The log entry that matches the specified message.
+        """
+        return self.run_and_wait_for_log(command, message, parse_json=False)
+
+    def stop(self) -> None:
+        """
+        Stop the Kamihi container gracefully.
+
+        This method overrides the default stop method to ensure that the Kamihi container
+        is stopped gracefully and waits for the logs to confirm the stop.
+        """
+        self.kill(signal="SIGINT")
+        self.kill(signal="SIGINT")
+        self.wait_for_log("Stopped!", "SUCCESS")
 
 
 mongo_image = fetch(repository="mongo:latest")
 """Fixture that fetches the mongodb container image."""
 
 
-mongo_container = container(image="{mongo_image.id}")
+mongo_volume = volume()
+"""Fixture that creates a volume for the mongodb container."""
+
+
+mongo_container = container(image="{mongo_image.id}", volumes={"{mongo_volume.name}": {"bind": "/data/db"}})
 """Fixture that provides the mongodb container."""
 
 
-kamihi_image = build(path=".", dockerfile="tests/functional/docker/Dockerfile")
+kamihi_image = build(path=".", dockerfile="tests/functional/Dockerfile")
 """Fixture that builds the kamihi container image."""
 
 
-kamihi_volume = volume(initial_content=fxtr("user_code"))
+kamihi_volume = volume(initial_content=fxtr("app_folder"))
 """Fixture that creates a volume for the kamihi container."""
 
 
 kamihi_container = container(
     image="{kamihi_image.id}",
-    ports={"4242/tcp": None},
     environment={
         "KAMIHI_TESTING": "True",
         "KAMIHI_TOKEN": "{test_settings.bot_token}",
@@ -151,104 +380,85 @@ kamihi_container = container(
         "KAMIHI_WEB__HOST": "0.0.0.0",
     },
     volumes={
-        "{kamihi_volume.name}": {"bind": "/app/src"},
+        "{kamihi_volume.name}": {"bind": "/app"},
+        str(Path("~/.cache/uv").expanduser()): {"bind": "/root/.cache/uv"},
     },
-    command="uv run /app/src/main.py",
+    command="{sync_and_run_command}",
+    wrapper_class=KamihiContainer,
 )
 """Fixture that provides the Kamihi container."""
 
 
 @pytest.fixture
-def wait_for_log(kamihi_container):
-    """Fixture that provides a function to wait for specific logs in the Kamihi container."""
-
-    def _wait_for_log(level: str, message: str, timeout: int = 5) -> dict:
-        """
-        Wait for a specific log entry in the Kamihi container.
-
-        This function will check the logs of the Kamihi container for a specific log entry
-        with the given level and message. It will keep checking until the log entry is found
-        or the timeout is reached.
-
-        Args:
-            level (str): The log level to wait for (e.g., "INFO", "ERROR").
-            message (str): The message to wait for in the log entry.
-            timeout (int): The maximum time to wait for the log entry (in seconds).
-
-        Returns:
-            dict: The log entry that matches the specified level and message.
-        """
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            for line in kamihi_container.logs().split("\n"):
-                try:
-                    log_entry = json.loads(line.strip())
-                    if isinstance(log_entry, dict) and "record" in log_entry:
-                        # Check if the log entry matches the expected level and message
-                        if log_entry["record"]["level"]["name"] == level and message in log_entry["record"]["message"]:
-                            return log_entry
-                except json.JSONDecodeError:
-                    pass
-            time.sleep(0.1)
-        raise TimeoutError(f"Timeout waiting for {level} log with message '{message}' after {timeout} seconds.")
-
-    return _wait_for_log
-
-
-@pytest.fixture
-def kamihi(kamihi_container: Container, wait_for_log, request) -> Generator[Container, Any, None]:
-    """Fixture that provides the Kamihi container after ensuring it is ready."""
-    wait_for_log("SUCCESS", "Started!")
+def kamihi(kamihi_container: KamihiContainer, run_command, request) -> Generator[Container, None, None]:
+    """Fixture that ensures the Kamihi container is started and ready."""
+    kamihi_container.wait_for_message("Bytecode compiled")
+    if "kamihi run" in run_command:
+        kamihi_container.wait_until_started()
 
     yield kamihi_container
 
-    test_results_path = Path.cwd() / "test-results" / "logs"
-    test_results_path.mkdir(parents=True, exist_ok=True)
-    test_name = request.node.module.__name__ + "." + request.node.name
-    test_name = Path(
-        test_name.replace("tests.functional", str(test_results_path) + "/functional")
-        .replace(".", "/")
-        .replace(":", "/")
-    )
-    test_name.parent.mkdir(parents=True, exist_ok=True)
-    with open(test_name.with_suffix(".log"), "w") as log_file:
-        log_file.write(kamihi_container.logs())
+    if run_command == "kamihi run":
+        kamihi_container.stop()
 
 
 @pytest.fixture
-async def admin_page(kamihi: Container, wait_for_log, page) -> Page:
+async def admin_page(kamihi: KamihiContainer, page) -> Page:
     """Fixture that provides the admin page of the Kamihi web interface."""
-    wait_for_log("TRACE", "Uvicorn running on http://0.0.0.0:4242 (Press CTRL+C to quit)")
-    await page.goto(f"http://127.0.0.1:{kamihi.ports['4242/tcp'][0]}/")
+    kamihi.assert_logged("TRACE", "Uvicorn running on http://0.0.0.0:4242 (Press CTRL+C to quit)")
+    await page.goto(f"http://{kamihi.ips.primary}:4242/")
     return page
 
 
-@pytest.fixture(autouse=True)
-def mongodb(kamihi: Container, mongo_container: Container) -> Generator[None, Any, None]:
+@pytest.fixture
+def mongodb(mongo_container: Container) -> Generator[MongoClient, None, None]:
     """Fixture that provides the MongoDB container."""
-    connect(host=f"mongodb://{mongo_container.ips.primary}/kamihi", alias="default")
+    client = MongoClient(f"mongodb://{mongo_container.ips.primary}:27017")
 
-    yield
+    yield client.kamihi
 
-    disconnect()
+    client.close()
 
 
 @pytest.fixture
-async def user_in_db(kamihi: Container, test_settings):
+def user_custom_data():
+    """Fixture to provide the user custom data."""
+    return {}
+
+
+@pytest.fixture
+async def user_in_db(kamihi: KamihiContainer, test_settings, user_custom_data, mongodb):
     """Fixture that creates a user in the MongoDB database."""
-    user = User(telegram_id=test_settings.user_id, is_admin=False).save()
+    kamihi.run_and_wait_for_log(
+        f"kamihi user add {test_settings.user_id} --data '{json.dumps(user_custom_data)}'",
+        level="SUCCESS",
+        message="User added.",
+    )
 
-    yield user
-
-    user.delete()
+    yield mongodb.user.find_one({"telegram_id": test_settings.user_id})
 
 
 @pytest.fixture
-async def add_permission_for_user(kamihi: Container, test_settings):
+async def add_permission_for_user(test_settings, mongodb):
     """Fixture that returns a function to add permissions to a user for an action in the MongoDB database."""
 
-    def _add_permission(user: User, action_name: str):
-        action = RegisteredAction.objects(name=action_name).first()
-        Permission(action=action, users=[user], roles=[]).save()
+    def _add_permission(user: dict, action_name: str):
+        action_id = mongodb.registered_action.find_one({"name": action_name})["_id"]
+        user_id = mongodb.user.find_one({"telegram_id": user["telegram_id"]})["_id"]
+        mongodb.permission.insert_one({"action": action_id, "users": [user_id], "roles": []})
 
     yield _add_permission
+
+
+@pytest.fixture(scope="session")
+def cleanup():
+    """
+    Fixture to clean up the host environment after tests.
+
+    This fixture is used to remove, containers, volumes, and images created during the tests.
+    """
+    yield
+
+    print(docker.from_env().containers.prune())
+    print(docker.from_env().volumes.prune())
+    print(docker.from_env().images.prune({"dangling": True}))

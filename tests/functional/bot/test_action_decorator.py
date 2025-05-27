@@ -12,71 +12,69 @@ import pytest
 from telethon.tl.custom import Conversation
 
 
-class TestActionDecoratorNoParentheses:
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("kamihi")
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        {
+            "actions/start/__init__.py": "".encode(),
+            "actions/start/start.py": dedent("""\
+                from kamihi import bot
+                
+                @bot.action
+                async def start():
+                    return "test"
+            """).encode(),
+        }
+    ],
+)
+async def test_action_decorator_no_parentheses(user_in_db, add_permission_for_user, chat: Conversation, actions_folder):
     """Test the action decorator without parentheses."""
+    add_permission_for_user(user_in_db, "start")
 
-    @pytest.fixture
-    def user_code(self):
-        """Fixture to provide the user code for the bot."""
-        return {
-            "main.py": dedent("""\
-                              from kamihi import bot
-                             
-                              @bot.action
-                              async def start():
-                                  return "test"
-                             
-                              bot.start()
-                              """).encode()
+    await chat.send_message("/start")
+    response = await chat.get_response()
+
+    assert response.text == "test"
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("kamihi")
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        {
+            "actions/start/__init__.py": "".encode(),
+            "actions/start/start.py": dedent("""\
+                from kamihi import bot
+                
+                @bot.action
+                async def start():
+                    return "Hello! I'm your friendly bot. How can I help you today?"
+            """).encode(),
+            "actions/start2/__init__.py": "".encode(),
+            "actions/start2/start2.py": dedent("""\
+                from kamihi import bot
+                
+                @bot.action
+                async def start2():
+                    return "Hello! I'm not your friendly bot."
+            """).encode(),
         }
-
-    @pytest.mark.asyncio
-    async def test_action_decorator_no_parentheses(
-        self, kamihi, user_in_db, add_permission_for_user, chat: Conversation
-    ):
-        """Test the action decorator without parentheses."""
-        add_permission_for_user(user_in_db, "start")
-
-        await chat.send_message("/start")
-        response = await chat.get_response()
-
-        assert response.text == "test"
-
-
-class TestActionMultipleDefined:
+    ],
+)
+async def test_action_multiple_defined(user_in_db, add_permission_for_user, chat: Conversation, actions_folder):
     """Test the action decorator with multiple defined actions."""
+    add_permission_for_user(user_in_db, "start")
+    add_permission_for_user(user_in_db, "start2")
 
-    @pytest.fixture
-    def user_code(self):
-        """Fixture to provide the user code for the bot."""
-        return {
-            "main.py": dedent("""\
-                              from kamihi import bot
-                             
-                              @bot.action
-                              async def start():
-                                  return "Hello! I'm your friendly bot. How can I help you today?"
-                             
-                              @bot.action
-                              async def start2():
-                                  return "Hello! I'm not your friendly bot."
-                             
-                              bot.start()
-                              """).encode()
-        }
+    await chat.send_message("/start")
+    response = await chat.get_response()
 
-    @pytest.mark.asyncio
-    async def test_action_multiple_defined(self, kamihi, user_in_db, add_permission_for_user, chat: Conversation):
-        """Test the action decorator with multiple defined actions."""
-        add_permission_for_user(user_in_db, "start")
-        add_permission_for_user(user_in_db, "start2")
+    assert response.text == "Hello! I'm your friendly bot. How can I help you today?"
 
-        await chat.send_message("/start")
-        response = await chat.get_response()
+    await chat.send_message("/start2")
+    response = await chat.get_response()
 
-        assert response.text == "Hello! I'm your friendly bot. How can I help you today?"
-
-        await chat.send_message("/start2")
-        response = await chat.get_response()
-
-        assert response.text == "Hello! I'm not your friendly bot."
+    assert response.text == "Hello! I'm not your friendly bot."

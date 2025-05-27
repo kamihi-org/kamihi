@@ -11,12 +11,11 @@ watch:
   - src/kamihi
 
 nav:
-  - Home:
-      - index.md
-      - Installation: tutorials/installation.md
-      - Quick start: tutorials/quick-start.md
-      - Changelog: changelog.md
-      - Special thanks: thanks.md
+  - Home: index.md
+  - Tutorials:
+      - tutorials/index.md
+      - Your first bot: tutorials/your-first-bot.md
+      - Adding actions: tutorials/adding-actions.md
   - Guides:
       - guides/index.md
       - Key concepts: guides/key-concepts.md
@@ -34,13 +33,20 @@ nav:
           - Configure notifications: guides/logging/configure-notifications.md
           - Configure structured logging: guides/logging/configure-structured.md
           - Configure file log rotation and retention: guides/logging/configure-rotation-retention.md
+      - Projects:
+          - Using other package managers: guides/projects/other-package-managers.md
   #  - "Explanation":
+  - CLI reference: reference/cli.md
+  - API reference
   - Developers:
       - dev/index.md
       - Architecture: dev/architecture.md
       - Directories: dev/directories.md
       - Development setup: dev/setup.md
       - Testing: dev/testing.md
+  - About:
+      - Changelog: changelog.md
+      - Special thanks: thanks.md
 
 
 theme:
@@ -83,8 +89,11 @@ plugins:
             show_symbol_type_heading: true
             show_symbol_type_toc: true
             summary: true
+            find_stubs_package: true
+            show_bases: true
   - api-autonav:
       modules: [ 'src/kamihi' ]
+      nav_section_title: "API reference"
   - mkdocs-typer2:
       pretty: true
   - termynal:
