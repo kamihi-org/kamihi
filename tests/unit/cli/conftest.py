@@ -15,10 +15,20 @@ Attributes:
 """
 
 import os
+import re
 from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
+
+
+@pytest.fixture(scope="session")
+def remove_ansi():
+    def _remove_ansi(text):
+        ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+        return ansi_escape.sub("", text)
+
+    return _remove_ansi
 
 
 @pytest.fixture(scope="session")
@@ -30,6 +40,7 @@ def run_command():
 
     def _run_command(*command: str):
         """Run a command in the specified directory."""
+        result = runner.invoke(app, command, color=False)
         return runner.invoke(app, command, color=False)
 
     return _run_command

@@ -38,22 +38,22 @@ def test_init_other_path(run_command, tmp_path):
     assert '[project]\nname = "example_project"' in open(tmp_path / "example_project/pyproject.toml").read()
 
 
-def test_init_nonexistent_path(run_command, tmp_path):
+def test_init_nonexistent_path(run_command, tmp_path, remove_ansi):
     """Test the init command of the CLI with an invalid path."""
     result = run_command("init", "example_project", "--path", str(tmp_path / "invalid"))
 
     assert result.exit_code == 2
-    assert "Invalid value for '--path':" in result.output
+    assert "Invalid value for '--path':" in remove_ansi(result.output)
 
 
-def test_init_path_is_file(run_command, tmp_path):
+def test_init_path_is_file(run_command, tmp_path, remove_ansi):
     """Test the init command of the CLI with a file as path."""
     (tmp_path / "example_file.txt").touch()
 
     result = run_command("init", "example_project", "--path", str(tmp_path / "example_file.txt"))
 
     assert result.exit_code == 2
-    assert "Invalid value for '--path':" in result.output
+    assert "Invalid value for '--path':" in remove_ansi(result.output)
 
 
 def test_init_description(run_command, temp_cwd):
