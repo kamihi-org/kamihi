@@ -7,30 +7,9 @@
 
 > This project is currently in the early stages of development. Expect frequent changes and updates as we work towards a stable release. Your feedback and contributions are welcome!
 
-## TL;DR
+## Getting started
 
-Install with:
-```sh
-uv add kamihi # or pip install kamihi
-```
-
-Create a bot with:
-```python
-from kamihi import bot
-
-bot.settings.token = "123456789:ABC-DEF1234ghIkl-zyx57W2P0s"
-
-@bot.action
-async def start():
-    return "Hello! I'm your friendly bot. How can I help you today?"
-
-bot.start()
-```
-
-Execute the bot with:
-```
-python your_script.py
-```
+To get started, check out the tutorial ["Your first bot"](https://kamihi-dev.github.io/kamihi/tutorials/your-first-bot/) in the documentation.
 
 ## Documentation
 
