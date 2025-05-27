@@ -172,7 +172,7 @@ def actions_folder():
             from kamihi import bot
             
             @bot.action
-            async def start():-
+            async def start():
                 return "Hello World!"
         """).encode(),
     }
