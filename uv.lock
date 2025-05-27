@@ -491,7 +491,6 @@ version = "0.8.0"
 source = { editable = "." }
 dependencies = [
     { name = "apprise" },
-    { name = "click" },
     { name = "copier" },
     { name = "jinja2" },
     { name = "loguru" },
@@ -540,7 +539,6 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "apprise", specifier = ">=1.9.2" },
-    { name = "click", specifier = "<8.2" },
     { name = "copier", specifier = ">=9.7.1" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "loguru", specifier = ">=0.7.3" },
