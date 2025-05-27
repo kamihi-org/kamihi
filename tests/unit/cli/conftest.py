@@ -25,6 +25,7 @@ from typer.testing import CliRunner
 def local_cli():
     from kamihi.cli import app
 
+    os.environ["NO_COLOR"] = "1"
     runner = CliRunner()
 
     yield runner, app
