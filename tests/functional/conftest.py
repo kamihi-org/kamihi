@@ -225,7 +225,7 @@ class KamihiContainer(Container):
         extra_values: dict[str, Any] = None,
         stream: CancellableStream = None,
         parse_json: bool = True,
-    ) -> dict | None | Any:
+    ) -> dict | str | None:
         """
         Wait for a specific log entry in the Kamihi container.
 
@@ -237,7 +237,7 @@ class KamihiContainer(Container):
             parse_json (bool): Whether to parse the log entry as JSON.
 
         Returns:
-            dict: The log entry that matches the specified level and message.
+            dict | str: The log entry or message that matches the specified level and message, or None if not found.
         """
         if stream is None:
             stream = self.logs(stream=True)
@@ -260,6 +260,7 @@ class KamihiContainer(Container):
                 log_entry = line
                 if message in log_entry:
                     return log_entry
+        return None
 
     def wait_for_message(self, message: str, stream: CancellableStream = None) -> str:
         """
