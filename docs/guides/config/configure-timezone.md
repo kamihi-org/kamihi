@@ -1,10 +1,10 @@
-The default timezone for the server is UTC. You can change the timezone by setting the `TZ` environment variable in your `.env` file. For example, to set the timezone to `America/New_York`, you would add the following line to your `.env` file:
+The default timezone for the bot is UTC. You can change it by adjusting the `settings.timezone` variable:
 
-=== "Config. file"
+=== "`kamihi.yml`"
     ```yaml
     timezone: America/New_York
     ```
-=== "`.env` file"
+=== "`.env`"
     ```bash
     KAMIHI_TIMEZONE=America/New_York
     ```
