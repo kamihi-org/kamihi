@@ -21,14 +21,18 @@ import pytest
 from typer.testing import CliRunner
 
 
-@pytest.fixture
-def local_cli():
+@pytest.fixture(scope="session")
+def run_command():
     from kamihi.cli import app
 
     os.environ["NO_COLOR"] = "1"
     runner = CliRunner()
 
-    yield runner, app
+    def _run_command(*command: str):
+        """Run a command in the specified directory."""
+        return runner.invoke(app, command, color=False)
+
+    return _run_command
 
 
 @pytest.fixture
@@ -41,10 +45,9 @@ def temp_cwd(tmp_path):
 
 
 @pytest.fixture
-def tmp_project(temp_cwd, local_cli):
+def tmp_project(temp_cwd, run_command):
     """Fixture to create a temporary project directory."""
-    runner, app = local_cli
-    result = runner.invoke(app, ["init", "example_project"])
+    result = run_command("init", "example_project")
 
     assert result.exit_code == 0
     assert os.path.exists(temp_cwd / "example_project")

@@ -9,11 +9,9 @@ License:
 import os
 
 
-def test_action_new(local_cli, tmp_project):
+def test_action_new(run_command, tmp_project):
     """Test the action command of the CLI."""
-    runner, app = local_cli
-
-    result = runner.invoke(app, ["action", "new", "example_action"])
+    result = run_command("action", "new", "example_action")
 
     assert result.exit_code == 0
     assert os.path.exists("actions/example_action")
@@ -21,21 +19,17 @@ def test_action_new(local_cli, tmp_project):
     assert os.path.exists("actions/example_action/__init__.py")
 
 
-def test_action_new_no_name(local_cli, tmp_project):
+def test_action_new_no_name(run_command, tmp_project):
     """Test the action command of the CLI without a name."""
-    runner, app = local_cli
-
-    result = runner.invoke(app, ["action", "new"])
+    result = run_command("action", "new")
 
     assert result.exit_code == 2
     assert "Missing argument 'NAME'." in result.output
 
 
-def test_action_new_description(local_cli, tmp_project):
+def test_action_new_description(run_command, tmp_project):
     """Test the action command of the CLI with a description."""
-    runner, app = local_cli
-
-    result = runner.invoke(app, ["action", "new", "example_action", "--description", "This is an example action."])
+    result = run_command("action", "new", "example_action", "--description", "This is an example action.")
 
     assert result.exit_code == 0
     assert os.path.exists("actions/example_action")
@@ -48,11 +42,9 @@ def test_action_new_description(local_cli, tmp_project):
         assert "This is an example action." in content
 
 
-def test_action_new_no_description(local_cli, tmp_project):
+def test_action_new_no_description(run_command, tmp_project):
     """Test the action command of the CLI without a description."""
-    runner, app = local_cli
-
-    result = runner.invoke(app, ["action", "new", "example_action"])
+    result = run_command("action", "new", "example_action")
 
     assert result.exit_code == 0
     assert os.path.exists("actions/example_action")

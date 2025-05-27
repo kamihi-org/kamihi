@@ -9,11 +9,9 @@ License:
 import os
 
 
-def test_init(local_cli, temp_cwd):
+def test_init(run_command, temp_cwd):
     """Test the init command of the CLI."""
-    runner, app = local_cli
-
-    result = runner.invoke(app, ["init", "example_project"])
+    result = run_command("init", "example_project")
 
     assert result.exit_code == 0
     assert os.path.exists("example_project")
@@ -22,20 +20,16 @@ def test_init(local_cli, temp_cwd):
     assert '[project]\nname = "example_project"' in open("example_project/pyproject.toml").read()
 
 
-def test_init_no_name(local_cli, temp_cwd):
+def test_init_no_name(run_command, temp_cwd):
     """Test the init command of the CLI without a name."""
-    runner, app = local_cli
-
-    result = runner.invoke(app, ["init"])
+    result = run_command("init")
     assert result.exit_code == 2
     assert "Missing argument 'NAME'." in result.output
 
 
-def test_init_other_path(local_cli, tmp_path):
+def test_init_other_path(run_command, tmp_path):
     """Test the init command of the CLI with a different path."""
-    runner, app = local_cli
-
-    result = runner.invoke(app, ["init", "example_project", "--path", str(tmp_path)])
+    result = run_command("init", "example_project", "--path", str(tmp_path))
 
     assert result.exit_code == 0
     assert os.path.exists(tmp_path / "example_project")
@@ -44,33 +38,27 @@ def test_init_other_path(local_cli, tmp_path):
     assert '[project]\nname = "example_project"' in open(tmp_path / "example_project/pyproject.toml").read()
 
 
-def test_init_nonexistent_path(local_cli, tmp_path):
+def test_init_nonexistent_path(run_command, tmp_path):
     """Test the init command of the CLI with an invalid path."""
-    runner, app = local_cli
-
-    result = runner.invoke(app, ["init", "example_project", "--path", str(tmp_path / "invalid")])
+    result = run_command("init", "example_project", "--path", str(tmp_path / "invalid"))
 
     assert result.exit_code == 2
     assert "Invalid value for '--path':" in result.output
 
 
-def test_init_path_is_file(local_cli, tmp_path):
+def test_init_path_is_file(run_command, tmp_path):
     """Test the init command of the CLI with a file as path."""
-    runner, app = local_cli
-
     (tmp_path / "example_file.txt").touch()
 
-    result = runner.invoke(app, ["init", "example_project", "--path", str(tmp_path / "example_file.txt")])
+    result = run_command("init", "example_project", "--path", str(tmp_path / "example_file.txt"))
 
     assert result.exit_code == 2
     assert "Invalid value for '--path':" in result.output
 
 
-def test_init_description(local_cli, temp_cwd):
+def test_init_description(run_command, temp_cwd):
     """Test the init command of the CLI with a description."""
-    runner, app = local_cli
-
-    result = runner.invoke(app, ["init", "example_project", "--description", "Test project"])
+    result = run_command("init", "example_project", "--description", "Test project")
 
     assert result.exit_code == 0
     assert os.path.exists("example_project")
