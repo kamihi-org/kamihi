@@ -225,7 +225,7 @@ class KamihiContainer(Container):
         extra_values: dict[str, Any] = None,
         stream: CancellableStream = None,
         parse_json: bool = True,
-    ) -> dict | str:
+    ) -> dict | None | Any:
         """
         Wait for a specific log entry in the Kamihi container.
 
@@ -239,7 +239,6 @@ class KamihiContainer(Container):
         Returns:
             dict: The log entry that matches the specified level and message.
         """
-        res = []
         if stream is None:
             stream = self.logs(stream=True)
         for line in stream:
