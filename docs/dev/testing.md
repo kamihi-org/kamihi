@@ -83,7 +83,7 @@ The functional test suite comes with several convenience fixtures to make writin
 These fixtures provide the content of the project under test in the container. You can override them to provide custom content for testing:
 
 - **`pyproject`** - Returns a dictionary with `pyproject.toml` as key and the file content as value.
-- **`config_file`** - Returns a dictionary with `kamohi.yml` as key and the file content as value.
+- **`config_file`** - Returns a dictionary with `kamihi.yml` as key and the file content as value.
 - **`actions_folder`** - Dictionary representing the actions folder structure and all its files.
 - **`models_folder`** - Dictionary representing the models folder structure and all its files.
 - **`app_folder`** - Combines all application files into a single dictionary for container mounting. Not to be overridden unless you know what you're doing.
