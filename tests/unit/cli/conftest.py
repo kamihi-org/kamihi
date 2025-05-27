@@ -40,7 +40,6 @@ def run_command():
 
     def _run_command(*command: str):
         """Run a command in the specified directory."""
-        result = runner.invoke(app, command, color=False)
         return runner.invoke(app, command, color=False)
 
     return _run_command
