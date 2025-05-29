@@ -1,8 +1,10 @@
+This guide explains how to run and develop tests for the Kamihi project, including unit and functional tests.
+
 ## Unit testing
 
 Unit tests are located in the `tests/unit` directory. They are organized in the same way as the source code, with a folder per module, each with one or more test files that normally correspond to the files in the module.
 
-Unit tests are written using `pytest`, and once the project has been correctly set up, they can be run with the following command:
+Unit tests are written using `pytest`, and once the project has been correctly set up following the [setup guide](setup.md), they can be run with the following command:
 
 ```bash
 $ uv run pytest tests/unit
@@ -17,7 +19,6 @@ $ uv run pytest tests/unit
     As of the time of writing this documentation, it is not possible to run functional tests unless you have an iOS device for the initial setup. This is because for now creating test accounts can only be done through the Telegram app on iOS. This is a limitation of Telegram, not Kamihi.
 
 Functional tests are located in the `tests/functional` directory. They are organized by feature, based loosely on the structure of the source code but not constrained by it.
-
 
 ### Setup
 
@@ -269,7 +270,7 @@ async def test_greeting(user_in_db, add_permission_for_user, chat, actions_folde
     assert str(user_in_db['telegram_id']) in response.text
 ```
 
-#### Best practices
+### Best practices
 
 - **Use `@pytest.mark.usefixtures("kamihi")`** when you need the container running but don't directly interact with it
 - **Always add permissions** before testing bot actions using `add_permission_for_user`, otherwise the bot will respond with the default message.
