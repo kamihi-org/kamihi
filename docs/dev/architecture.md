@@ -5,6 +5,7 @@ This design document details Kamihi's implementation strategy for rapid Telegram
 Telegram bot development suffers from excessive complexity and repetitive boilerplate. Existing frameworks require developers to manually integrate database management, user authentication, message routing, and administrative interfaces — concerns that should be handled automatically.
 
 This complexity creates three critical problems:
+
 - **High development overhead**: Simple bots require hundreds of lines of configuration
 - **Inconsistent patterns**: Teams reinvent authentication and database integration differently
 - **Maintenance burden**: Bot evolution requires coordinated changes across multiple integration layers
@@ -13,7 +14,7 @@ This complexity creates three critical problems:
 
 Kamihi eliminates this complexity through opinionated defaults and automatic integration. The framework provides batteries-included functionality while maintaining escape hatches for customization when needed.
 
-## System Overview
+## System overview
 
 Kamihi's architecture centers on automatic service integration and zero-configuration defaults. The framework handles infrastructure concerns transparently, allowing developers to focus exclusively on bot behavior.
 

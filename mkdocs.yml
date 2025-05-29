@@ -100,6 +100,7 @@ plugins:
       prompt_literal_start:
         - "$"
         - ">"
+  - mermaid2
 
 markdown_extensions:
   - abbr
@@ -116,7 +117,11 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.snippets
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
   - pymdownx.details
 
 extra:
