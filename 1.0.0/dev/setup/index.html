@@ -72,6 +72,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#prerequisites" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -2883,6 +2888,19 @@
       
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Development setup
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -2894,6 +2912,41 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setting-up-the-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      Setting up the project
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -3050,6 +3103,32 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setting-up-the-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      Setting up the project
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -3069,7 +3148,53 @@
 
   <h1>Development setup</h1>
 
-<p>TODO</p>
+<p>This guide will help you set up the development environment for the project.</p>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">⚓︎</a></h2>
+<p>You should have the following installed:</p>
+<ul>
+<li><code>git</code>, for version control. You can find download and installation instructions <a href="https://git-scm.com/downloads">here</a>.</li>
+<li><code>uv</code>, for managing virtual environments and dependencies. Install it using <a href="https://docs.astral.sh/uv/getting-started/installation/">this guide</a>.</li>
+<li>(optional) <code>docker</code> and <code>docker compose</code>, for running the database and functional tests. You can install Docker Desktop from <a href="https://docs.docker.com/desktop/">here</a> or follow the instructions for <a href="https://docs.docker.com/engine/install/">Docker Engine</a> and <a href="https://docs.docker.com/compose/install/">Docker Compose</a>.</li>
+<li>(if not using Docker) <code>mongodb</code>, for running the database locally. You can find installation instructions <a href="https://www.mongodb.com/docs/manual/installation/">here</a>.</li>
+</ul>
+<h2 id="setting-up-the-project">Setting up the project<a class="headerlink" href="#setting-up-the-project" title="Permanent link">⚓︎</a></h2>
+<ol>
+<li>Clone the repository:
+    <div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/kamihi-dev/kamihi.git
+<span class="nb">cd</span><span class="w"> </span>kamihi
+</code></pre></div></li>
+<li>Create the virtual environment and install dependencies:
+    <div class="highlight"><pre><span></span><code>uv<span class="w"> </span>sync<span class="w"> </span>--all-packages<span class="w"> </span>--all-groups
+</code></pre></div></li>
+<li>Activate the virtual environment by restarting your terminal or sourcing the <code>activate</code> file for your terminal type:
+    <div class="highlight"><pre><span></span><code><span class="c1"># For bash/zsh</span>
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+
+<span class="c1"># For fish</span>
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate.fish
+
+<span class="c1"># For csh/tcsh</span>
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate.csh
+
+<span class="c1"># For powershell</span>
+.<span class="w"> </span>.venv/Scripts/Activate.ps1
+</code></pre></div></li>
+<li>(optional) We recommend also setting up a test project to experiment with the framework and the code you write. Just create a new project using the CLI, and substitute the <code>pyproject.toml</code> file with this one:
+    <div class="highlight"><pre><span></span><code><span class="k">[project]</span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;kamihi-example&quot;</span>
+<span class="n">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;0.0.0&quot;</span>
+<span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Kamihi project&quot;</span>
+<span class="n">readme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;README.md&quot;</span>
+<span class="n">requires-python</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&gt;=3.12&quot;</span>
+<span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;kamihi&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="k">[tool.uv.sources]</span>
+<span class="n">kamihi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;&lt;the path to the kamihi project&gt;&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">editable</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div></li>
+</ol>
+<p>For more information specific to documentation and testing, refer to the <a href="../documentation/">documentation guide</a> and the <a href="../testing/">testing guide</a>.</p>
 
 
 

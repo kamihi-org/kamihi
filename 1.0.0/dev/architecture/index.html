@@ -72,6 +72,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#problem-statement" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -2837,6 +2842,19 @@
       
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -2848,6 +2866,230 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem-statement" class="md-nav__link">
+    <span class="md-ellipsis">
+      Problem Statement
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solution-convention-over-configuration-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      Solution: Convention-Over-Configuration Architecture
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      System Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core components
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bot-module-kamihibot" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bot module (kamihi.bot)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-module-kamihibaseconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration module (kamihi.base.config)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#database-module-kamihidb" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database module (kamihi.db)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#telegram-module-kamihitg" class="md-nav__link">
+    <span class="md-ellipsis">
+      Telegram module (kamihi.tg)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#web-module-kamihiweb" class="md-nav__link">
+    <span class="md-ellipsis">
+      Web module (kamihi.web)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#template-module-kamihitemplates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Template module (kamihi.templates)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#user-module-kamihiusers" class="md-nav__link">
+    <span class="md-ellipsis">
+      User module (kamihi.users)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cli-tool-kamihicli" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLI tool (kamihi.cli)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-decisions-and-trade-offs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Design Decisions and Trade-offs
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design Decisions and Trade-offs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mongodb-vs-sql-databases" class="md-nav__link">
+    <span class="md-ellipsis">
+      MongoDB vs SQL Databases
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#singleton-bot-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      Singleton Bot Pattern
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#decorator-based-action-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Decorator-Based Action Registration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Implementation Strategy
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Strategy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#action-registration-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Action Registration Flow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#database-connection-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database Connection Lifecycle
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-priority-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration Priority Chain
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-this-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why This Architecture
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -3050,6 +3292,221 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem-statement" class="md-nav__link">
+    <span class="md-ellipsis">
+      Problem Statement
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solution-convention-over-configuration-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      Solution: Convention-Over-Configuration Architecture
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      System Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core components
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bot-module-kamihibot" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bot module (kamihi.bot)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-module-kamihibaseconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration module (kamihi.base.config)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#database-module-kamihidb" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database module (kamihi.db)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#telegram-module-kamihitg" class="md-nav__link">
+    <span class="md-ellipsis">
+      Telegram module (kamihi.tg)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#web-module-kamihiweb" class="md-nav__link">
+    <span class="md-ellipsis">
+      Web module (kamihi.web)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#template-module-kamihitemplates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Template module (kamihi.templates)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#user-module-kamihiusers" class="md-nav__link">
+    <span class="md-ellipsis">
+      User module (kamihi.users)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cli-tool-kamihicli" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLI tool (kamihi.cli)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-decisions-and-trade-offs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Design Decisions and Trade-offs
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design Decisions and Trade-offs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mongodb-vs-sql-databases" class="md-nav__link">
+    <span class="md-ellipsis">
+      MongoDB vs SQL Databases
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#singleton-bot-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      Singleton Bot Pattern
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#decorator-based-action-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Decorator-Based Action Registration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Implementation Strategy
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Strategy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#action-registration-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Action Registration Flow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#database-connection-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database Connection Lifecycle
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-priority-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration Priority Chain
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-this-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why This Architecture
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -3069,7 +3526,86 @@
 
   <h1>Architecture</h1>
 
-<p>TODO</p>
+<p>This design document details Kamihi's implementation strategy for rapid Telegram bot development, evaluating architectural choices based on developer productivity, maintainability, and scalability constraints.</p>
+<h2 id="problem-statement">Problem Statement<a class="headerlink" href="#problem-statement" title="Permanent link">⚓︎</a></h2>
+<p>Telegram bot development suffers from excessive complexity and repetitive boilerplate. Existing frameworks require developers to manually integrate database management, user authentication, message routing, and administrative interfaces — concerns that should be handled automatically.</p>
+<p>This complexity creates three critical problems:
+- <strong>High development overhead</strong>: Simple bots require hundreds of lines of configuration
+- <strong>Inconsistent patterns</strong>: Teams reinvent authentication and database integration differently
+- <strong>Maintenance burden</strong>: Bot evolution requires coordinated changes across multiple integration layers</p>
+<h2 id="solution-convention-over-configuration-architecture">Solution: Convention-Over-Configuration Architecture<a class="headerlink" href="#solution-convention-over-configuration-architecture" title="Permanent link">⚓︎</a></h2>
+<p>Kamihi eliminates this complexity through opinionated defaults and automatic integration. The framework provides batteries-included functionality while maintaining escape hatches for customization when needed.</p>
+<h2 id="system-overview">System Overview<a class="headerlink" href="#system-overview" title="Permanent link">⚓︎</a></h2>
+<p>Kamihi's architecture centers on automatic service integration and zero-configuration defaults. The framework handles infrastructure concerns transparently, allowing developers to focus exclusively on bot behavior.</p>
+<div class="highlight"><pre><span></span><code>graph TD
+    A[CLI Interface] --&gt; B[Bot Layer]
+    B --&gt; C[Action Registry]
+    B --&gt; D[User Management]
+    B --&gt; E[Database Layer]
+    B --&gt; F[Telegram Client]
+    B --&gt; G[Web Admin]
+    H[Template System] --&gt; C
+    I[Configuration] --&gt; B
+</code></pre></div>
+<h2 id="core-components">Core components<a class="headerlink" href="#core-components" title="Permanent link">⚓︎</a></h2>
+<h3 id="bot-module-kamihibot">Bot module (<code>kamihi.bot</code>)<a class="headerlink" href="#bot-module-kamihibot" title="Permanent link">⚓︎</a></h3>
+<p>The <code>Bot</code> class orchestrates all framework subsystems through a singleton instance. This pattern prevents configuration drift and ensures consistent state across the application.</p>
+<p>Actions register automatically through Python decorators, mapping functions to Telegram commands. The framework stores actions as <code>Action</code> objects containing metadata for runtime execution and administrative introspection.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">kamihi</span><span class="w"> </span><span class="kn">import</span> <span class="n">bot</span>
+
+<span class="nd">@bot</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Handle user greetings&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="n">update</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">&quot;Hello! Bot is running.&quot;</span>
+</code></pre></div>
+<p><strong>Why singleton pattern?</strong> Multiple bot instances would create conflicting Telegram webhook registrations and database connections. The singleton ensures exactly one bot per process, preventing these conflicts.</p>
+<h3 id="configuration-module-kamihibaseconfig">Configuration module (<code>kamihi.base.config</code>)<a class="headerlink" href="#configuration-module-kamihibaseconfig" title="Permanent link">⚓︎</a></h3>
+<p>Pydantic models provide type safety and validation for configuration. The <code>KamihiSettings</code> class loads from multiple sources in priority order: programmatic settings, YAML files, environment variables, then defaults.</p>
+<p>This hierarchy supports development convenience with production security. Developers use YAML files locally while production deployments rely on environment variables.</p>
+<h3 id="database-module-kamihidb">Database module (<code>kamihi.db</code>)<a class="headerlink" href="#database-module-kamihidb" title="Permanent link">⚓︎</a></h3>
+<p>MongoDB integration through MongoEngine provides document-based persistence. The framework handles connection lifecycle automatically and provides base models for common bot entities.</p>
+<p><strong>Why MongoDB over SQL?</strong> SQL schemas require complex migrations for changes, while MongoDB handles schema evolution transparently. This is essential for database model extensibility, given that different users of the framework will likely need to store different data schemas for the users of their bots.</p>
+<p>Database configuration defaults to local development (<code>mongodb://localhost:27017</code>) but supports production connection strings through configuration.</p>
+<h3 id="telegram-module-kamihitg">Telegram module (<code>kamihi.tg</code>)<a class="headerlink" href="#telegram-module-kamihitg" title="Permanent link">⚓︎</a></h3>
+<p>The <code>TelegramClient</code> abstraction wraps <code>python-telegram-bot</code>, providing a consistent interface for message handling and API communication. This isolation protects the framework from Telegram API changes and centralizes error handling.</p>
+<h3 id="web-module-kamihiweb">Web module (<code>kamihi.web</code>)<a class="headerlink" href="#web-module-kamihiweb" title="Permanent link">⚓︎</a></h3>
+<p>Starlette-based admin interface runs on a separate thread, exposing user and permission management without interfering with bot operations. This separation ensures bot availability during administrative tasks.</p>
+<p>Non-technical users can manage bot access without code changes or deployments through the web interface.</p>
+<h3 id="template-module-kamihitemplates">Template module (<code>kamihi.templates</code>)<a class="headerlink" href="#template-module-kamihitemplates" title="Permanent link">⚓︎</a></h3>
+<p>Jinja2 templating enables dynamic message generation with automatic template discovery. Actions organize templates by namespace, supporting complex response scenarios while separating logic from presentation.</p>
+<p>Hot-reloading in development accelerates iteration for message refinement.</p>
+<h3 id="user-module-kamihiusers">User module (<code>kamihi.users</code>)<a class="headerlink" href="#user-module-kamihiusers" title="Permanent link">⚓︎</a></h3>
+<p>Role-based access control provides built-in authentication and authorization. The system supports configurable user registration flows and permission checking for action execution.</p>
+<p>This eliminates custom authentication implementations while providing granular bot access control.</p>
+<h3 id="cli-tool-kamihicli">CLI tool (<code>kamihi.cli</code>)<a class="headerlink" href="#cli-tool-kamihicli" title="Permanent link">⚓︎</a></h3>
+<p>The command-line interface manages project lifecycle: initialization, action scaffolding, user administration, and bot execution. CLI commands integrate with project templates to maintain consistent structures.</p>
+<div class="highlight"><pre><span></span><code>kamihi<span class="w"> </span>init<span class="w"> </span>my-bot<span class="w">        </span><span class="c1"># Create new project</span>
+kamihi<span class="w"> </span>action<span class="w"> </span>new<span class="w"> </span>greet<span class="w">   </span><span class="c1"># Scaffold new action</span>
+kamihi<span class="w"> </span>run<span class="w">               </span><span class="c1"># Start bot with web interface</span>
+</code></pre></div>
+<h2 id="design-decisions-and-trade-offs">Design Decisions and Trade-offs<a class="headerlink" href="#design-decisions-and-trade-offs" title="Permanent link">⚓︎</a></h2>
+<h3 id="mongodb-vs-sql-databases">MongoDB vs SQL Databases<a class="headerlink" href="#mongodb-vs-sql-databases" title="Permanent link">⚓︎</a></h3>
+<p>Kamihi uses MongoDB instead of traditional SQL databases. This choice prioritizes rapid development and schema flexibility over strict relational integrity.</p>
+<p><strong>Addressing scalability concerns:</strong> MongoDB's horizontal scaling through sharding supports bot growth from hundreds to millions of users without application changes. Document queries for user lookups and message history remain performant with proper indexing.</p>
+<h3 id="singleton-bot-pattern">Singleton Bot Pattern<a class="headerlink" href="#singleton-bot-pattern" title="Permanent link">⚓︎</a></h3>
+<p>The singleton pattern for the Bot class prevents multiple instances that would create conflicting webhook registrations and database connections. While this limits some advanced use cases, it eliminates the most common source of bot deployment failures. It also transfers the responsibility of managing the bot's lifecycle to the framework, simplifying application code.</p>
+<p><strong>Alternative considered:</strong> Factory pattern for multiple bot instances was rejected because it complicates configuration management and provides no clear benefit for the target use case of single-bot applications.</p>
+<h3 id="decorator-based-action-registration">Decorator-Based Action Registration<a class="headerlink" href="#decorator-based-action-registration" title="Permanent link">⚓︎</a></h3>
+<p>Python decorators enable automatic action discovery during module import. This approach trades some flexibility for developer convenience, eliminating the need for explicit registration calls.</p>
+<p><strong>Runtime discovery trade-off:</strong> All actions must be imported at startup, slightly increasing initialization time. This cost is negligible compared to the productivity gain from automatic registration, and simplifies the project structure, eliminating the need for a central registry file, and avoiding circular import errors common to these scenarios.</p>
+<h2 id="implementation-strategy">Implementation Strategy<a class="headerlink" href="#implementation-strategy" title="Permanent link">⚓︎</a></h2>
+<h3 id="action-registration-flow">Action Registration Flow<a class="headerlink" href="#action-registration-flow" title="Permanent link">⚓︎</a></h3>
+<p>Actions register automatically when Python imports their modules. The CLI's <code>run</code> command recursively imports the <code>actions/</code> directory, ensuring all bot commands are available at startup.</p>
+<h3 id="database-connection-lifecycle">Database Connection Lifecycle<a class="headerlink" href="#database-connection-lifecycle" title="Permanent link">⚓︎</a></h3>
+<p>Database connections initialize lazily during bot startup with automatic reconnection handling for production resilience. Models inherit from framework base classes providing common fields and behaviors.</p>
+<h3 id="configuration-priority-chain">Configuration Priority Chain<a class="headerlink" href="#configuration-priority-chain" title="Permanent link">⚓︎</a></h3>
+<p>Settings load through priority: programmatic overrides → YAML configuration → environment variables → defaults. This pattern supports development convenience while maintaining production security.</p>
+<h2 id="why-this-architecture">Why This Architecture<a class="headerlink" href="#why-this-architecture" title="Permanent link">⚓︎</a></h2>
+<p>This design optimizes for developer velocity while maintaining production reliability. The architecture trades flexibility for productivity, making it optimal for teams prioritizing development speed and operational simplicity over custom infrastructure requirements.</p>
+<p><strong>Reduced Cognitive Load</strong>: Developers focus on business logic rather than infrastructure integration. The framework handles database connections, user management, and Telegram API complexities automatically.</p>
+<p><strong>Rapid Prototyping</strong>: New bots can be created and deployed within minutes using the CLI scaffolding tools. Template-based project generation ensures consistency across teams.</p>
+<p><strong>Operational Simplicity</strong>: The web interface provides non-technical stakeholders access to user management and bot monitoring without requiring code changes or deployments.</p>
+<p><strong>Testability</strong>: Clear separation between framework components and application logic enables comprehensive testing strategies. Functional tests can validate end-to-end bot behavior through Docker-based integration testing.</p>
+<p><strong>Scalability Path</strong>: The modular architecture supports both simple single-command bots and complex multi-action applications. Database abstraction and connection pooling handle growing user bases without application changes.</p>
 
 
 
