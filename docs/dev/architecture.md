@@ -103,7 +103,7 @@ Kamihi uses MongoDB instead of traditional SQL databases. This choice prioritize
 
 ### Singleton Bot Pattern
 
-The singleton pattern for the Bot class prevents multiple instances that would create conflicting webhook registrations and database connections. While this limits some advanced use cases, it eliminates the most common source of bot deployment failures. it also transfers the responsibility of managing the bot's lifecycle to the framework, simplifying application code.
+The singleton pattern for the Bot class prevents multiple instances that would create conflicting webhook registrations and database connections. While this limits some advanced use cases, it eliminates the most common source of bot deployment failures. It also transfers the responsibility of managing the bot's lifecycle to the framework, simplifying application code.
 
 **Alternative considered:** Factory pattern for multiple bot instances was rejected because it complicates configuration management and provides no clear benefit for the target use case of single-bot applications.
 
