@@ -1,4 +1,4 @@
-This design document details the documentation standards and contribution process for the kamihi project, establishing clear guidelines to ensure consistency, clarity, and maintainability across all project documentation.
+This guide details the documentation standards and contribution process for the Kamihi project, establishing clear guidelines to ensure consistency, clarity, and maintainability across all project documentation.
 
 ## Intended audiences
 
