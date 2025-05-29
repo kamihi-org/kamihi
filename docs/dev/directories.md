@@ -21,7 +21,7 @@ kamihi/
 ├── .deepsource.toml            # DeepSource configuration for static analysis
 ├── .pre-commit-config.yaml     # Pre-commit hooks configuration
 ├── .gitignore                  # Git ignore rules
-├── .dockerignore               # Docker ignore rules
+└── .dockerignore               # Docker ignore rules
 ```
 
 ## Source Code Organization (`src/kamihi/`)
