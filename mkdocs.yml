@@ -44,6 +44,7 @@ nav:
       - Directories: dev/directories.md
       - Development setup: dev/setup.md
       - Testing: dev/testing.md
+      - Documentation: dev/documentation.md
   - About:
       - Changelog: changelog.md
       - Special thanks: thanks.md
