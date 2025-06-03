@@ -1,4 +1,4 @@
-name: Run tests
+name: Run functional tests
 
 on:
   push:
@@ -37,7 +37,7 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run pytest
+          uv run pytest tests/functional
         env:
           KAMIHI_TESTING__BOT_TOKEN: ${{ secrets.TOKEN }}
           KAMIHI_TESTING__BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
@@ -48,13 +48,3 @@ jobs:
           KAMIHI_TESTING__TG_SESSION: ${{ secrets.TG_SESSION }}
           KAMIHI_TESTING__TG_DC_ID: ${{ secrets.TG_DC_ID }}
           KAMIHI_TESTING__TG_DC_IP: ${{ secrets.TG_DC_IP }}
-
-      - name: Install Deepsource CLI
-        run: |
-          curl https://deepsource.io/cli | sh
-
-      - name: Send coverage report to Deepsource
-        env:
-          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
-        run: |
-          ./bin/deepsource report --analyzer test-coverage --key python --value-file ./coverage.xml
