@@ -589,9 +589,9 @@ starlette==0.46.2 \
     # via
     #   kamihi
     #   starlette-admin
-starlette-admin==0.15.0 \
-    --hash=sha256:37c9259cf2a6d80621a194b89059d67cb35617b279eaa76030e3092f9d3a146d \
-    --hash=sha256:a202ccb800a578cd7e14a577a4ebb45a679821c701ce880b5bd99f536e66650a
+starlette-admin==0.15.1 \
+    --hash=sha256:a832e8a0e8a16c9c3f2012ddf352867ad8e730f21192caa85225798091cba130 \
+    --hash=sha256:beccdb8695ecadc9f314e0b5afd2b04e067538e8273d0c3199b671198b5ee43e
     # via kamihi
 telegramify-markdown==0.5.1 \
     --hash=sha256:a2c4ca337219607dce13883bdc30bf4faf07bf37e3f748594e8b10e1b5708fae \
