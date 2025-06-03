@@ -16,7 +16,7 @@ import pytest
 from docker.types import CancellableStream
 from dotenv import load_dotenv
 from playwright.async_api import Page
-from pydantic import Field
+from pydantic import Field, BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pymongo import MongoClient
 from pytest_docker_tools.wrappers import Container
@@ -26,13 +26,28 @@ from telethon.sessions import StringSession
 from telethon.tl.custom import Conversation
 
 
+class TestBot(BaseModel):
+    """
+    Configuration of the test bot.
+
+    Attributes:
+        name (str): The name of the bot.
+        username (str): The username of the bot.
+        token (str): The token for the bot to authenticate with Telegram.
+
+    """
+
+    name: str = Field()
+    username: str = Field()
+    token: str = Field()
+
+
 class TestingSettings(BaseSettings):
     """
     Settings for the testing environment.
 
     Attributes:
-        bot_token (str): The bot token for the Telegram bot.
-        bot_username (str): The username of the bot.
+        bot (TestBot): The bot configuration for testing.
         user_id (int): The user ID for testing.
         tg_phone_number (str): The phone number for Telegram authentication.
         tg_api_id (int): The API ID for Telegram authentication.
@@ -44,8 +59,7 @@ class TestingSettings(BaseSettings):
 
     """
 
-    bot_token: str = Field()
-    bot_username: str = Field()
+    bot: TestBot = Field(default_factory=TestBot)
     user_id: int = Field()
     tg_phone_number: str = Field()
     tg_api_id: int = Field()
@@ -106,7 +120,7 @@ async def tg_client(test_settings):
 @pytest.fixture(scope="session")
 async def chat(test_settings, tg_client) -> AsyncGenerator[Conversation, Any]:
     """Open conversation with the bot."""
-    async with tg_client.conversation(test_settings.bot_username, timeout=10, max_messages=10000) as conv:
+    async with tg_client.conversation(test_settings.bot.username, timeout=10, max_messages=10000) as conv:
         yield conv
 
 
@@ -373,7 +387,7 @@ kamihi_container = container(
     image="{kamihi_image.id}",
     environment={
         "KAMIHI_TESTING": "True",
-        "KAMIHI_TOKEN": "{test_settings.bot_token}",
+        "KAMIHI_TOKEN": "{test_settings.bot.token}",
         "KAMIHI_LOG__STDOUT_LEVEL": "TRACE",
         "KAMIHI_LOG__STDOUT_SERIALIZE": "True",
         "KAMIHI_DB__HOST": "mongodb://{mongo_container.ips.primary}",

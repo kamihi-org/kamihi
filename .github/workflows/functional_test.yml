@@ -1,0 +1,123 @@
+name: Run functional tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  create_bot:
+    name: "Create bot"
+    runs-on: ubuntu-latest
+    environment: testing
+    output:
+      bot: ${{ steps.create_bot.outputs.bot }}
+    concurrency:
+      group: botfather
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+        ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@f0ec1fc3b38f5e7cd731bb6ce540c5af426746bb # v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: |
+          uv sync --group unit --group func
+
+      - name: Create bot
+        run: |
+          echo "bot=$(uv run tests/functional/utils/create_bot.py)" >> "$GITHUB_OUTPUT"
+        env:
+          KAMIHI_TESTING__USER_ID: ${{ secrets.USER_ID }}
+          KAMIHI_TESTING__TG_PHONE_NUMBER: ${{ secrets.TG_PHONE_NUMBER }}
+          KAMIHI_TESTING__TG_API_ID: ${{ secrets.TG_API_ID }}
+          KAMIHI_TESTING__TG_API_HASH: ${{ secrets.TG_API_HASH }}
+          KAMIHI_TESTING__TG_SESSION: ${{ secrets.TG_SESSION }}
+          KAMIHI_TESTING__TG_DC_ID: ${{ secrets.TG_DC_ID }}
+          KAMIHI_TESTING__TG_DC_IP: ${{ secrets.TG_DC_IP }}
+
+  test:
+    name: "Run functional tests"
+    runs-on: ubuntu-latest
+    environment: testing
+    needs: create_bot
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@f0ec1fc3b38f5e7cd731bb6ce540c5af426746bb # v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: |
+          uv sync --group unit --group func
+          uv run playwright install
+
+      - name: Run tests
+        run: |
+          uv run pytest tests/functional
+        env:
+          KAMIHI_TESTING__USER_ID: ${{ secrets.USER_ID }}
+          KAMIHI_TESTING__TG_PHONE_NUMBER: ${{ secrets.TG_PHONE_NUMBER }}
+          KAMIHI_TESTING__TG_API_ID: ${{ secrets.TG_API_ID }}
+          KAMIHI_TESTING__TG_API_HASH: ${{ secrets.TG_API_HASH }}
+          KAMIHI_TESTING__TG_SESSION: ${{ secrets.TG_SESSION }}
+          KAMIHI_TESTING__TG_DC_ID: ${{ secrets.TG_DC_ID }}
+          KAMIHI_TESTING__TG_DC_IP: ${{ secrets.TG_DC_IP }}
+          KAMIHI_TESTING__BOT: ${{ needs.create_bot.outputs.bot }}
+
+  delete_bot:
+    name: "Delete bot"
+    runs-on: ubuntu-latest
+    environment: testing
+    needs:
+      - create_bot
+      - test
+    if: always() # Ensure this runs even if the test job fails
+    concurrency:
+      group: botfather
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@f0ec1fc3b38f5e7cd731bb6ce540c5af426746bb # v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: |
+          uv sync --group unit --group func
+
+      - name: Delete bot
+        run: |
+          uv run tests/functional/utils/delete_bot.py
+        env:
+          KAMIHI_TESTING__USER_ID: ${{ secrets.USER_ID }}
+          KAMIHI_TESTING__TG_PHONE_NUMBER: ${{ secrets.TG_PHONE_NUMBER }}
+          KAMIHI_TESTING__TG_API_ID: ${{ secrets.TG_API_ID }}
+          KAMIHI_TESTING__TG_API_HASH: ${{ secrets.TG_API_HASH }}
+          KAMIHI_TESTING__TG_SESSION: ${{ secrets.TG_SESSION }}
+          KAMIHI_TESTING__TG_DC_ID: ${{ secrets.TG_DC_ID }}
+          KAMIHI_TESTING__TG_DC_IP: ${{ secrets.TG_DC_IP }}
+          KAMIHI_TESTING__BOT: ${{ needs.create_bot.outputs.bot }}
