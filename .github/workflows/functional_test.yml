@@ -36,7 +36,7 @@ jobs:
 
       - name: Create bot
         run: |
-          echo "bot=$(uv run tests/functional/utils/create_bot.py)" >> "$GITHUB_OUTPUT"
+          echo "bot=$(uv run tests/functional/utils/get_bot_token.py)" >> "$GITHUB_OUTPUT"
         env:
           KAMIHI_TESTING__USER_ID: ${{ secrets.USER_ID }}
           KAMIHI_TESTING__TG_PHONE_NUMBER: ${{ secrets.TG_PHONE_NUMBER }}
