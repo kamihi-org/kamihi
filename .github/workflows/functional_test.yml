@@ -31,7 +31,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --dev
+          uv sync --group unit --group func
           uv run playwright install
 
       - name: Run tests
