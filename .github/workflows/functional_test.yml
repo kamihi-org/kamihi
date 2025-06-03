@@ -13,8 +13,8 @@ jobs:
     name: "Create bot"
     runs-on: ubuntu-latest
     environment: testing
-    output:
-      bot: ${{ steps.create_bot.outputs.bot }}
+    outputs:
+      - bot: ${{ steps.create_bot.outputs.bot }}
     concurrency:
       group: botfather
 
