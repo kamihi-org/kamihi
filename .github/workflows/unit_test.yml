@@ -1,4 +1,4 @@
-name: Run tests
+name: Run unit tests
 
 on:
   push:
@@ -8,15 +8,10 @@ on:
     branches:
       - main
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   test:
-    name: "Run tests"
+    name: "Run unit tests"
     runs-on: ubuntu-latest
-    environment: testing
 
     steps:
       - name: Check out
@@ -32,22 +27,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --dev
-          uv run playwright install
+          uv sync --group unit
 
       - name: Run tests
         run: |
-          uv run pytest
-        env:
-          KAMIHI_TESTING__BOT_TOKEN: ${{ secrets.TOKEN }}
-          KAMIHI_TESTING__BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
-          KAMIHI_TESTING__USER_ID: ${{ secrets.USER_ID }}
-          KAMIHI_TESTING__TG_PHONE_NUMBER: ${{ secrets.TG_PHONE_NUMBER }}
-          KAMIHI_TESTING__TG_API_ID: ${{ secrets.TG_API_ID }}
-          KAMIHI_TESTING__TG_API_HASH: ${{ secrets.TG_API_HASH }}
-          KAMIHI_TESTING__TG_SESSION: ${{ secrets.TG_SESSION }}
-          KAMIHI_TESTING__TG_DC_ID: ${{ secrets.TG_DC_ID }}
-          KAMIHI_TESTING__TG_DC_IP: ${{ secrets.TG_DC_IP }}
+          uv run pytest tests/unit
 
       - name: Install Deepsource CLI
         run: |
