@@ -89,9 +89,9 @@ copier==9.7.1 \
     --hash=sha256:83da2cbe5e28a1593c649f5dac37d916774b07a3ba3ce66e6966a3e84e557885 \
     --hash=sha256:89f2a3f3f9134af35a7d4e2aa63b6468dbff18d82c8369f995b126de9faf0f08
     # via kamihi
-decli==0.6.2 \
-    --hash=sha256:2fc84106ce9a8f523ed501ca543bdb7e416c064917c12a59ebdc7f311a97b7ed \
-    --hash=sha256:36f71eb55fd0093895efb4f416ec32b7f6e00147dda448e3365cf73ceab42d6f
+decli==0.6.3 \
+    --hash=sha256:5152347c7bb8e3114ad65db719e5709b28d7f7f45bdb709f70167925e55640f3 \
+    --hash=sha256:87f9d39361adf7f16b9ca6e3b614badf7519da13092f2db3c80ca223c53c7656
     # via commitizen
 distlib==0.3.9 \
     --hash=sha256:47f8c22fd27c27e25a65601af709b38e4f0a45ea4fc2e710f65755fa8caaaf87 \
