@@ -3596,8 +3596,9 @@
 <p>This guide explains how to run and develop tests for the Kamihi project, including unit and functional tests.</p>
 <h2 id="unit-testing">Unit testing<a class="headerlink" href="#unit-testing" title="Permanent link">⚓︎</a></h2>
 <p>Unit tests are located in the <code>tests/unit</code> directory. They are organized in the same way as the source code, with a folder per module, each with one or more test files that normally correspond to the files in the module.</p>
-<p>Unit tests are written using <code>pytest</code>, and once the project has been correctly set up following the <a href="../setup/">setup guide</a>, they can be run with the following command:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/unit
+<p>Unit tests are written using <code>pytest</code>. Once the project has been correctly set up following the <a href="../setup/">setup guide</a>, you just need to install their dependencies and run them:</p>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>sync<span class="w"> </span>--group<span class="w"> </span>unit
+$<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/unit
 </code></pre></div>
 <h2 id="functional-testing">Functional testing<a class="headerlink" href="#functional-testing" title="Permanent link">⚓︎</a></h2>
 <div class="admonition note">
@@ -3612,6 +3613,9 @@
 <h3 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">⚓︎</a></h3>
 <p>Running functional tests requires a bit more setup, as they run on Telegram's <a href="https://core.telegram.org/api/auth#test-accounts">test accounts</a> (to avoid bans and FLOOD errors). To create the environment needed for them, you can follow these steps:</p>
 <ol>
+<li>Install the dependencies:
+    <div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>sync<span class="w"> </span>--group<span class="w"> </span>unit<span class="w"> </span>--group<span class="w"> </span>func
+</code></pre></div></li>
 <li>Make sure you have Docker and Docker Compose installed on your machine.
     <div class="highlight"><pre><span></span><code>$<span class="w"> </span>docker<span class="w"> </span>--version
 $<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>--version
