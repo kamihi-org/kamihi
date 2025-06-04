@@ -10,6 +10,7 @@ from pathlib import Path
 
 from loguru import logger
 from telegram import Bot, Message, Update
+from telegram.constants import FileSizeLimit
 from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
@@ -51,6 +52,7 @@ async def send_file(bot: Bot, chat_id: int, file: Path, reply_to_message_id: int
     Send a file to a chat.
 
     This function sends a file to a specified chat using the provided bot instance.
+    Performs validation checks to ensure the file exists, is readable, and is within size limits.
 
     Args:
         bot (Bot): The Telegram Bot instance.
@@ -63,6 +65,32 @@ async def send_file(bot: Bot, chat_id: int, file: Path, reply_to_message_id: int
 
     """
     lg = logger.bind(chat_id=chat_id, received_id=reply_to_message_id, path=file)
+
+    # Validate file exists
+    if not file.exists():
+        lg.error("File does not exist")
+        return None
+
+    # Validate it's a file, not a directory
+    if not file.is_file():
+        lg.error("Path is not a file")
+        return None
+
+    # Check read permissions
+    try:
+        file.read_text()
+    except PermissionError:
+        lg.error("No read permission for file")
+        return None
+
+    # Check file size
+    file_size = file.stat().st_size
+    max_size = FileSizeLimit.FILESIZE_UPLOAD
+    if file_size > max_size:
+        lg.error("File size ({} bytes) exceeds Telegram limit of {} bytes", file_size, max_size)
+        return None
+    if file_size == 0:
+        lg.warning("File is empty")
 
     with lg.catch(exception=TelegramError, message="Failed to send file"):
         reply = await bot.send_document(
