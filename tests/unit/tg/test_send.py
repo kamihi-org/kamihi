@@ -238,7 +238,7 @@ async def test_send_file_with_invalid_path(logot: Logot, mock_ptb_bot):
     result = await send_file(mock_ptb_bot, chat_id, invalid_path)
 
     # Verify that the logger was called with an error
-    logot.assert_logged(logged.error(f"File does not exist"))
+    logot.assert_logged(logged.error("File does not exist"))
     # Verify function returns None
     assert result is None
 
