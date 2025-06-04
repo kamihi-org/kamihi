@@ -10,7 +10,6 @@ License:
 """
 
 import os
-import re
 from enum import StrEnum
 from pathlib import Path
 
