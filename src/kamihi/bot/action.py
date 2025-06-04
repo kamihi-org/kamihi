@@ -17,7 +17,7 @@ from telegram import Update
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
-from kamihi.tg import reply_text
+from kamihi.tg import reply
 from kamihi.tg.handlers import AuthHandler
 from kamihi.users import get_user_from_telegram_id
 
@@ -178,7 +178,7 @@ class Action:
 
         result = await self._func(*pos_args, **keyword_args)
         if result is not None:
-            await reply_text(update, context, result)
+            await reply(update, context, result)
         else:
             self._logger.debug("No result to send")
 
