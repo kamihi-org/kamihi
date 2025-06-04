@@ -347,7 +347,7 @@ timezone: Europe/London
     try:
         # Load settings from YAML file
         settings = KamihiSettings.from_yaml(yaml_path)
-        
+
         # Verify all settings were loaded correctly
         assert settings.log.stdout_level == "WARNING"
         assert settings.log.stderr_enable is True
@@ -376,11 +376,11 @@ timezone: Asia/Tokyo
     try:
         # Load settings from YAML file
         settings = KamihiSettings.from_yaml(yaml_path)
-        
+
         # Verify specified settings were loaded
         assert settings.log.stdout_level == "ERROR"
         assert settings.timezone == "Asia/Tokyo"
-        
+
         # Verify default values are preserved for unspecified settings
         assert settings.log.stderr_enable is False  # Default value
         assert settings.db.host == "mongodb://localhost:27017"  # Default value
@@ -395,13 +395,13 @@ def test_from_yaml_with_nonexistent_file():
     """Test loading settings from a non-existent YAML file returns default settings."""
     # Use a path that doesn't exist
     nonexistent_path = Path("/tmp/nonexistent_config.yaml")
-    
+
     # Ensure the file doesn't exist
     assert not nonexistent_path.exists()
-    
+
     # Load settings from non-existent file
     settings = KamihiSettings.from_yaml(nonexistent_path)
-    
+
     # Verify default settings are returned
     assert settings.log.stdout_level == "INFO"  # Default value
     assert settings.log.stderr_enable is False  # Default value
@@ -420,7 +420,7 @@ def test_from_yaml_with_empty_file():
     try:
         # Load settings from empty file
         settings = KamihiSettings.from_yaml(yaml_path)
-        
+
         # Verify default settings are returned
         assert settings.log.stdout_level == "INFO"  # Default value
         assert settings.log.stderr_enable is False  # Default value
@@ -443,7 +443,7 @@ def test_from_yaml_with_null_content():
     try:
         # Load settings from file with null content
         settings = KamihiSettings.from_yaml(yaml_path)
-        
+
         # Verify default settings are returned
         assert settings.log.stdout_level == "INFO"  # Default value
         assert settings.log.stderr_enable is False  # Default value
@@ -503,13 +503,13 @@ def test_from_yaml_with_directory_path():
     # Create a temporary directory
     with tempfile.TemporaryDirectory() as temp_dir:
         dir_path = Path(temp_dir)
-        
+
         # Ensure it's a directory, not a file
         assert dir_path.is_dir()
-        
+
         # Load settings from directory path
         settings = KamihiSettings.from_yaml(dir_path)
-        
+
         # Verify default settings are returned
         assert settings.log.stdout_level == "INFO"  # Default value
         assert settings.log.stderr_enable is False  # Default value
@@ -560,7 +560,7 @@ autoreload_templates: false
     try:
         # Load settings from YAML file
         settings = KamihiSettings.from_yaml(yaml_path)
-        
+
         # Verify all log settings
         assert settings.log.stdout_enable is True
         assert settings.log.stdout_level == "DEBUG"
@@ -578,22 +578,22 @@ autoreload_templates: false
         assert settings.log.notification_level == "SUCCESS"
         assert settings.log.notification_urls == [
             "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
-            "https://discord.com/api/webhooks/123456789/abcdefgh"
+            "https://discord.com/api/webhooks/123456789/abcdefgh",
         ]
-        
+
         # Verify database settings
         assert settings.db.host == "mongodb+srv://user:password@cluster0.mongodb.net"
         assert settings.db.name == "production_db"
-        
+
         # Verify response settings
         assert settings.responses.default_enabled is False
         assert settings.responses.default_message == "Custom default message"
         assert settings.responses.error_message == "Custom error message"
-        
+
         # Verify web settings
         assert settings.web.host == "0.0.0.0"
         assert settings.web.port == 8080
-        
+
         # Verify general settings
         assert settings.timezone == "America/New_York"
         assert settings.testing is False
@@ -616,10 +616,10 @@ timezone: Europe/Paris
     try:
         # Load settings from YAML file
         settings = KamihiSettings.from_yaml(yaml_path)
-        
+
         # Verify specified setting
         assert settings.timezone == "Europe/Paris"
-        
+
         # Verify all other sections preserve defaults
         assert settings.log.stdout_level == "INFO"  # Default LogSettings
         assert settings.log.stderr_enable is False  # Default LogSettings
