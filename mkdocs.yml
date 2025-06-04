@@ -26,6 +26,7 @@ nav:
           - Configure the timezone: guides/config/configure-timezone.md
       - Actions:
           - Set commands: guides/actions/commands.md
+          - Send files: guides/actions/send-files.md
       - Users:
           - Extend the user model: guides/users/extend.md
       - Logging:
