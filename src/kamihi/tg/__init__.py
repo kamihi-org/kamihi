@@ -9,6 +9,6 @@ License:
 """
 
 from .client import TelegramClient
-from .send import reply_text, send_text
+from .send import reply, send
 
-__all__ = ["TelegramClient", "reply_text", "send_text"]
+__all__ = ["TelegramClient", "reply", "send"]
