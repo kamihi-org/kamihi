@@ -31,11 +31,11 @@ def mock_ptb_bot():
 
 
 @pytest.fixture
-def mock_file_path():
+def tmp_file(tmp_path):
     """Fixture to provide a mock file path."""
-    mock_path = Mock(spec=Path)
-    mock_path.name = "test_file.txt"
-    return mock_path
+    file = tmp_path / "test_file.txt"
+    file.write_text("This is a test file.")
+    return file
 
 
 @pytest.fixture
@@ -170,7 +170,7 @@ async def test_send_text_handles_markdown_errors(logot: Logot, mock_ptb_bot):
 
 
 @pytest.mark.asyncio
-async def test_send_file_basic(logot: Logot, mock_ptb_bot, mock_file_path):
+async def test_send_file(logot: Logot, mock_ptb_bot, tmp_file):
     """Test basic functionality of send_file with minimal parameters."""
     # Configure return value for send_document
     mock_message = Mock(spec=Message)
@@ -180,13 +180,13 @@ async def test_send_file_basic(logot: Logot, mock_ptb_bot, mock_file_path):
     chat_id = 123456
 
     # Call function
-    result = await send_file(mock_ptb_bot, chat_id, mock_file_path)
+    result = await send_file(mock_ptb_bot, chat_id, tmp_file)
 
     # Verify send_document was called with correct parameters
     mock_ptb_bot.send_document.assert_called_once_with(
         chat_id=chat_id,
-        document=mock_file_path,
-        filename=mock_file_path.name,
+        document=tmp_file,
+        filename=tmp_file.name,
         reply_to_message_id=None,
     )
     assert result == mock_message
@@ -194,26 +194,26 @@ async def test_send_file_basic(logot: Logot, mock_ptb_bot, mock_file_path):
 
 
 @pytest.mark.asyncio
-async def test_send_file_with_reply(logot: Logot, mock_ptb_bot, mock_file_path):
+async def test_send_file_with_reply(logot: Logot, mock_ptb_bot, tmp_file):
     """Test that send_file correctly handles reply_to_message_id parameter."""
     chat_id = 123456
     reply_to = 789
 
     # Call function
-    await send_file(mock_ptb_bot, chat_id, mock_file_path, reply_to)
+    await send_file(mock_ptb_bot, chat_id, tmp_file, reply_to)
 
     # Verify send_document was called with reply_to_message_id parameter
     mock_ptb_bot.send_document.assert_called_once_with(
         chat_id=chat_id,
-        document=mock_file_path,
-        filename=mock_file_path.name,
+        document=tmp_file,
+        filename=tmp_file.name,
         reply_to_message_id=reply_to,
     )
     logot.assert_logged(logged.debug("File sent"))
 
 
 @pytest.mark.asyncio
-async def test_send_file_error_handling(logot: Logot, mock_ptb_bot, mock_file_path):
+async def test_send_file_telegram_error_handling(logot: Logot, mock_ptb_bot, tmp_file):
     """Test that send_file properly catches and logs TelegramError."""
     chat_id = 123456
 
@@ -221,10 +221,58 @@ async def test_send_file_error_handling(logot: Logot, mock_ptb_bot, mock_file_pa
     mock_ptb_bot.send_document.side_effect = TelegramError("Test error")
 
     # Call function
-    result = await send_file(mock_ptb_bot, chat_id, mock_file_path)
+    result = await send_file(mock_ptb_bot, chat_id, tmp_file)
 
     # Verify that the logger was called
     logot.assert_logged(logged.error("Failed to send file"))
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_send_file_with_invalid_path(logot: Logot, mock_ptb_bot):
+    """Test that send_file handles invalid Path content."""
+    chat_id = 123456
+    invalid_path = Path("invalid/path/to/file.txt")
+
+    # Call function
+    result = await send_file(mock_ptb_bot, chat_id, invalid_path)
+
+    # Verify that the logger was called with an error
+    logot.assert_logged(logged.error(f"File does not exist"))
+    # Verify function returns None
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_send_file_with_directory_path(logot: Logot, mock_ptb_bot, tmp_path):
+    """Test that send_file handles directory Path content."""
+    chat_id = 123456
+
+    # Call function
+    result = await send_file(mock_ptb_bot, chat_id, tmp_path)
+
+    # Verify that the logger was called with an error
+    logot.assert_logged(logged.error("Path is not a file"))
+    # Verify function returns None
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_send_file_with_no_read_permission(logot: Logot, mock_ptb_bot, tmp_path):
+    """Test that send_file handles file with no read permission."""
+    chat_id = 123456
+    no_permission_file = tmp_path / "no_permission_file.txt"
+    no_permission_file.write_text("This file has no read permission.")
+
+    # Remove read permissions
+    no_permission_file.chmod(0o000)
+
+    # Call function
+    result = await send_file(mock_ptb_bot, chat_id, no_permission_file)
+
+    # Verify that the logger was called with an error
+    logot.assert_logged(logged.error("No read permission for file"))
+    # Verify function returns None
     assert result is None
 
 
@@ -248,7 +296,7 @@ async def test_send_with_text_content(mock_ptb_bot):
 
 
 @pytest.mark.asyncio
-async def test_send_with_file_content(mock_ptb_bot, mock_file_path):
+async def test_send_with_file_content(mock_ptb_bot, tmp_file):
     """Test that send correctly dispatches Path content to send_file."""
     chat_id = 123456
     reply_to = 789
@@ -258,10 +306,10 @@ async def test_send_with_file_content(mock_ptb_bot, mock_file_path):
         mock_send_file.return_value = mock_message
 
         # Call function
-        result = await send(mock_ptb_bot, chat_id, mock_file_path, reply_to)
+        result = await send(mock_ptb_bot, chat_id, tmp_file, reply_to)
 
         # Verify send_file was called with correct parameters
-        mock_send_file.assert_called_once_with(mock_ptb_bot, chat_id, mock_file_path, reply_to)
+        mock_send_file.assert_called_once_with(mock_ptb_bot, chat_id, tmp_file, reply_to)
         assert result == mock_message
 
 
@@ -321,7 +369,7 @@ async def test_reply_with_text_content(mock_update_context):
 
 
 @pytest.mark.asyncio
-async def test_reply_with_file_content(mock_update_context, mock_file_path):
+async def test_reply_with_file_content(mock_update_context, tmp_file):
     """Test that reply correctly handles file content."""
     update, context = mock_update_context
 
@@ -330,13 +378,13 @@ async def test_reply_with_file_content(mock_update_context, mock_file_path):
         mock_send.return_value = mock_message
 
         # Call function
-        result = await reply(update, context, mock_file_path)
+        result = await reply(update, context, tmp_file)
 
         # Verify send was called with correct parameters
         mock_send.assert_called_once_with(
             context.bot,
             update.effective_message.chat_id,
-            mock_file_path,
+            tmp_file,
             reply_to_message_id=update.effective_message.message_id,
         )
         assert result == mock_message
