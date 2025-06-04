@@ -573,6 +573,7 @@ unit = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
+    { name = "pytest-retry" },
     { name = "pytest-timeout" },
 ]
 
@@ -626,6 +627,7 @@ unit = [
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pytest-asyncio", specifier = ">=1.0.0" },
     { name = "pytest-cov", specifier = ">=6.1.1" },
+    { name = "pytest-retry", specifier = ">=1.7.0" },
     { name = "pytest-timeout", specifier = ">=2.4.0" },
 ]
 
@@ -1328,6 +1330,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ce/88/2f61cdaa81552795ff43420b5869af17585bc55432b44ef1aa882251890e/pytest_playwright_asyncio-0.7.0.tar.gz", hash = "sha256:bf811e2164a74cc743394a327b68ee71f3f924b1ea3e29220499c8d7b03f6af1", size = 16706, upload-time = "2025-01-31T11:06:06.43Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/bf/22/9fb8eb62fbc0cfb7c608c4f04b0ee5a4188b05cdead119adc031c0d96593/pytest_playwright_asyncio-0.7.0-py3-none-any.whl", hash = "sha256:f0a41b7f2967f7f514bd499026555eca0b3be6423f78831b86587def8fc50572", size = 16835, upload-time = "2025-01-31T11:06:09.811Z" },
+]
+
+[[package]]
+name = "pytest-retry"
+version = "1.7.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c5/5b/607b017994cca28de3a1ad22a3eee8418e5d428dcd8ec25b26b18e995a73/pytest_retry-1.7.0.tar.gz", hash = "sha256:f8d52339f01e949df47c11ba9ee8d5b362f5824dff580d3870ec9ae0057df80f", size = 19977, upload-time = "2025-01-19T01:56:13.115Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7c/ff/3266c8a73b9b93c4b14160a7e2b31d1e1088e28ed29f4c2d93ae34093bfd/pytest_retry-1.7.0-py3-none-any.whl", hash = "sha256:a2dac85b79a4e2375943f1429479c65beb6c69553e7dae6b8332be47a60954f4", size = 13775, upload-time = "2025-01-19T01:56:11.199Z" },
 ]
 
 [[package]]
