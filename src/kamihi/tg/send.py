@@ -38,13 +38,13 @@ async def send_text(
     lg = logger.bind(chat_id=chat_id, received_id=reply_to_message_id, response_text=text)
 
     with lg.catch(exception=TelegramError, message="Failed to send message"):
-        reply = await bot.send_message(
+        message_reply = await bot.send_message(
             chat_id,
             md(text),
             reply_to_message_id=reply_to_message_id,
         )
-        lg.bind(response_id=reply.message_id).debug("Reply sent" if reply_to_message_id else "Message sent")
-        return reply
+        lg.bind(response_id=message_reply.message_id).debug("Reply sent" if reply_to_message_id else "Message sent")
+        return message_reply
 
 
 async def send_file(bot: Bot, chat_id: int, file: Path, reply_to_message_id: int = None) -> Message | None:
@@ -93,14 +93,14 @@ async def send_file(bot: Bot, chat_id: int, file: Path, reply_to_message_id: int
         lg.warning("File is empty")
 
     with lg.catch(exception=TelegramError, message="Failed to send file"):
-        reply = await bot.send_document(
+        message_reply = await bot.send_document(
             chat_id=chat_id,
             document=file,
             filename=file.name,
             reply_to_message_id=reply_to_message_id,
         )
-        lg.bind(response_id=reply.message_id).debug("File sent")
-        return reply
+        lg.bind(response_id=message_reply.message_id).debug("File sent")
+        return message_reply
 
 
 async def send(bot: Bot, chat_id: int, content: str | Path, reply_to_message_id: int = None) -> Message | None:
