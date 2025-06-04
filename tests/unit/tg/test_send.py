@@ -1,21 +1,24 @@
 """
 Tests for the kamihi.tg.send module.
 
-This module contains unit tests for the send_text and reply_text functions
+This module contains unit tests for the send_text, send_file, send, and reply functions
 used to send messages via the Telegram API.
 
 License:
     MIT
 """
 
+from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from telegram import Bot, Message
+from logot import Logot, logged
+from telegram import Bot, Message, Update
 from telegram.error import TelegramError
+from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
 
-from kamihi.tg.send import reply_text, send_text
+from kamihi.tg.send import reply, send, send_file, send_text
 
 
 @pytest.fixture
@@ -23,16 +26,42 @@ def mock_ptb_bot():
     """Fixture to provide a mock Bot instance."""
     bot = Mock(spec=Bot)
     bot.send_message = AsyncMock(return_value=Mock(spec=Message))
+    bot.send_document = AsyncMock(return_value=Mock(spec=Message))
     return bot
 
 
-@pytest.mark.asyncio
-async def test_send_text_basic(mock_ptb_bot):
-    """
-    Test basic functionality of send_text with minimal parameters.
+@pytest.fixture
+def mock_file_path():
+    """Fixture to provide a mock file path."""
+    mock_path = Mock(spec=Path)
+    mock_path.name = "test_file.txt"
+    return mock_path
 
-    Validates foundation for markdown-renderizado by ensuring text is sent correctly.
-    """
+
+@pytest.fixture
+def mock_update_context():
+    """Fixture to provide mock Update and CallbackContext."""
+    update = Mock(spec=Update)
+    context = Mock(spec=CallbackContext)
+
+    # Set up effective_message
+    mock_message = Mock()
+    mock_message.chat_id = 123456
+    mock_message.message_id = 789
+    update.effective_message = mock_message
+
+    # Set up context.bot
+    bot = Mock(spec=Bot)
+    bot.send_message = AsyncMock(return_value=Mock(spec=Message))
+    bot.send_document = AsyncMock(return_value=Mock(spec=Message))
+    context.bot = bot
+
+    return update, context
+
+
+@pytest.mark.asyncio
+async def test_send_text_basic(logot: Logot, mock_ptb_bot):
+    """Test basic functionality of send_text with minimal parameters."""
     # Configure return value for send_message
     mock_message = Mock(spec=Message)
     mock_ptb_bot.send_message.return_value = mock_message
@@ -45,15 +74,12 @@ async def test_send_text_basic(mock_ptb_bot):
 
     # Verify send_message was called with correct parameters
     mock_ptb_bot.send_message.assert_called_once_with(chat_id, md(text), reply_to_message_id=None)
+    logot.assert_logged(logged.debug("Message sent"))
 
 
 @pytest.mark.asyncio
-async def test_send_text_with_reply(mock_ptb_bot):
-    """
-    Test that send_text correctly handles reply_to_message_id parameter.
-
-    Validates support for proper command response flow in acciones-comandos-reconocimiento.
-    """
+async def test_send_text_with_reply(logot: Logot, mock_ptb_bot):
+    """Test that send_text correctly handles reply_to_message_id parameter."""
     chat_id = 123456
     text = "Reply message"
     reply_to = 789
@@ -63,38 +89,26 @@ async def test_send_text_with_reply(mock_ptb_bot):
 
     # Verify send_message was called with reply_to_message_id parameter set to reply_to
     mock_ptb_bot.send_message.assert_called_once_with(chat_id, md(text), reply_to_message_id=reply_to)
+    logot.assert_logged(logged.debug("Reply sent"))
 
 
 @pytest.mark.asyncio
-async def test_send_text_with_markdown_formatting(mock_ptb_bot):
-    """
-    Test that send_text correctly sends messages with Markdown formatting.
-
-    Validates:
-    - markdown-procesamiento: "Cuando un usuario envía un mensaje con formato Markdown,
-      el sistema procesa correctamente las etiquetas de formato."
-    - markdown-renderizado: "Cuando un desarrollador implementa una acción que genera
-      texto con formato Markdown, el sistema renderiza correctamente todas las etiquetas de formato."
-    """
+async def test_send_text_with_markdown_formatting(logot: Logot, mock_ptb_bot):
+    """Test that send_text correctly sends messages with Markdown formatting."""
     chat_id = 123456
     markdown_text = "*Bold text* and _italic text_"
 
     # Call function
     await send_text(mock_ptb_bot, chat_id, markdown_text)
 
-    # Verify markdown text is preserved when sending
+    # Verify Markdown text is preserved when sending
     mock_ptb_bot.send_message.assert_called_once_with(chat_id, md(markdown_text), reply_to_message_id=None)
+    logot.assert_logged(logged.debug("Message sent"))
 
 
 @pytest.mark.asyncio
-async def test_send_text_with_special_markdown_characters(mock_ptb_bot):
-    """
-    Test that send_text correctly handles special Markdown characters.
-
-    Validates:
-    - markdown-caracteres: "Cuando se utilizan caracteres especiales junto con etiquetas de formato,
-      el sistema escapa correctamente los caracteres para evitar conflictos con la sintaxis de Markdown."
-    """
+async def test_send_text_with_special_markdown_characters(logot: Logot, mock_ptb_bot):
+    """Test that send_text correctly handles special Markdown characters."""
     chat_id = 123456
     text_with_special_chars = "Special characters: *asterisks*, _underscores_, `backticks`"
 
@@ -103,17 +117,12 @@ async def test_send_text_with_special_markdown_characters(mock_ptb_bot):
 
     # Verify text with special characters is sent correctly
     mock_ptb_bot.send_message.assert_called_once_with(chat_id, md(text_with_special_chars), reply_to_message_id=None)
+    logot.assert_logged(logged.debug("Message sent"))
 
 
 @pytest.mark.asyncio
-async def test_send_text_with_complex_markdown(mock_ptb_bot):
-    """
-    Test that send_text correctly handles complex Markdown formatting.
-
-    Validates:
-    - markdown-combinacion: "Al combinar múltiples estilos de formato en un mismo mensaje,
-      el sistema mantiene la jerarquía correcta del formato."
-    """
+async def test_send_text_with_complex_markdown(logot: Logot, mock_ptb_bot):
+    """Test that send_text correctly handles complex Markdown formatting."""
     chat_id = 123456
     complex_markdown = "_*Bold inside italic*_ and *_Italic inside bold_*."
 
@@ -122,58 +131,29 @@ async def test_send_text_with_complex_markdown(mock_ptb_bot):
 
     # Verify complex markdown is preserved
     mock_ptb_bot.send_message.assert_called_once_with(chat_id, md(complex_markdown), reply_to_message_id=None)
+    logot.assert_logged(logged.debug("Message sent"))
 
 
 @pytest.mark.asyncio
-async def test_send_text_error_handling(mock_ptb_bot):
-    """
-    Test that send_text properly catches and logs TelegramError.
-
-    Validates supports markdown-errores by ensuring errors in message sending are properly handled.
-    """
+async def test_send_text_error_handling(logot: Logot, mock_ptb_bot):
+    """Test that send_text properly catches and logs TelegramError."""
     chat_id = 123456
     text = "Test message"
 
     # Make send_message raise a TelegramError
     mock_ptb_bot.send_message.side_effect = TelegramError("Test error")
 
-    # We need to patch the logger in a way that prevents the exception from propagating
-    with patch("kamihi.tg.send.logger") as mock_logger:
-        # Set up the chained mocks correctly
-        mock_bind = Mock()
-        mock_logger.bind.return_value = mock_bind
+    # Call the function (should not raise now because context manager swallows exception)
+    result = await send_text(mock_ptb_bot, chat_id, text)
 
-        # Create a context manager that will swallow the exception
-        class MockCatch:
-            def __enter__(self):
-                return self
-
-            def __exit__(self, exc_type, exc_val, exc_tb):
-                # Return True to indicate the exception was handled
-                return True
-
-        mock_bind.catch.return_value = MockCatch()
-
-        # Call the function (should not raise now because context manager swallows exception)
-        result = await send_text(mock_ptb_bot, chat_id, text)
-
-        # Verify bind was called with correct parameters
-        mock_logger.bind.assert_called_once()
-        # Verify catch was called with the correct arguments
-        mock_bind.catch.assert_called_once_with(exception=TelegramError, message="Failed to send message")
-        # Verify the function returned None (since there was an error)
-        assert result is None
+    # Verify that the logger was called
+    logot.assert_logged(logged.error("Failed to send message"))
+    assert result is None
 
 
 @pytest.mark.asyncio
-async def test_send_text_handles_markdown_errors(mock_ptb_bot):
-    """
-    Test that send_text properly handles malformed Markdown content.
-
-    Validates:
-    - markdown-errores: "Al utilizar etiquetas de Markdown inválidas o mal formadas,
-      el sistema detecta los errores y muestra un mensaje informativo sobre el formato correcto."
-    """
+async def test_send_text_handles_markdown_errors(logot: Logot, mock_ptb_bot):
+    """Test that send_text properly handles malformed Markdown content."""
     chat_id = 123456
     malformed_markdown = "This has *unclosed bold"
 
@@ -181,49 +161,224 @@ async def test_send_text_handles_markdown_errors(mock_ptb_bot):
     error = TelegramError("Bad markdown formatting")
     mock_ptb_bot.send_message.side_effect = error
 
-    # We need to patch the logger in a way that prevents the exception from propagating
-    with patch("kamihi.tg.send.logger") as mock_logger:
-        # Set up the chained mocks correctly
-        mock_bind = Mock()
-        mock_logger.bind.return_value = mock_bind
+    # Call the function (should not raise now because context manager swallows exception)
+    result = await send_text(mock_ptb_bot, chat_id, malformed_markdown)
 
-        # Create a context manager that will swallow the exception
-        class MockCatch:
-            def __enter__(self):
-                return self
-
-            def __exit__(self, exc_type, exc_val, exc_tb):
-                # Return True to indicate the exception was handled
-                return True
-
-        mock_bind.catch.return_value = MockCatch()
-
-        # Call the function (should not raise now)
-        result = await send_text(mock_ptb_bot, chat_id, malformed_markdown)
-
-        # Verify bind was called with the right parameters
-        mock_logger.bind.assert_called_with(chat_id=chat_id, received_id=None, response_text=malformed_markdown)
-        # Verify catch was called with the correct arguments
-        mock_bind.catch.assert_called_with(exception=TelegramError, message="Failed to send message")
-        # Verify function returns None on error
-        assert result is None
+    # Verify that the logger was called
+    logot.assert_logged(logged.error("Failed to send message"))
+    assert result is None
 
 
 @pytest.mark.asyncio
-async def test_reply_text(mock_update, mock_context):
-    """
-    Test that reply_text correctly extracts parameters and calls send_text.
+async def test_send_file_basic(logot: Logot, mock_ptb_bot, mock_file_path):
+    """Test basic functionality of send_file with minimal parameters."""
+    # Configure return value for send_document
+    mock_message = Mock(spec=Message)
+    mock_message.message_id = 123
+    mock_ptb_bot.send_document.return_value = mock_message
 
-    Validates support for proper command response flow in acciones-comandos-reconocimiento.
-    """
-    text = "Reply message"
+    chat_id = 123456
 
-    # Patch send_text to verify it gets called with correct parameters
-    with patch("kamihi.tg.send.send_text", new=AsyncMock()) as mock_send_text:
+    # Call function
+    result = await send_file(mock_ptb_bot, chat_id, mock_file_path)
+
+    # Verify send_document was called with correct parameters
+    mock_ptb_bot.send_document.assert_called_once_with(
+        chat_id=chat_id,
+        document=mock_file_path,
+        filename=mock_file_path.name,
+        reply_to_message_id=None,
+    )
+    assert result == mock_message
+    logot.assert_logged(logged.debug("File sent"))
+
+
+@pytest.mark.asyncio
+async def test_send_file_with_reply(logot: Logot, mock_ptb_bot, mock_file_path):
+    """Test that send_file correctly handles reply_to_message_id parameter."""
+    chat_id = 123456
+    reply_to = 789
+
+    # Call function
+    await send_file(mock_ptb_bot, chat_id, mock_file_path, reply_to)
+
+    # Verify send_document was called with reply_to_message_id parameter
+    mock_ptb_bot.send_document.assert_called_once_with(
+        chat_id=chat_id,
+        document=mock_file_path,
+        filename=mock_file_path.name,
+        reply_to_message_id=reply_to,
+    )
+    logot.assert_logged(logged.debug("File sent"))
+
+
+@pytest.mark.asyncio
+async def test_send_file_error_handling(logot: Logot, mock_ptb_bot, mock_file_path):
+    """Test that send_file properly catches and logs TelegramError."""
+    chat_id = 123456
+
+    # Make send_document raise a TelegramError
+    mock_ptb_bot.send_document.side_effect = TelegramError("Test error")
+
+    # Call function
+    result = await send_file(mock_ptb_bot, chat_id, mock_file_path)
+
+    # Verify that the logger was called
+    logot.assert_logged(logged.error("Failed to send file"))
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_send_with_text_content(mock_ptb_bot):
+    """Test that send correctly dispatches text content to send_text."""
+    chat_id = 123456
+    text_content = "Test message"
+    reply_to = 789
+
+    with patch("kamihi.tg.send.send_text") as mock_send_text:
+        mock_message = Mock(spec=Message)
+        mock_send_text.return_value = mock_message
+
         # Call function
-        await reply_text(mock_update, mock_context, text)
+        result = await send(mock_ptb_bot, chat_id, text_content, reply_to)
 
-        # Verify send_text was called with parameters extracted from update and context
-        mock_send_text.assert_called_once_with(
-            mock_context.bot, mock_update.effective_message.chat_id, text, mock_update.effective_message.message_id
+        # Verify send_text was called with correct parameters
+        mock_send_text.assert_called_once_with(mock_ptb_bot, chat_id, text_content, reply_to)
+        assert result == mock_message
+
+
+@pytest.mark.asyncio
+async def test_send_with_file_content(mock_ptb_bot, mock_file_path):
+    """Test that send correctly dispatches Path content to send_file."""
+    chat_id = 123456
+    reply_to = 789
+
+    with patch("kamihi.tg.send.send_file") as mock_send_file:
+        mock_message = Mock(spec=Message)
+        mock_send_file.return_value = mock_message
+
+        # Call function
+        result = await send(mock_ptb_bot, chat_id, mock_file_path, reply_to)
+
+        # Verify send_file was called with correct parameters
+        mock_send_file.assert_called_once_with(mock_ptb_bot, chat_id, mock_file_path, reply_to)
+        assert result == mock_message
+
+
+@pytest.mark.asyncio
+async def test_send_with_unsupported_content(logot: Logot, mock_ptb_bot):
+    """Test that send handles unsupported content types correctly."""
+    chat_id = 123456
+    unsupported_content = 12345  # int is not supported
+
+    result = await send(mock_ptb_bot, chat_id, unsupported_content)
+
+    # Verify that the logger was called with an error
+    logot.assert_logged(logged.error(f"Unsupported content type: {type(unsupported_content)}"))
+    # Verify function returns None
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_send_without_reply_to_message_id(mock_ptb_bot):
+    """Test that send works correctly when reply_to_message_id is not provided."""
+    chat_id = 123456
+    text_content = "Test message"
+
+    with patch("kamihi.tg.send.send_text") as mock_send_text:
+        mock_message = Mock(spec=Message)
+        mock_send_text.return_value = mock_message
+
+        # Call function without reply_to_message_id
+        result = await send(mock_ptb_bot, chat_id, text_content)
+
+        # Verify send_text was called with None for reply_to_message_id
+        mock_send_text.assert_called_once_with(mock_ptb_bot, chat_id, text_content, None)
+        assert result == mock_message
+
+
+@pytest.mark.asyncio
+async def test_reply_with_text_content(mock_update_context):
+    """Test that reply correctly handles text content."""
+    update, context = mock_update_context
+    text_content = "Reply message"
+
+    with patch("kamihi.tg.send.send") as mock_send:
+        mock_message = Mock(spec=Message)
+        mock_send.return_value = mock_message
+
+        # Call function
+        result = await reply(update, context, text_content)
+
+        # Verify send was called with correct parameters
+        mock_send.assert_called_once_with(
+            context.bot,
+            update.effective_message.chat_id,
+            text_content,
+            reply_to_message_id=update.effective_message.message_id,
         )
+        assert result == mock_message
+
+
+@pytest.mark.asyncio
+async def test_reply_with_file_content(mock_update_context, mock_file_path):
+    """Test that reply correctly handles file content."""
+    update, context = mock_update_context
+
+    with patch("kamihi.tg.send.send") as mock_send:
+        mock_message = Mock(spec=Message)
+        mock_send.return_value = mock_message
+
+        # Call function
+        result = await reply(update, context, mock_file_path)
+
+        # Verify send was called with correct parameters
+        mock_send.assert_called_once_with(
+            context.bot,
+            update.effective_message.chat_id,
+            mock_file_path,
+            reply_to_message_id=update.effective_message.message_id,
+        )
+        assert result == mock_message
+
+
+@pytest.mark.asyncio
+async def test_reply_extracts_correct_parameters(mock_update_context):
+    """Test that reply correctly extracts parameters from Update and CallbackContext."""
+    update, context = mock_update_context
+    text_content = "Test reply"
+
+    # Modify the mock to have specific values
+    update.effective_message.chat_id = 999888
+    update.effective_message.message_id = 777666
+
+    with patch("kamihi.tg.send.send") as mock_send:
+        # Call function
+        await reply(update, context, text_content)
+
+        # Verify the correct parameters were extracted and passed
+        mock_send.assert_called_once_with(
+            context.bot,
+            999888,  # chat_id
+            text_content,
+            reply_to_message_id=777666,  # message_id
+        )
+
+
+@pytest.mark.asyncio
+async def test_reply_forwards_return_value(mock_update_context):
+    """Test that reply correctly forwards the return value from send."""
+    update, context = mock_update_context
+    text_content = "Test message"
+
+    with patch("kamihi.tg.send.send") as mock_send:
+        # Test with successful message
+        mock_message = Mock(spec=Message)
+        mock_send.return_value = mock_message
+        result = await reply(update, context, text_content)
+        assert result == mock_message
+
+        # Test with None return (error case)
+        mock_send.return_value = None
+        result = await reply(update, context, text_content)
+        assert result is None
