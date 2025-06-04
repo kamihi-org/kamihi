@@ -145,7 +145,6 @@ class WebSettings(BaseModel):
     Defines the web settings schema.
 
     Attributes:
-        secret (str): The secret key for the web server.
         host (str): The host of the web interface.
         port (int): The port of the web interface.
 
