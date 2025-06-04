@@ -8,6 +8,7 @@ License:
 
 import os
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -324,3 +325,312 @@ def test_db_host(host: str):
     with patch.dict(os.environ, {"KAMIHI_DB__HOST": host}):
         settings = KamihiSettings()
         assert settings.db.host == host
+
+
+def test_from_yaml_with_valid_file():
+    """Test loading settings from a valid YAML file."""
+    # Create a temporary YAML file with valid configuration
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
+        temp_file.write("""
+log:
+  stdout_level: WARNING
+  stderr_enable: true
+  file_enable: true
+  file_path: custom.log
+db:
+  host: mongodb://testhost:27017
+  name: testdb
+timezone: Europe/London
+        """)
+        yaml_path = Path(temp_file.name)
+
+    try:
+        # Load settings from YAML file
+        settings = KamihiSettings.from_yaml(yaml_path)
+        
+        # Verify all settings were loaded correctly
+        assert settings.log.stdout_level == "WARNING"
+        assert settings.log.stderr_enable is True
+        assert settings.log.file_enable is True
+        assert settings.log.file_path == "custom.log"
+        assert settings.db.host == "mongodb://testhost:27017"
+        assert settings.db.name == "testdb"
+        assert settings.timezone == "Europe/London"
+    finally:
+        # Clean up
+        if yaml_path.exists():
+            yaml_path.unlink()
+
+
+def test_from_yaml_with_partial_config():
+    """Test loading settings from a YAML file with only partial configuration."""
+    # Create a temporary YAML file with partial configuration
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
+        temp_file.write("""
+log:
+  stdout_level: ERROR
+timezone: Asia/Tokyo
+        """)
+        yaml_path = Path(temp_file.name)
+
+    try:
+        # Load settings from YAML file
+        settings = KamihiSettings.from_yaml(yaml_path)
+        
+        # Verify specified settings were loaded
+        assert settings.log.stdout_level == "ERROR"
+        assert settings.timezone == "Asia/Tokyo"
+        
+        # Verify default values are preserved for unspecified settings
+        assert settings.log.stderr_enable is False  # Default value
+        assert settings.db.host == "mongodb://localhost:27017"  # Default value
+        assert settings.testing is False  # Default value
+    finally:
+        # Clean up
+        if yaml_path.exists():
+            yaml_path.unlink()
+
+
+def test_from_yaml_with_nonexistent_file():
+    """Test loading settings from a non-existent YAML file returns default settings."""
+    # Use a path that doesn't exist
+    nonexistent_path = Path("/tmp/nonexistent_config.yaml")
+    
+    # Ensure the file doesn't exist
+    assert not nonexistent_path.exists()
+    
+    # Load settings from non-existent file
+    settings = KamihiSettings.from_yaml(nonexistent_path)
+    
+    # Verify default settings are returned
+    assert settings.log.stdout_level == "INFO"  # Default value
+    assert settings.log.stderr_enable is False  # Default value
+    assert settings.db.host == "mongodb://localhost:27017"  # Default value
+    assert settings.timezone == "UTC"  # Default value
+    assert settings.testing is False  # Default value
+
+
+def test_from_yaml_with_empty_file():
+    """Test loading settings from an empty YAML file returns default settings."""
+    # Create an empty YAML file
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
+        temp_file.write("")  # Empty file
+        yaml_path = Path(temp_file.name)
+
+    try:
+        # Load settings from empty file
+        settings = KamihiSettings.from_yaml(yaml_path)
+        
+        # Verify default settings are returned
+        assert settings.log.stdout_level == "INFO"  # Default value
+        assert settings.log.stderr_enable is False  # Default value
+        assert settings.db.host == "mongodb://localhost:27017"  # Default value
+        assert settings.timezone == "UTC"  # Default value
+        assert settings.testing is False  # Default value
+    finally:
+        # Clean up
+        if yaml_path.exists():
+            yaml_path.unlink()
+
+
+def test_from_yaml_with_null_content():
+    """Test loading settings from a YAML file with null content returns default settings."""
+    # Create a YAML file with null content
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
+        temp_file.write("~")  # YAML null
+        yaml_path = Path(temp_file.name)
+
+    try:
+        # Load settings from file with null content
+        settings = KamihiSettings.from_yaml(yaml_path)
+        
+        # Verify default settings are returned
+        assert settings.log.stdout_level == "INFO"  # Default value
+        assert settings.log.stderr_enable is False  # Default value
+        assert settings.db.host == "mongodb://localhost:27017"  # Default value
+        assert settings.timezone == "UTC"  # Default value
+        assert settings.testing is False  # Default value
+    finally:
+        # Clean up
+        if yaml_path.exists():
+            yaml_path.unlink()
+
+
+def test_from_yaml_with_invalid_yaml():
+    """Test loading settings from a YAML file with invalid YAML syntax raises an error."""
+    # Create a YAML file with invalid syntax
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
+        temp_file.write("""
+log:
+  stdout_level: WARNING
+    invalid_indentation: true
+        """)
+        yaml_path = Path(temp_file.name)
+
+    try:
+        # Loading from invalid YAML should raise an exception
+        with pytest.raises(Exception):
+            KamihiSettings.from_yaml(yaml_path)
+    finally:
+        # Clean up
+        if yaml_path.exists():
+            yaml_path.unlink()
+
+
+def test_from_yaml_with_invalid_config_values():
+    """Test loading settings from a YAML file with invalid configuration values raises validation error."""
+    # Create a YAML file with invalid configuration values
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
+        temp_file.write("""
+log:
+  stdout_level: INVALID_LEVEL
+timezone: Invalid/Timezone
+        """)
+        yaml_path = Path(temp_file.name)
+
+    try:
+        # Loading with invalid values should raise ValidationError
+        with pytest.raises(ValidationError):
+            KamihiSettings.from_yaml(yaml_path)
+    finally:
+        # Clean up
+        if yaml_path.exists():
+            yaml_path.unlink()
+
+
+def test_from_yaml_with_directory_path():
+    """Test loading settings from a directory path returns default settings."""
+    # Create a temporary directory
+    with tempfile.TemporaryDirectory() as temp_dir:
+        dir_path = Path(temp_dir)
+        
+        # Ensure it's a directory, not a file
+        assert dir_path.is_dir()
+        
+        # Load settings from directory path
+        settings = KamihiSettings.from_yaml(dir_path)
+        
+        # Verify default settings are returned
+        assert settings.log.stdout_level == "INFO"  # Default value
+        assert settings.log.stderr_enable is False  # Default value
+        assert settings.db.host == "mongodb://localhost:27017"  # Default value
+        assert settings.timezone == "UTC"  # Default value
+        assert settings.testing is False  # Default value
+
+
+def test_from_yaml_with_complex_nested_config():
+    """Test loading settings from a YAML file with complex nested configuration."""
+    # Create a temporary YAML file with complex nested configuration
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
+        temp_file.write("""
+log:
+  stdout_enable: true
+  stdout_level: DEBUG
+  stdout_serialize: true
+  stderr_enable: true
+  stderr_level: CRITICAL
+  stderr_serialize: false
+  file_enable: true
+  file_level: WARNING
+  file_path: /var/log/kamihi.log
+  file_serialize: true
+  file_rotation: 10 MB
+  file_retention: 30 days
+  notification_enable: true
+  notification_level: SUCCESS
+  notification_urls:
+    - https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
+    - https://discord.com/api/webhooks/123456789/abcdefgh
+db:
+  host: mongodb+srv://user:password@cluster0.mongodb.net
+  name: production_db
+responses:
+  default_enabled: false
+  default_message: Custom default message
+  error_message: Custom error message
+web:
+  host: 0.0.0.0
+  port: 8080
+timezone: America/New_York
+testing: false
+autoreload_templates: false
+        """)
+        yaml_path = Path(temp_file.name)
+
+    try:
+        # Load settings from YAML file
+        settings = KamihiSettings.from_yaml(yaml_path)
+        
+        # Verify all log settings
+        assert settings.log.stdout_enable is True
+        assert settings.log.stdout_level == "DEBUG"
+        assert settings.log.stdout_serialize is True
+        assert settings.log.stderr_enable is True
+        assert settings.log.stderr_level == "CRITICAL"
+        assert settings.log.stderr_serialize is False
+        assert settings.log.file_enable is True
+        assert settings.log.file_level == "WARNING"
+        assert settings.log.file_path == "/var/log/kamihi.log"
+        assert settings.log.file_serialize is True
+        assert settings.log.file_rotation == "10 MB"
+        assert settings.log.file_retention == "30 days"
+        assert settings.log.notification_enable is True
+        assert settings.log.notification_level == "SUCCESS"
+        assert settings.log.notification_urls == [
+            "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
+            "https://discord.com/api/webhooks/123456789/abcdefgh"
+        ]
+        
+        # Verify database settings
+        assert settings.db.host == "mongodb+srv://user:password@cluster0.mongodb.net"
+        assert settings.db.name == "production_db"
+        
+        # Verify response settings
+        assert settings.responses.default_enabled is False
+        assert settings.responses.default_message == "Custom default message"
+        assert settings.responses.error_message == "Custom error message"
+        
+        # Verify web settings
+        assert settings.web.host == "0.0.0.0"
+        assert settings.web.port == 8080
+        
+        # Verify general settings
+        assert settings.timezone == "America/New_York"
+        assert settings.testing is False
+        assert settings.autoreload_templates is False
+    finally:
+        # Clean up
+        if yaml_path.exists():
+            yaml_path.unlink()
+
+
+def test_from_yaml_preserves_defaults_for_missing_sections():
+    """Test that missing sections in YAML preserve their default values."""
+    # Create a YAML file with only one section
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
+        temp_file.write("""
+timezone: Europe/Paris
+        """)
+        yaml_path = Path(temp_file.name)
+
+    try:
+        # Load settings from YAML file
+        settings = KamihiSettings.from_yaml(yaml_path)
+        
+        # Verify specified setting
+        assert settings.timezone == "Europe/Paris"
+        
+        # Verify all other sections preserve defaults
+        assert settings.log.stdout_level == "INFO"  # Default LogSettings
+        assert settings.log.stderr_enable is False  # Default LogSettings
+        assert settings.db.host == "mongodb://localhost:27017"  # Default DatabaseSettings
+        assert settings.db.name == "kamihi"  # Default DatabaseSettings
+        assert settings.responses.default_enabled is True  # Default ResponseSettings
+        assert settings.web.host == "localhost"  # Default WebSettings
+        assert settings.web.port == 4242  # Default WebSettings
+        assert settings.testing is False  # Default value
+        assert settings.autoreload_templates is True  # Default value
+    finally:
+        # Clean up
+        if yaml_path.exists():
+            yaml_path.unlink()
