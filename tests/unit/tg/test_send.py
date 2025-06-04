@@ -14,6 +14,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from logot import Logot, logged
 from telegram import Bot, Message, Update
+from telegram.constants import FileSizeLimit
 from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
@@ -272,6 +273,50 @@ async def test_send_file_with_no_read_permission(logot: Logot, mock_ptb_bot, tmp
 
     # Verify that the logger was called with an error
     logot.assert_logged(logged.error("No read permission for file"))
+    # Verify function returns None
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_send_file_with_empty_file(logot: Logot, mock_ptb_bot, tmp_path):
+    """Test that send_file handles empty file content."""
+    chat_id = 123456
+    empty_file = tmp_path / "empty_file.txt"
+    empty_file.write_text("")
+
+    # Call function
+    await send_file(mock_ptb_bot, chat_id, empty_file)
+
+    # Verify that the logger was called with a warning
+    logot.assert_logged(logged.warning("File is empty"))
+    # Verify send_document was called with correct parameters
+    mock_ptb_bot.send_document.assert_called_once_with(
+        chat_id=chat_id,
+        document=empty_file,
+        filename=empty_file.name,
+        reply_to_message_id=None,
+    )
+    logot.assert_logged(logged.debug("File sent"))
+
+
+@pytest.mark.asyncio
+async def test_send_file_too_big(logot: Logot, mock_ptb_bot, tmp_path):
+    """Test that send_file handles files that are too big."""
+    chat_id = 123456
+    big_file = tmp_path / "big_file.txt"
+    big_file.write_text("A" * (FileSizeLimit.FILESIZE_UPLOAD + 1))
+
+    assert big_file.stat().st_size > FileSizeLimit.FILESIZE_UPLOAD
+
+    # Call function
+    result = await send_file(mock_ptb_bot, chat_id, big_file)
+
+    # Verify that the logger was called with an error
+    logot.assert_logged(
+        logged.error(
+            f"File size ({big_file.stat().st_size} bytes) exceeds Telegram limit of {FileSizeLimit.FILESIZE_UPLOAD} bytes"
+        )
+    )
     # Verify function returns None
     assert result is None
 
