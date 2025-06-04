@@ -12,5 +12,8 @@
   ],
   labels: [
     "type:task"
+  ],
+  ignorePaths: [
+    "requirements.txt"
   ]
 }
