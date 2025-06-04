@@ -25,8 +25,6 @@ from pydantic_settings import (
 )
 from pytz.tzinfo import DstTzInfo
 
-_LEVEL_PATTERN = r"^(TRACE|DEBUG|INFO|SUCCESS|WARNING|ERROR|CRITICAL)$"
-
 
 class LogLevel(StrEnum):
     """
@@ -98,30 +96,6 @@ class LogSettings(BaseModel):
     notification_enable: bool = Field(default=False)
     notification_level: LogLevel = LogLevel.SUCCESS
     notification_urls: list[str] = Field(default_factory=list)
-
-    @field_validator("stdout_level", "stderr_level", "file_level", "notification_level")
-    @classmethod
-    def validate_log_level(cls, value: str) -> str:
-        """
-        Validate the log level value.
-
-        Args:
-            value (str): The log level value to validate.
-
-        Returns:
-            str: The validated log level value.
-
-        Raises:
-            ValueError: If the log level is invalid.
-
-        """
-        value = value.upper()
-
-        if not re.match(_LEVEL_PATTERN, value):
-            msg = f"Invalid log level: {value}"
-            raise ValueError(msg)
-
-        return value
 
 
 class ResponseSettings(BaseModel):
