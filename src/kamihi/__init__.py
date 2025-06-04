@@ -19,7 +19,7 @@ from .base.logging import configure_logging
 from .bot import Bot
 from .users.models import User as BaseUser
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 
 bot: Bot

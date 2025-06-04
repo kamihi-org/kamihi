@@ -1,3 +1,9 @@
+## 1.1.0 (2025-06-04)
+
+### Feat
+
+- **bot**: support sending files as action result (#78)
+
 ## 1.0.0 (2025-05-27)
 
 ### Feat
