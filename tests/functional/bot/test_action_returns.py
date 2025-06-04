@@ -58,7 +58,9 @@ async def test_action_returns_string(user_in_db, add_permission_for_user, chat: 
         }
     ],
 )
-async def test_action_returns_file(user_in_db, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path):
+async def test_action_returns_file(
+    user_in_db, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+):
     """Test the action decorator without parentheses."""
     add_permission_for_user(user_in_db, "start")
 
