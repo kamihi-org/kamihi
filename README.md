@@ -9,16 +9,16 @@
 
 ## Getting started
 
-To get started, check out the tutorial ["Your first bot"](https://kamihi-dev.github.io/kamihi/tutorials/your-first-bot/) in the documentation.
+To get started, check out the tutorial ["Your first bot"](https://kamihi-dev.github.io/kamihi/latest/tutorials/your-first-bot/) in the documentation.
 
 ## Documentation
 
-The documentation is available at [kamihi-dev.github.io/kamihi](https://kamihi-dev.github.io/kamihi/). It includes a comprehensive guide to using Kamihi, including installation instructions, usage examples, and API references.
+The documentation is available at [kamihi-dev.github.io/kamihi](https://kamihi-dev.github.io/kamihi/latest). It includes a comprehensive guide to using Kamihi, including installation instructions, usage examples, and API references.
 
 ## Contributing
 
 We welcome contributions to Kamihi! If you have an idea for a new feature, bug fix, or improvement, please open an 
-issue or submit a pull request. For more information on how to contribute, check out [this page](https://kamihi-dev.github.io/kamihi/dev/) on the docs.
+issue or submit a pull request. For more information on how to contribute, check out [this page](https://kamihi-dev.github.io/kamihi/latest/dev/) on the docs.
 
 ## License
 
