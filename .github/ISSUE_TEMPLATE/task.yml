@@ -15,7 +15,7 @@ body:
         - Pull requests
         - Documentation
         - Other
-      default: CI
+      default: 0
     validations:
       required: true
   - type: textarea
