@@ -51,7 +51,7 @@ async def test_action_returns_string(user_in_db, add_permission_for_user, chat: 
                 from pathlib import Path
                              
                 @bot.action
-                async def start():
+                async def start() -> Path:
                     return Path("actions/start/file.txt")
             """).encode(),
             "actions/start/file.txt": "This is a file.".encode(),

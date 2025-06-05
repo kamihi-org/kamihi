@@ -149,9 +149,27 @@ class Action:
         """Clean up the action from the database."""
         RegisteredAction.objects(name__nin=keep).delete()
 
+    async def _validate_result(self, result: Any) -> bool:  # noqa: ANN401
+        """Validate the result of the action."""
+        ann = inspect.get_annotations(self._func).get("return")
+
+        if ann and not isinstance(result, ann):
+            self._logger.error(
+                "Action returned an unexpected type: expected {expected}, got {actual}",
+                expected=ann,
+                actual=type(result),
+            )
+            return False
+        if not ann and result is not None:
+            self._logger.warning(
+                "Action returned a value of type {typ} but no return type annotation was specified",
+                typ=type(result),
+            )
+        return True
+
     async def _send_result(self, result: Any, update: Update, context: CallbackContext) -> None:  # noqa: ANN401
         """Send the result of the action."""
-        ann = inspect.get_annotations(self._func).get("return")
+        ann = inspect.get_annotations(self._func).get("return", str)
 
         if ann == Path:
             await send_document(result, update=update, context=context)
@@ -171,11 +189,10 @@ class Action:
 
         self._logger.debug("Executing")
 
-        ann = inspect.get_annotations(self._func)
         pos_args = []
         keyword_args = {}
 
-        for name, param in ann.items():
+        for name, param in inspect.signature(self._func).parameters.items():
             match name:
                 case "update":
                     value = update
@@ -198,17 +215,10 @@ class Action:
 
         result: Any = await self._func(*pos_args, **keyword_args)
 
-        if not isinstance(result, ann.get("return")):
-            self._logger.error(
-                "Action returned an unexpected type: expected {expected}, got {actual}",
-                expected=ann.get("return"),
-                actual=type(result),
-            )
-            return
+        if self._validate_result(result):
+            await self._send_result(result, update, context)
 
-        await self._send_result(result, update, context)
-
-        self._logger.debug("Executed successfully")
+        self._logger.debug("Executed")
         raise ApplicationHandlerStop
 
     def __repr__(self) -> str:
