@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
+from pathlib import Path
+from typing import Annotated, Any
 
 import loguru
 from loguru import logger
@@ -19,6 +21,7 @@ from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
 from kamihi.tg import reply
 from kamihi.tg.handlers import AuthHandler
+from kamihi.tg.send import send_document, send_text
 from kamihi.users import get_user_from_telegram_id
 
 from .models import RegisteredAction
@@ -147,6 +150,21 @@ class Action:
         """Clean up the action from the database."""
         RegisteredAction.objects(name__nin=keep).delete()
 
+    async def _send_result(self, result: Any, update: Update, context: CallbackContext) -> None:  # noqa: ANN401
+        """Send the result of the action."""
+        ann = inspect.get_annotations(self._func)
+
+        match ann.get("return", str):
+            case Path():
+                await send_document(result, update=update, context=context)
+            case str():
+                await send_text(result, update=update, context=context)
+            case None:
+                self._logger.debug("Function returned None, skipping reply")
+            case _:
+                self._logger.error("Unsupported return type: {return_type}", return_type=ann.get("return", str))
+                raise ApplicationHandlerStop
+
     async def __call__(self, update: Update, context: CallbackContext) -> None:
         """Execute the action."""
         if not self.is_valid():
@@ -154,11 +172,12 @@ class Action:
             return
 
         self._logger.debug("Executing")
-        parameters = inspect.signature(self._func).parameters
+
+        ann = inspect.get_annotations(self._func)
         pos_args = []
         keyword_args = {}
 
-        for name, param in parameters.items():
+        for name, param in ann.items():
             match name:
                 case "update":
                     value = update
@@ -168,6 +187,9 @@ class Action:
                     value = self._logger
                 case "user":
                     value = get_user_from_telegram_id(update.effective_user.id)
+                case "return":
+                    # Skip return annotation
+                    continue
                 case _:
                     value = None
 
@@ -176,11 +198,17 @@ class Action:
             else:
                 keyword_args[name] = value
 
-        result = await self._func(*pos_args, **keyword_args)
-        if result is not None:
-            await reply(update, context, result)
-        else:
-            self._logger.debug("No result to send")
+        result: Any = await self._func(*pos_args, **keyword_args)
+
+        if not isinstance(result, ann.get("return")):
+            self._logger.error(
+                "Action returned an unexpected type: expected {expected}, got {actual}",
+                expected=ann.get("return"),
+                actual=type(result),
+            )
+            return
+
+        await self._send_result(result, update, context)
 
         self._logger.debug("Executed successfully")
         raise ApplicationHandlerStop
