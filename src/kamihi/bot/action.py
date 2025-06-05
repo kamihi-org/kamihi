@@ -19,9 +19,8 @@ from telegram import Update
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
-from kamihi.tg import reply
+from kamihi.tg import send_document, send_text
 from kamihi.tg.handlers import AuthHandler
-from kamihi.tg.send import send_document, send_text
 from kamihi.users import get_user_from_telegram_id
 
 from .models import RegisteredAction
@@ -156,9 +155,9 @@ class Action:
 
         match ann.get("return", str):
             case Path():
-                await send_document(result, update=update, context=context)
+                await send_document(result, self._logger, update=update, context=context)
             case str():
-                await send_text(result, update=update, context=context)
+                await send_text(result, self._logger, update=update, context=context)
             case None:
                 self._logger.debug("Function returned None, skipping reply")
             case _:

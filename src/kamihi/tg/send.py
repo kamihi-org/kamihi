@@ -6,10 +6,11 @@ License:
 
 """
 
-from pathlib import Path
-from typing import Any
+from __future__ import annotations
 
-import loguru
+import typing
+from pathlib import Path
+
 from loguru import logger
 from telegram import Bot, Message, Update
 from telegram.constants import FileSizeLimit
@@ -17,10 +18,13 @@ from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
 
+if typing.TYPE_CHECKING:
+    from loguru import Logger
+
 
 def _send_details(
     context: CallbackContext, update: Update | None = None, chat_id: int = None
-) -> tuple[Bot, int | None, int | None, loguru.Logger]:
+) -> tuple[Bot, int | None, int | None, Logger]:
     """
     Get bot, chat ID and message ID for sending a message.
 
@@ -34,21 +38,27 @@ def _send_details(
 
     """
     bot = context.bot
-    cid = chat_id or (update.effective_chat.id if update and update.effective_chat else None)
     reply_id = update.effective_message.message_id if update and update.effective_message else None
+
+    if not chat_id and not bool(update and update.effective_chat and update.effective_chat.id):
+        raise ValueError("Cannot determine chat_id. Provide it explicitly or ensure update contains it")
+
+    cid = chat_id or update.effective_chat.id
     lg = logger.bind(chat_id=cid)
+
     if reply_id:
         lg = lg.bind(reply_to_message_id=reply_id)
+
     return bot, cid, reply_id, lg
 
 
-def _check_path(file: Path, lg: loguru.Logger, max_size: FileSizeLimit = FileSizeLimit.FILESIZE_UPLOAD) -> bool:
+def _check_path(file: Path, lg: Logger, max_size: FileSizeLimit = FileSizeLimit.FILESIZE_UPLOAD) -> bool:
     """
     Check if the file path is valid.
 
     Args:
         file (Path): The file path to check.
-        lg (loguru.Logger): The logger instance for logging.
+        lg (Logger): The logger instance for logging.
         max_size (FileSizeLimit): The maximum file size allowed. Defaults to FileSizeLimit.FILESIZE_UPLOAD.
 
     Returns:
