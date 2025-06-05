@@ -114,7 +114,7 @@ async def send_text(text: str, **kwargs: CallbackContext | Update | int | None) 
     with lg.catch(exception=TelegramError, message="Failed to send message"):
         message_reply = await bot.send_message(
             chat_id,
-            md(text),
+            md(text if text else ""),
             reply_to_message_id=reply_to_message_id,
         )
         lg.bind(response_id=message_reply.message_id).debug("Reply sent" if reply_to_message_id else "Message sent")
