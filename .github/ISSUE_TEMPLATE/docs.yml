@@ -1,0 +1,20 @@
+name: Documentation
+description: For improvements or additions to the documentation.
+labels:
+  - triage
+type: Documentation
+body:
+  - type: textarea
+    attributes:
+      label: What needs to be done?
+      description: A clear and concise description of what the improvement or addition to the documentation is.
+      placeholder: Improve the documentation for the `kamihi` command.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Page
+      description: The page or section of the documentation that you are referring to, if applicable. You can just paste the link.
+      placeholder: https://kamihi-dev.github.io/kamihi/latest/
+    validations:
+      required: false
