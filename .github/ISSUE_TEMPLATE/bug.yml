@@ -1,0 +1,52 @@
+name: Bug report
+description: File a bug report and we'll look into it.
+labels:
+  - triage
+type: Bug
+assignees:
+  - kiinami
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report :)
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Be detailed! The more you tell us, the easier it is to fix.
+      placeholder: A bug happened!
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      description: Be detailed! The more you tell us, the easier it is to fix.
+      placeholder: No bug should happen!
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: You can check it by running `kamihi version` in your terminal.
+      placeholder: eg. 1.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: If the problem happens with the admin interface, what browser are you using?
+      multiple: true
+      options:
+        - Firefox
+        - Chrome
+        - Safari
+        - Microsoft Edge
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: shell

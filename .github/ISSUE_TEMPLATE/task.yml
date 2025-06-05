@@ -1,0 +1,33 @@
+name: Tasks
+description: Something needs to be done in the repository, and it is not a bug or feature request.
+labels:
+  - triage
+type: Task
+body:
+  - type: dropdown
+    attributes:
+      label: What area of the repository does this task relate to?
+      multiple: false
+      options:
+        - CI
+        - Environments
+        - Issues
+        - Pull requests
+        - Documentation
+        - Other
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What needs to be done?
+      description: A clear and concise description of what the task is.
+      placeholder: CI is wonky.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Describe alternatives you've considered.
+      description: A clear and concise description of any alternative solutions or features you've considered.
+    validations:
+      required: false
