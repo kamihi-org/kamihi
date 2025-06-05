@@ -151,18 +151,17 @@ class Action:
 
     async def _send_result(self, result: Any, update: Update, context: CallbackContext) -> None:  # noqa: ANN401
         """Send the result of the action."""
-        ann = inspect.get_annotations(self._func)
+        ann = inspect.get_annotations(self._func).get("return")
 
-        match ann.get("return", str):
-            case Path():
-                await send_document(result, self._logger, update=update, context=context)
-            case str():
-                await send_text(result, self._logger, update=update, context=context)
-            case None:
-                self._logger.debug("Function returned None, skipping reply")
-            case _:
-                self._logger.error("Unsupported return type: {return_type}", return_type=ann.get("return", str))
-                raise ApplicationHandlerStop
+        if ann == Path:
+            await send_document(result, update=update, context=context)
+        elif ann == str:
+            await send_text(result, update=update, context=context)
+        elif ann is None:
+            self._logger.debug("Function returned None, skipping reply")
+        else:
+            msg = f"Unexpected return type {type(result)} from action '{self.name}'"
+            raise TypeError(msg)
 
     async def __call__(self, update: Update, context: CallbackContext) -> None:
         """Execute the action."""
