@@ -155,7 +155,17 @@ class Action:
 
     def _validate_result(self, result: Any) -> bool:  # noqa: ANN401
         """Validate the result of the action."""
-        ann_type, ann_metadata = parse_annotation(inspect.signature(self._func).return_annotation)
+        signature = inspect.signature(self._func).return_annotation
+        ann_type, ann_metadata = parse_annotation(signature)
+
+        if signature is inspect.Signature.empty:
+            if not isinstance(result, str):
+                self._logger.error(
+                    "Action with no return type specified returned a value of type {typ} when it should have been str",
+                    typ=type(result),
+                )
+                return False
+            return True
 
         if ann_type and not isinstance(result, ann_type):
             self._logger.error(
@@ -176,13 +186,11 @@ class Action:
         """Send the result of the action."""
         ann_type, ann_metadata = parse_annotation(inspect.signature(self._func).return_annotation)
 
-        if ann_type is pathlib.Path and isinstance(ann_metadata, Document):
-            await send_document(result, caption=ann_metadata.caption, update=update, context=context)
-        elif ann_type is pathlib.Path and isinstance(ann_metadata, Photo):
+        if ann_type is pathlib.Path and isinstance(ann_metadata, Photo):
             await send_photo(result, caption=ann_metadata.caption, update=update, context=context)
-        elif ann_type is pathlib.Path:
-            await send_document(result, update=update, context=context)
-        elif ann_type is str:
+        elif ann_type is pathlib.Path or isinstance(ann_metadata, Document):
+            await send_document(result, caption=ann_metadata.caption, update=update, context=context)
+        elif ann_type is str or ann_type is inspect.Signature.empty:
             await send_text(result, update=update, context=context)
         elif ann_type is None:
             self._logger.debug("Function returned None, skipping reply")
