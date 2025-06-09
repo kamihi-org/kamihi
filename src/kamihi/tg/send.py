@@ -121,7 +121,9 @@ async def send_text(text: str, **kwargs: CallbackContext | Update | int | None) 
         return message_reply
 
 
-async def send_document(file: Path, **kwargs: CallbackContext | Update | int | None) -> Message | None:
+async def send_document(
+    file: Path, caption: str = None, **kwargs: CallbackContext | Update | int | None
+) -> Message | None:
     """
     Send a file to a chat.
 
@@ -130,6 +132,7 @@ async def send_document(file: Path, **kwargs: CallbackContext | Update | int | N
 
     Args:
         file (Path): The file to send.
+        caption (str, optional): The caption for the file. Defaults to None.
         kwargs (dict): Additional parameters including:
             - context (CallbackContext): The callback context containing the bot instance.
             - update (Update | None): The Telegram update object, if available.
@@ -150,6 +153,7 @@ async def send_document(file: Path, **kwargs: CallbackContext | Update | int | N
             chat_id=chat_id,
             document=file,
             filename=file.name,
+            caption=md(caption) if caption else None,
             reply_to_message_id=reply_to_message_id,
         )
         lg.bind(response_id=message_reply.message_id).debug("File sent")

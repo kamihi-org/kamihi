@@ -21,7 +21,7 @@ from telegram import Update
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
-from kamihi.bot.media import Photo
+from kamihi.bot.media import Document, Photo
 from kamihi.tg import send_document, send_text
 from kamihi.tg.handlers import AuthHandler
 from kamihi.tg.send import send_photo
@@ -176,7 +176,9 @@ class Action:
         """Send the result of the action."""
         ann_type, ann_metadata = parse_annotation(inspect.signature(self._func).return_annotation)
 
-        if ann_type is pathlib.Path and isinstance(ann_metadata, Photo):
+        if ann_type is pathlib.Path and isinstance(ann_metadata, Document):
+            await send_document(result, caption=ann_metadata.caption, update=update, context=context)
+        elif ann_type is pathlib.Path and isinstance(ann_metadata, Photo):
             await send_photo(result, caption=ann_metadata.caption, update=update, context=context)
         elif ann_type is pathlib.Path:
             await send_document(result, update=update, context=context)

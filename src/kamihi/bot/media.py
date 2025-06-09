@@ -10,13 +10,25 @@ from dataclasses import dataclass
 
 
 @dataclass
-class Photo:
+class Media:
     """
-    Represents a photo media type.
+    Represents a media type for the Kamihi bot.
+
+    This is a base class for different media types like Photo and Document.
 
     Attributes:
-        caption (str | None): Optional caption for the photo.
+        caption (str | None): Optional caption for the media.
 
     """
 
     caption: str | None = None
+
+
+@dataclass
+class Document(Media):
+    """Represents a document media type."""
+
+
+@dataclass
+class Photo(Media):
+    """Represents a photo media type."""
