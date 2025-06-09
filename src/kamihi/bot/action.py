@@ -9,6 +9,8 @@ License:
 from __future__ import annotations
 
 import inspect
+import pathlib
+import typing
 from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated, Any
@@ -19,12 +21,14 @@ from telegram import Update
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
+from kamihi.bot.media import Photo
 from kamihi.tg import send_document, send_text
 from kamihi.tg.handlers import AuthHandler
+from kamihi.tg.send import send_photo
 from kamihi.users import get_user_from_telegram_id
 
 from .models import RegisteredAction
-from .utils import COMMAND_REGEX
+from .utils import COMMAND_REGEX, parse_annotation
 
 
 class Action:
@@ -149,36 +153,39 @@ class Action:
         """Clean up the action from the database."""
         RegisteredAction.objects(name__nin=keep).delete()
 
-    async def _validate_result(self, result: Any) -> bool:  # noqa: ANN401
+    def _validate_result(self, result: Any) -> bool:  # noqa: ANN401
         """Validate the result of the action."""
-        ann = inspect.get_annotations(self._func).get("return")
+        ann_type, ann_metadata = parse_annotation(inspect.signature(self._func).return_annotation)
 
-        if ann and not isinstance(result, ann):
+        if ann_type and not isinstance(result, ann_type):
             self._logger.error(
                 "Action returned an unexpected type: expected {expected}, got {actual}",
-                expected=ann,
+                expected=ann_type,
                 actual=type(result),
             )
             return False
-        if not ann and result is not None:
+        if not ann_type and result is not None:
             self._logger.warning(
                 "Action returned a value of type {typ} but no return type annotation was specified",
                 typ=type(result),
             )
+
         return True
 
     async def _send_result(self, result: Any, update: Update, context: CallbackContext) -> None:  # noqa: ANN401
         """Send the result of the action."""
-        ann = inspect.get_annotations(self._func).get("return", str)
+        ann_type, ann_metadata = parse_annotation(inspect.signature(self._func).return_annotation)
 
-        if ann == Path:
+        if ann_type is pathlib.Path and isinstance(ann_metadata, Photo):
+            await send_photo(result, caption=ann_metadata.caption, update=update, context=context)
+        elif ann_type is pathlib.Path:
             await send_document(result, update=update, context=context)
-        elif ann == str:
+        elif ann_type is str:
             await send_text(result, update=update, context=context)
-        elif ann is None:
+        elif ann_type is None:
             self._logger.debug("Function returned None, skipping reply")
         else:
-            msg = f"Unexpected return type {type(result)} from action '{self.name}'"
+            msg = f"Unexpected return type {ann_type} from action '{self.name}'"
             raise TypeError(msg)
 
     async def __call__(self, update: Update, context: CallbackContext) -> None:

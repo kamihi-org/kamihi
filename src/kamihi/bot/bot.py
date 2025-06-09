@@ -29,6 +29,7 @@ from telegram import BotCommand
 from telegram.ext import CommandHandler
 
 from kamihi.base.config import KamihiSettings
+from kamihi.bot.media import Photo
 from kamihi.db.mongo import connect, disconnect
 from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
@@ -57,6 +58,8 @@ class Bot:
 
     settings: KamihiSettings
     templates: Templates
+
+    Photo: Photo = Photo
 
     _client: TelegramClient
     _web: KamihiWeb
