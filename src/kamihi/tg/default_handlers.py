@@ -45,4 +45,5 @@ async def error(update: object | None, context: CallbackContext) -> None:
     if isinstance(update, Update):
         text = context.bot_data["responses"]["error_message"]
         await send_text(text, update=update, context=context)
-        raise ApplicationHandlerStop
+
+    raise ApplicationHandlerStop
