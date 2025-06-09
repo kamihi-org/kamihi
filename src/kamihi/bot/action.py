@@ -189,7 +189,12 @@ class Action:
         if ann_type is pathlib.Path and isinstance(ann_metadata, Photo):
             await send_photo(result, caption=ann_metadata.caption, update=update, context=context)
         elif ann_type is pathlib.Path or isinstance(ann_metadata, Document):
-            await send_document(result, caption=ann_metadata.caption, update=update, context=context)
+            await send_document(
+                result,
+                caption=ann_metadata.caption if isinstance(ann_metadata, Document) else None,
+                update=update,
+                context=context,
+            )
         elif ann_type is str or ann_type is inspect.Signature.empty:
             await send_text(result, update=update, context=context)
         elif ann_type is None:
