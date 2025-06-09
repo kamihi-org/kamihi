@@ -154,3 +154,42 @@ async def send_document(file: Path, **kwargs: CallbackContext | Update | int | N
         )
         lg.bind(response_id=message_reply.message_id).debug("File sent")
         return message_reply
+
+
+async def send_photo(
+    file: Path, caption: str = None, **kwargs: CallbackContext | Update | int | None
+) -> Message | None:
+    """
+    Send a photo to a chat.
+
+    This function sends a photo file to a specified chat using the provided bot instance.
+    Performs validation checks to ensure the file exists, is readable, and is within size limits.
+
+    Args:
+        file (Path): The photo file to send.
+        caption (str, optional): The caption for the photo. Defaults to None.
+        kwargs (dict): Additional parameters including:
+            - context (CallbackContext): The callback context containing the bot instance.
+            - update (Update | None): The Telegram update object, if available.
+            - chat_id (int | None): The chat ID to send the message to, if provided.
+
+    Returns:
+        Message | None: The response from the Telegram API, or None if an error occurs.
+
+    """
+    bot, chat_id, reply_to_message_id, lg = _send_details(**kwargs)
+    lg = logger.bind(path=file)
+
+    if not _check_path(file, lg, max_size=FileSizeLimit.PHOTOSIZE_UPLOAD):
+        return None
+
+    with lg.catch(exception=TelegramError, message="Failed to send photo"):
+        message_reply = await bot.send_photo(
+            chat_id=chat_id,
+            photo=file,
+            caption=md(caption) if caption else None,
+            filename=file.name,
+            reply_to_message_id=reply_to_message_id,
+        )
+        lg.bind(response_id=message_reply.message_id).debug("Photo sent")
+        return message_reply
