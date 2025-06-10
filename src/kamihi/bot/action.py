@@ -158,27 +158,28 @@ class Action:
         signature = inspect.signature(self._func).return_annotation
         ann_type, ann_metadata = parse_annotation(signature)
 
-        if signature is inspect.Signature.empty:
-            if not isinstance(result, str):
+        if signature is inspect.Signature.empty and not isinstance(result, str):
+            self._logger.error(
+                "Action with no return type specified returned a value of type {typ} when it should have been str",
+                typ=type(result),
+            )
+            return False
+
+        if ann_type is not inspect.Signature.empty:
+            if ann_type is not type(None) and result is None:
                 self._logger.error(
-                    "Action with no return type specified returned a value of type {typ} when it should have been str",
-                    typ=type(result),
+                    "Action with return type {expected} returned None, which is unexpected",
+                    expected=ann_type,
+                )
+                return False
+            elif not isinstance(result, ann_type):  # noqa: RET505
+                self._logger.error(
+                    "Action returned an unexpected type: expected {expected}, got {actual}",
+                    expected=ann_type,
+                    actual=type(result),
                 )
                 return False
             return True
-
-        if ann_type and not isinstance(result, ann_type):
-            self._logger.error(
-                "Action returned an unexpected type: expected {expected}, got {actual}",
-                expected=ann_type,
-                actual=type(result),
-            )
-            return False
-        if not ann_type and result is not None:
-            self._logger.warning(
-                "Action returned a value of type {typ} but no return type annotation was specified",
-                typ=type(result),
-            )
 
         return True
 

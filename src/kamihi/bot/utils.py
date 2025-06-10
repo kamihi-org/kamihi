@@ -34,4 +34,4 @@ def parse_annotation(ann: Any) -> tuple[type, Any]:  # noqa: ANN401
         base_type = args[0]
         metadata = args[1]
         return base_type, metadata
-    return ann, ()
+    return ann, None
