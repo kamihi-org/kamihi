@@ -18,8 +18,8 @@ from telethon.tl.custom import Conversation, Message
     "actions_folder",
     [
         {
-            "actions/start/__init__.py": "",
-            "actions/start/start.py": dedent("""\
+            "start/__init__.py": "",
+            "start/start.py": dedent("""\
                 from kamihi import bot
                              
                 @bot.action
@@ -28,8 +28,8 @@ from telethon.tl.custom import Conversation, Message
             """),
         },
         {
-            "actions/start/__init__.py": "",
-            "actions/start/start.py": dedent("""\
+            "start/__init__.py": "",
+            "start/start.py": dedent("""\
                 from kamihi import bot
                              
                 @bot.action
@@ -56,8 +56,8 @@ async def test_action_returns_string(user_in_db, add_permission_for_user, chat: 
     "actions_folder",
     [
         {
-            "actions/start/__init__.py": "",
-            "actions/start/start.py": dedent("""\
+            "start/__init__.py": "",
+            "start/start.py": dedent("""\
                 from kamihi import bot
                 from pathlib import Path
                              
@@ -65,11 +65,11 @@ async def test_action_returns_string(user_in_db, add_permission_for_user, chat: 
                 async def start() -> Path:
                     return Path("actions/start/file.txt")
             """),
-            "actions/start/file.txt": "This is a file.",
+            "start/file.txt": "This is a file.",
         },
         {
-            "actions/start/__init__.py": "",
-            "actions/start/start.py": dedent("""\
+            "start/__init__.py": "",
+            "start/start.py": dedent("""\
                 from kamihi import bot
                 from pathlib import Path
                 from typing import Annotated
@@ -78,7 +78,7 @@ async def test_action_returns_string(user_in_db, add_permission_for_user, chat: 
                 async def start() -> Annotated[Path, bot.Document()]:
                     return Path("actions/start/file.txt")
             """),
-            "actions/start/file.txt": "This is a file.",
+            "start/file.txt": "This is a file.",
         },
     ],
     ids=["implicit", "explicit"],

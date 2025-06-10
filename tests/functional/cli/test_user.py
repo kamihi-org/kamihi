@@ -67,7 +67,7 @@ async def test_user_add_invalid_telegram_id(kamihi: KamihiContainer, admin_page:
     "models_folder",
     [
         {
-            "models/user.py": dedent("""\
+            "user.py": dedent("""\
                 from kamihi import bot, BaseUser
                 from mongoengine import StringField
                  
@@ -97,7 +97,7 @@ async def test_user_add_custom_data(kamihi: KamihiContainer, admin_page: Page, m
     "models_folder",
     [
         {
-            "models/user.py": dedent("""\
+            "user.py": dedent("""\
                 from kamihi import bot, BaseUser
                 from mongoengine import StringField
 
@@ -130,7 +130,7 @@ async def test_user_add_custom_data_invalid_json_format(
     "models_folder",
     [
         {
-            "models/user.py": dedent("""\
+            "user.py": dedent("""\
                 from kamihi import bot, BaseUser
                 from mongoengine import StringField
 
@@ -151,7 +151,7 @@ async def test_user_add_custom_data_missing_required_field(kamihi: KamihiContain
     "models_folder",
     [
         {
-            "models/user.py": dedent("""\
+            "user.py": dedent("""\
                 from kamihi import bot, BaseUser
                 from mongoengine import StringField
 
@@ -176,7 +176,7 @@ async def test_user_add_custom_data_field_not_defined(kamihi: KamihiContainer, a
     "models_folder",
     [
         {
-            "models/user.py": dedent("""\
+            "user.py": dedent("""\
                 from kamihi import bot, BaseUser
                 from mongoengine import StringField
 

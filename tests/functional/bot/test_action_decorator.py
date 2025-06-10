@@ -18,8 +18,8 @@ from telethon.tl.custom import Conversation
     "actions_folder",
     [
         {
-            "actions/start/__init__.py": "",
-            "actions/start/start.py": dedent("""\
+            "start/__init__.py": "",
+            "start/start.py": dedent("""\
                 from kamihi import bot
                 
                 @bot.action
@@ -45,16 +45,16 @@ async def test_action_decorator_no_parentheses(user_in_db, add_permission_for_us
     "actions_folder",
     [
         {
-            "actions/start/__init__.py": "",
-            "actions/start/start.py": dedent("""\
+            "start/__init__.py": "",
+            "start/start.py": dedent("""\
                 from kamihi import bot
                 
                 @bot.action
                 async def start():
                     return "Hello! I'm your friendly bot. How can I help you today?"
             """),
-            "actions/start2/__init__.py": "",
-            "actions/start2/start2.py": dedent("""\
+            "start2/__init__.py": "",
+            "start2/start2.py": dedent("""\
                 from kamihi import bot
                 
                 @bot.action

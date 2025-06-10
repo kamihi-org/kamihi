@@ -86,12 +86,12 @@ The functional test suite comes with several convenience fixtures to make writin
 
 #### Application structure fixtures
 
-These fixtures provide the content of the project under test in the container. You can override them to provide custom content for testing:
+These fixtures provide the content of the project under test in the container. All of them are dictionaries where the keys represent the paths of the files and the values represent the contents. Directories get created automatically. You can override them to provide custom content for testing:
 
 - **`pyproject`** - Returns a dictionary with `pyproject.toml` as key and the file content as value.
 - **`config_file`** - Returns a dictionary with `kamihi.yml` as key and the file content as value.
-- **`actions_folder`** - Dictionary representing the actions folder structure and all its files.
-- **`models_folder`** - Dictionary representing the models folder structure and all its files.
+- **`actions_folder`** - Dictionary representing the actions folder structure and all its files. Gets `actions/` prepended to all keys at runtime.
+- **`models_folder`** - Dictionary representing the models folder structure and all its files. Gets `models/` prepended to all keys at runtime.
 - **`app_folder`** - Combines all application files into a single dictionary for container mounting. Not to be overridden unless you know what you're doing.
 
 #### Container and database fixtures
@@ -173,14 +173,14 @@ def run_command():
 def actions_folder():
     """Custom actions for all tests in this file."""
     return {
-        "actions/start/__init__.py": "".encode(),
-        "actions/start/start.py": dedent("""\
+        "start/__init__.py": "",
+        "start/start.py": dedent("""\
             from kamihi import bot
             
             @bot.action
             async def start():
                 return "Hello World!"
-        """).encode(),
+        """),
     }
 
 def test_my_feature(kamihi, chat):
@@ -198,18 +198,18 @@ Override fixtures for specific tests by decorating individual functions:
     "models_folder",
     [
         {
-            "models/user.py": dedent("""\
+            "user.py": dedent("""\
                 from kamihi import bot, BaseUser
                 from mongoengine import StringField
                  
                 @bot.user_class
                 class MyCustomUser(BaseUser):
                     name: str = StringField()
-            """).encode(),
+            """),
         }
     ],
 )
-async def test_custom_user_model(user_in_db, chat):
+async def test_custom_user_model(user_in_db, chat, models_folder):
     # This test uses custom user model and data
     pass
 ```
@@ -254,14 +254,14 @@ async def test_web_feature(admin_page):
     "actions_folder",
     [
         {
-            "actions/greet/__init__.py": "".encode(),
-            "actions/greet/greet.py": dedent("""\
+            "greet/__init__.py": "",
+            "greet/greet.py": dedent("""\
                 from kamihi import bot
                 
                 @bot.action
                 async def greet(user):
                     return f"Hello {user.telegram_id}!"
-            """).encode(),
+            """),
         }
     ],
 )

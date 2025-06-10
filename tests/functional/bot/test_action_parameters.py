@@ -18,8 +18,8 @@ from telethon.tl.custom import Conversation
     "actions_folder",
     [
         {
-            "actions/start/__init__.py": "",
-            "actions/start/start.py": dedent("""\
+            "start/__init__.py": "",
+            "start/start.py": dedent("""\
             from kamihi import bot
                          
             @bot.action
@@ -45,8 +45,8 @@ async def test_action_parameter_user(user_in_db, add_permission_for_user, chat: 
     "actions_folder",
     [
         {
-            "actions/start/__init__.py": "",
-            "actions/start/start.py": dedent("""\
+            "start/__init__.py": "",
+            "start/start.py": dedent("""\
             from kamihi import bot
                          
             @bot.action
@@ -60,7 +60,7 @@ async def test_action_parameter_user(user_in_db, add_permission_for_user, chat: 
     "models_folder",
     [
         {
-            "models/user.py": dedent("""\
+            "user.py": dedent("""\
                 from kamihi import bot, BaseUser
                 from mongoengine import StringField
                  
