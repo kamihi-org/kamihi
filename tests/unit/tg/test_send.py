@@ -20,9 +20,9 @@ from telegram.constants import FileSizeLimit
 from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
-from PIL import Image
 
 from kamihi.tg.send import send_text, send_document, _send_details, _check_path, send_photo
+from tests.conftest import random_image
 
 
 @pytest.fixture
@@ -65,28 +65,10 @@ def tmp_file(tmp_path):
 def tmp_image_file(tmp_path):
     """Fixture to create a random image in a temporal directory and provide its path."""
     file = tmp_path / "test_file.jpg"
-    width, height = 1000, 1000
-    for _ in range(1000):
-        candidate_width = np.random.randint(1, 4001)
-        candidate_height = np.random.randint(1, 4001)
 
-        if any(
-            [
-                candidate_width + candidate_height > 10000,
-                candidate_width < 1,
-                candidate_height < 1,
-                max(candidate_width, candidate_height) / min(candidate_width, candidate_height) > 20,
-            ]
-        ):
-            continue
+    with open(file, "wb") as f:
+        f.write(random_image())
 
-        width = candidate_width
-        height = candidate_height
-        break
-
-    pixel_data = np.random.randint(0, 256, size=(height, width, 3), dtype=np.uint8)
-    img = Image.fromarray(pixel_data, "RGB")
-    img.save(file, format="JPEG", quality=85)
     return file
 
 

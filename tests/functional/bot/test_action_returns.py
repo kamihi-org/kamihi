@@ -9,6 +9,8 @@ import pytest
 from telethon import TelegramClient
 from telethon.tl.custom import Conversation, Message
 
+from tests.conftest import random_image
+
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("kamihi")
@@ -90,10 +92,85 @@ async def test_action_returns_file(
     await chat.send_message("/start")
     response: Message = await chat.get_response()
 
-    assert response.__getattribute__("file") is not None
-    assert response.file.name == "file.txt"
+    assert response.document is not None
+    assert response.document.mime_type == "text/plain"
 
     await tg_client.download_media(response, str(tmp_path))
     dpath = tmp_path / "file.txt"
     assert dpath.exists()
     assert dpath.read_text() == "This is a file."
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("kamihi")
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        {
+            "start/__init__.py": "",
+            "start/start.py": """\
+                from kamihi import bot
+                from pathlib import Path
+                from typing import Annotated
+                             
+                @bot.action
+                async def start() -> Annotated[Path, bot.Photo()]:
+                    return Path("actions/start/image.jpg")
+            """,
+            "start/image.jpg": random_image(),
+        },
+    ],
+)
+async def test_action_returns_photo(
+    user_in_db, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+):
+    """Test that the action sends a photo to Telegram when a Path is returned and the bot.Photo annotation is used."""
+    add_permission_for_user(user_in_db, "start")
+
+    await chat.send_message("/start")
+    response: Message = await chat.get_response()
+
+    assert response.photo is not None
+
+    path = tmp_path / "image.jpg"
+    await tg_client.download_media(response, str(path))
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("kamihi")
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        {
+            "start/__init__.py": "",
+            "start/start.py": """\
+                from kamihi import bot
+                from pathlib import Path
+                from typing import Annotated
+                             
+                @bot.action
+                async def start() -> Annotated[Path, bot.Photo(caption="This is a photo.")]:
+                    return Path("actions/start/image.jpg")
+            """,
+            "start/image.jpg": random_image(),
+        },
+    ],
+)
+async def test_action_returns_photo_with_caption(
+    user_in_db, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+):
+    """Test the action when a Path is returned and the bot.Photo annotation is used with a caption."""
+    add_permission_for_user(user_in_db, "start")
+
+    await chat.send_message("/start")
+    response: Message = await chat.get_response()
+
+    assert response.photo is not None
+    assert response.text == "This is a photo."
+
+    path = tmp_path / "image.jpg"
+    await tg_client.download_media(response, str(path))
+    assert path.exists()
+    assert path.stat().st_size > 0

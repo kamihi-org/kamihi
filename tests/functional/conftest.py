@@ -154,8 +154,12 @@ def app_folder(pyproject, config_file, actions_folder, models_folder) -> dict:
     res = {}
     res.update({key: dedent(value) for key, value in pyproject.items()})
     res.update({key: dedent(value) for key, value in config_file.items()})
-    res.update({"actions/" + key: dedent(value) for key, value in actions_folder.items()})
-    res.update({"models/" + key: dedent(value) for key, value in models_folder.items()})
+    res.update(
+        {"actions/" + key: dedent(value) if isinstance(value, str) else value for key, value in actions_folder.items()}
+    )
+    res.update(
+        {"models/" + key: dedent(value) if isinstance(value, str) else value for key, value in models_folder.items()}
+    )
     res = {key: value.encode() if isinstance(value, str) else value for key, value in res.items()}
     return res
 
