@@ -74,7 +74,7 @@ async def test_user_add_invalid_telegram_id(kamihi: KamihiContainer, admin_page:
                 @bot.user_class
                 class MyCustomUser(BaseUser):
                     name: str = StringField()
-            """).encode(),
+            """),
         }
     ],
 )
@@ -104,7 +104,7 @@ async def test_user_add_custom_data(kamihi: KamihiContainer, admin_page: Page, m
                 @bot.user_class
                 class MyCustomUser(BaseUser):
                     name: str = StringField()
-            """).encode(),
+            """),
         }
     ],
 )
@@ -137,7 +137,7 @@ async def test_user_add_custom_data_invalid_json_format(
                 @bot.user_class
                 class MyCustomUser(BaseUser):
                     name: str = StringField(required=True)
-            """).encode(),
+            """),
         }
     ],
 )
@@ -158,7 +158,7 @@ async def test_user_add_custom_data_missing_required_field(kamihi: KamihiContain
                 @bot.user_class
                 class MyCustomUser(BaseUser):
                     name: str = StringField(required=True)
-            """).encode(),
+            """),
         }
     ],
 )
@@ -183,7 +183,7 @@ async def test_user_add_custom_data_field_not_defined(kamihi: KamihiContainer, a
                 @bot.user_class
                 class MyCustomUser(BaseUser):
                     name: str = StringField(required=True)
-            """).encode(),
+            """),
         }
     ],
 )

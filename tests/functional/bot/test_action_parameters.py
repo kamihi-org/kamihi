@@ -18,14 +18,14 @@ from telethon.tl.custom import Conversation
     "actions_folder",
     [
         {
-            "actions/start/__init__.py": "".encode(),
+            "actions/start/__init__.py": "",
             "actions/start/start.py": dedent("""\
             from kamihi import bot
                          
             @bot.action
             async def start(user):
                 return f"Hello, user with ID {user.telegram_id}!"
-        """).encode(),
+        """),
         }
     ],
 )
@@ -45,14 +45,14 @@ async def test_action_parameter_user(user_in_db, add_permission_for_user, chat: 
     "actions_folder",
     [
         {
-            "actions/start/__init__.py": "".encode(),
+            "actions/start/__init__.py": "",
             "actions/start/start.py": dedent("""\
             from kamihi import bot
                          
             @bot.action
             async def start(user):
                 return f"Hello, {user.name}!"
-        """).encode(),
+        """),
         }
     ],
 )
@@ -67,7 +67,7 @@ async def test_action_parameter_user(user_in_db, add_permission_for_user, chat: 
                 @bot.user_class
                 class MyCustomUser(BaseUser):
                     name: str = StringField()
-            """).encode(),
+            """),
         }
     ],
 )

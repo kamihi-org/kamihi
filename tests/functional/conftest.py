@@ -126,14 +126,14 @@ def pyproject() -> dict:
             
             [tool.uv.sources]
             kamihi = { path = "/lib/kamihi" }
-        """).encode()
+        """)
     }
 
 
 @pytest.fixture
 def config_file() -> dict:
     """Fixture to provide the path to the kamihi.yaml file."""
-    return {"kamihi.yaml": "".encode()}
+    return {"kamihi.yaml": ""}
 
 
 @pytest.fixture
@@ -156,6 +156,7 @@ def app_folder(pyproject, config_file, actions_folder, models_folder) -> dict:
     res.update(config_file)
     res.update(actions_folder)
     res.update(models_folder)
+    res = {key: value.encode() if isinstance(value, str) else value for key, value in res.items()}
     return res
 
 
