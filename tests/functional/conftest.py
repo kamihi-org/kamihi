@@ -114,7 +114,7 @@ async def chat(test_settings, tg_client) -> AsyncGenerator[Conversation, Any]:
 def pyproject() -> dict:
     """Fixture to provide the path to the pyproject.toml file."""
     return {
-        "pyproject.toml": dedent("""\
+        "pyproject.toml": """\
             [project]
             name = "kftp"
             version = "0.0.0"
@@ -126,7 +126,7 @@ def pyproject() -> dict:
             
             [tool.uv.sources]
             kamihi = { path = "/lib/kamihi" }
-        """)
+        """
     }
 
 
@@ -152,10 +152,10 @@ def models_folder() -> dict:
 def app_folder(pyproject, config_file, actions_folder, models_folder) -> dict:
     """Fixture to provide the path to the app folder."""
     res = {}
-    res.update(pyproject)
-    res.update(config_file)
-    res.update({"actions/" + key: value for key, value in actions_folder.items()})
-    res.update({"models/" + key: value for key, value in models_folder.items()})
+    res.update({key: dedent(value) for key, value in pyproject.items()})
+    res.update({key: dedent(value) for key, value in config_file.items()})
+    res.update({"actions/" + key: dedent(value) for key, value in actions_folder.items()})
+    res.update({"models/" + key: dedent(value) for key, value in models_folder.items()})
     res = {key: value.encode() if isinstance(value, str) else value for key, value in res.items()}
     return res
 

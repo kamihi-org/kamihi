@@ -6,8 +6,6 @@ License:
 
 """
 
-from textwrap import dedent
-
 import pytest
 from playwright.async_api import Page, expect
 
@@ -67,14 +65,14 @@ async def test_user_add_invalid_telegram_id(kamihi: KamihiContainer, admin_page:
     "models_folder",
     [
         {
-            "user.py": dedent("""\
+            "user.py": """\
                 from kamihi import bot, BaseUser
                 from mongoengine import StringField
                  
                 @bot.user_class
                 class MyCustomUser(BaseUser):
                     name: str = StringField()
-            """),
+            """,
         }
     ],
 )
@@ -97,14 +95,14 @@ async def test_user_add_custom_data(kamihi: KamihiContainer, admin_page: Page, m
     "models_folder",
     [
         {
-            "user.py": dedent("""\
+            "user.py": """\
                 from kamihi import bot, BaseUser
                 from mongoengine import StringField
 
                 @bot.user_class
                 class MyCustomUser(BaseUser):
                     name: str = StringField()
-            """),
+            """,
         }
     ],
 )
@@ -130,14 +128,14 @@ async def test_user_add_custom_data_invalid_json_format(
     "models_folder",
     [
         {
-            "user.py": dedent("""\
+            "user.py": """\
                 from kamihi import bot, BaseUser
                 from mongoengine import StringField
 
                 @bot.user_class
                 class MyCustomUser(BaseUser):
                     name: str = StringField(required=True)
-            """),
+            """,
         }
     ],
 )
@@ -151,14 +149,14 @@ async def test_user_add_custom_data_missing_required_field(kamihi: KamihiContain
     "models_folder",
     [
         {
-            "user.py": dedent("""\
+            "user.py": """\
                 from kamihi import bot, BaseUser
                 from mongoengine import StringField
 
                 @bot.user_class
                 class MyCustomUser(BaseUser):
                     name: str = StringField(required=True)
-            """),
+            """,
         }
     ],
 )
@@ -176,14 +174,14 @@ async def test_user_add_custom_data_field_not_defined(kamihi: KamihiContainer, a
     "models_folder",
     [
         {
-            "user.py": dedent("""\
+            "user.py": """\
                 from kamihi import bot, BaseUser
                 from mongoengine import StringField
 
                 @bot.user_class
                 class MyCustomUser(BaseUser):
                     name: str = StringField(required=True)
-            """),
+            """,
         }
     ],
 )
