@@ -11,7 +11,7 @@ License:
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
-import loguru
+import numpy as np
 from loguru import logger
 import pytest
 from logot import Logot, logged
@@ -20,8 +20,9 @@ from telegram.constants import FileSizeLimit
 from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
+from PIL import Image
 
-from kamihi.tg.send import send_text, send_document, _send_details, _check_path
+from kamihi.tg.send import send_text, send_document, _send_details, _check_path, send_photo
 
 
 @pytest.fixture
@@ -57,6 +58,35 @@ def tmp_file(tmp_path):
     """Fixture to provide a mock file path."""
     file = tmp_path / "test_file.txt"
     file.write_text("This is a test file.")
+    return file
+
+
+@pytest.fixture
+def tmp_image_file(tmp_path):
+    """Fixture to create a random image in a temporal directory and provide its path."""
+    file = tmp_path / "test_file.jpg"
+    width, height = 1000, 1000
+    for _ in range(1000):
+        candidate_width = np.random.randint(1, 4001)
+        candidate_height = np.random.randint(1, 4001)
+
+        if any(
+            [
+                candidate_width + candidate_height > 10000,
+                candidate_width < 1,
+                candidate_height < 1,
+                max(candidate_width, candidate_height) / min(candidate_width, candidate_height) > 20,
+            ]
+        ):
+            continue
+
+        width = candidate_width
+        height = candidate_height
+        break
+
+    pixel_data = np.random.randint(0, 256, size=(height, width, 3), dtype=np.uint8)
+    img = Image.fromarray(pixel_data, "RGB")
+    img.save(file, format="JPEG", quality=85)
     return file
 
 
@@ -241,6 +271,7 @@ async def test_send_document(logot: Logot, tmp_file, mock_ptb_bot, mock_update, 
         chat_id=chat_id,
         document=tmp_file,
         filename=tmp_file.name,
+        caption=None,
         reply_to_message_id=mock_update.effective_message.message_id,
     )
     assert result == mock_message
@@ -265,10 +296,26 @@ async def test_send_document_no_update(logot: Logot, tmp_file, mock_ptb_bot, moc
         chat_id=chat_id,
         document=tmp_file,
         filename=tmp_file.name,
+        caption=None,
         reply_to_message_id=None,
     )
     assert result == mock_message
     logot.assert_logged(logged.debug("File sent"))
+
+
+@pytest.mark.asyncio
+async def test_send_document_invalid(logot: Logot, mock_ptb_bot, mock_context):
+    """Test that send_document handles invalid file paths."""
+    chat_id = 123456
+    invalid_path = Path("invalid/path/to/file.txt")
+
+    # Call function
+    result = await send_document(invalid_path, context=mock_context, chat_id=chat_id)
+
+    # Verify that the logger was called with an error
+    logot.assert_logged(logged.error("File does not exist"))
+    # Verify function returns None
+    assert result is None
 
 
 @pytest.mark.asyncio
@@ -284,4 +331,85 @@ async def test_send_document_telegram_error_handling(logot: Logot, mock_ptb_bot,
 
     # Verify that the logger was called
     logot.assert_logged(logged.error("Failed to send file"))
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_send_photo(logot: Logot, tmp_image_file, mock_ptb_bot, mock_update, mock_context):
+    """Test basic functionality of send_photo with minimal parameters."""
+    # Configure return value for send_photo
+    mock_message = Mock(spec=Message)
+    mock_message.message_id = 123
+    mock_ptb_bot.send_photo.return_value = mock_message
+
+    chat_id = 123456
+
+    # Call function
+    result = await send_photo(tmp_image_file, update=mock_update, context=mock_context)
+
+    # Verify send_photo was called with correct parameters
+    mock_ptb_bot.send_photo.assert_called_once_with(
+        chat_id=chat_id,
+        photo=tmp_image_file,
+        caption=None,
+        filename=tmp_image_file.name,
+        reply_to_message_id=mock_update.effective_message.message_id,
+    )
+    assert result == mock_message
+    logot.assert_logged(logged.debug("Photo sent"))
+
+
+@pytest.mark.asyncio
+async def test_send_photo_no_update(logot: Logot, tmp_image_file, mock_ptb_bot, mock_context):
+    """Test send_photo without Update, using chat_id directly."""
+    chat_id = 123456
+
+    # Configure return value for send_photo
+    mock_message = Mock(spec=Message)
+    mock_message.message_id = 123
+    mock_ptb_bot.send_photo.return_value = mock_message
+
+    # Call function
+    result = await send_photo(tmp_image_file, chat_id=chat_id, context=mock_context)
+
+    # Verify send_photo was called with correct parameters
+    mock_ptb_bot.send_photo.assert_called_once_with(
+        chat_id=chat_id,
+        photo=tmp_image_file,
+        caption=None,
+        filename=tmp_image_file.name,
+        reply_to_message_id=None,
+    )
+    assert result == mock_message
+    logot.assert_logged(logged.debug("Photo sent"))
+
+
+@pytest.mark.asyncio
+async def test_send_photo_invalid(logot: Logot, mock_ptb_bot, mock_context):
+    """Test that send_photo handles invalid file paths."""
+    chat_id = 123456
+    invalid_path = Path("invalid/path/to/file.jpg")
+
+    # Call function
+    result = await send_photo(invalid_path, context=mock_context, chat_id=chat_id)
+
+    # Verify that the logger was called with an error
+    logot.assert_logged(logged.error("File does not exist"))
+    # Verify function returns None
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_send_photo_telegram_error_handling(logot: Logot, mock_ptb_bot, tmp_image_file, mock_context):
+    """Test that send_photo properly catches and logs TelegramError."""
+    chat_id = 123456
+
+    # Make send_photo raise a TelegramError
+    mock_ptb_bot.send_photo.side_effect = TelegramError("Test error")
+
+    # Call function
+    result = await send_photo(tmp_image_file, chat_id=chat_id, context=mock_context)
+
+    # Verify that the logger was called
+    logot.assert_logged(logged.error("Failed to send photo"))
     assert result is None
