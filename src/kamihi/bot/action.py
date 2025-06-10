@@ -186,22 +186,24 @@ class Action:
         """Send the result of the action."""
         ann_type, ann_metadata = parse_annotation(inspect.signature(self._func).return_annotation)
 
-        if ann_type is pathlib.Path and isinstance(ann_metadata, Photo):
-            await send_photo(result, caption=ann_metadata.caption, update=update, context=context)
-        elif ann_type is pathlib.Path or isinstance(ann_metadata, Document):
-            await send_document(
-                result,
-                caption=ann_metadata.caption if isinstance(ann_metadata, Document) else None,
-                update=update,
-                context=context,
-            )
-        elif ann_type is str or ann_type is inspect.Signature.empty:
-            await send_text(result, update=update, context=context)
-        elif ann_type is None:
-            self._logger.debug("Function returned None, skipping reply")
-        else:
-            msg = f"Unexpected return type {ann_type} from action '{self.name}'"
-            raise TypeError(msg)
+        match result:
+            case Photo():
+                await send_photo(result.path, caption=result.caption, update=update, context=context)
+            case Document():
+                await send_document(result.path, caption=result.caption, update=update, context=context)
+            case Path() if ann_type is pathlib.Path and isinstance(ann_metadata, Photo):
+                await send_photo(result, caption=ann_metadata.caption or result.name, update=update, context=context)
+            case Path() if ann_type is pathlib.Path and isinstance(ann_metadata, Document):
+                await send_document(result, caption=ann_metadata.caption, update=update, context=context)
+            case Path():
+                await send_document(result, update=update, context=context)
+            case str():
+                await send_text(result, update=update, context=context)
+            case None:
+                self._logger.debug("Function returned None, skipping reply")
+            case _:
+                msg = f"Unexpected return type {type(result)} from action '{self.name}'"
+                raise TypeError(msg)
 
     async def __call__(self, update: Update, context: CallbackContext) -> None:
         """Execute the action."""

@@ -7,6 +7,7 @@ License:
 """
 
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass
@@ -21,6 +22,7 @@ class Media:
 
     """
 
+    path: Path | None = None
     caption: str | None = None
 
 
