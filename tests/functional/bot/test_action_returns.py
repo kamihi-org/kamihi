@@ -322,3 +322,51 @@ async def test_action_returns_photo_captioned(
     await tg_client.download_media(response, str(path))
     assert path.exists()
     assert path.stat().st_size > 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("kamihi")
+@pytest.mark.parametrize(
+    "actions_folder,messages",
+    [
+        (
+            {
+                "start/__init__.py": "",
+                "start/start.py": """\
+                    from kamihi import bot
+                                 
+                    @bot.action
+                    async def start():
+                        return ["I now", "can send", "many messages", "!!"]
+                """,
+            },
+            ["I now", "can send", "many messages", "!!"],
+        ),
+        (
+            {
+                "start/__init__.py": "",
+                "start/start.py": """\
+                    from pathlib import Path
+                    from kamihi import bot
+                
+                    @bot.action
+                    async def start():
+                        return ["This is a message", bot.Photo(Path("actions/start/image.jpg"), caption="and this is a photo!")]
+                """,
+                "start/image.jpg": random_image(),
+            },
+            ["This is a message", "and this is a photo!"],
+        ),
+    ],
+)
+async def test_action_returns_multiple_messages(
+    user_in_db, add_permission_for_user, chat: Conversation, actions_folder, messages
+):
+    """Test actions that return multiple messages."""
+    add_permission_for_user(user_in_db, "start")
+
+    await chat.send_message("/start")
+
+    for message in messages:
+        response: Message = await chat.get_response()
+        assert response.text == message

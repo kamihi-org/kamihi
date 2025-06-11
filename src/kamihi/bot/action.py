@@ -19,6 +19,7 @@ from loguru import logger
 from telegram import Message, Update
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
+from typeguard import TypeCheckError, check_type
 
 from kamihi.bot.media import Document, Photo
 from kamihi.tg import send_document, send_text
@@ -154,25 +155,9 @@ class Action:
 
     def _validate_result(self, result: Any) -> bool:  # noqa: ANN401
         """Validate the result of the action."""
-        signature = inspect.signature(self._func).return_annotation
-        ann_type, ann_metadata = parse_annotation(signature)
-
-        if ann_type is not inspect.Signature.empty:
-            if ann_type is not type(None) and result is None:
-                self._logger.error(
-                    "Action with return type {expected} returned None, which is unexpected",
-                    expected=ann_type,
-                )
-                return False
-            elif not isinstance(result, ann_type):  # noqa: RET505
-                self._logger.error(
-                    "Action returned an unexpected type: expected {expected}, got {actual}",
-                    expected=ann_type,
-                    actual=type(result),
-                )
-                return False
-            return True
-
+        ann = inspect.signature(self._func).return_annotation
+        if ann is not inspect.Signature.empty:
+            check_type(result, ann)
         return True
 
     async def _send_result(
@@ -182,9 +167,6 @@ class Action:
         context: CallbackContext,
     ) -> Message | list[Message] | None:
         """Send the result of the action."""
-        if not self._validate_result(result):
-            return None
-
         ann_type, ann_metadata = parse_annotation(inspect.signature(self._func).return_annotation)
 
         if isinstance(result, (list, tuple)):
@@ -210,7 +192,7 @@ class Action:
             self._logger.debug("Function returned None, skipping reply")
             return None
 
-        msg = f"Unexpected return type {type(result)} from action '{self.name}'"
+        msg = f"Unexpected return type {type(result)}"
         raise TypeError(msg)
 
     async def __call__(self, update: Update, context: CallbackContext) -> None:
@@ -247,7 +229,8 @@ class Action:
 
         result: Any = await self._func(*pos_args, **keyword_args)
 
-        await self._send_result(result, update, context)
+        if self._validate_result(result):
+            await self._send_result(result, update, context)
 
         self._logger.debug("Executed")
         raise ApplicationHandlerStop

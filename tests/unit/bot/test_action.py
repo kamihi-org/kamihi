@@ -17,6 +17,7 @@ import pytest
 from logot import Logot, logged
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CommandHandler
+from typeguard import TypeCheckError
 
 from kamihi.bot.models import RegisteredAction
 from kamihi.bot.action import Action
@@ -198,36 +199,34 @@ def test_action_clean_up():
 
 
 @pytest.mark.parametrize(
-    "annotation, result, is_valid, expected_log",
+    "annotation, result",
     [
-        (Signature.empty, "This is a test result", True, None),
-        (str, "This is a test result", True, None),
-        (
-            str,
-            123456,
-            False,
-            ("ERROR", f"Action returned an unexpected type: expected {str}, got {int}"),
-        ),
-        (
-            str,
-            None,
-            False,
-            ("ERROR", f"Action with return type {str} returned None, which is unexpected"),
-        ),
+        (Signature.empty, "This is a test result"),
+        (str, "This is a test result"),
     ],
 )
-def test_action_validate_result(
-    logot: Logot, action: Action, annotation: type, result: Any, is_valid: str, expected_log: str | None
-) -> None:
+def test_action_validate_result(logot: Logot, action: Action, annotation: type, result: Any) -> None:
     """Test the Action class validate_result method with valid result."""
     action._func = AsyncMock()
     action._func.__signature__ = Signature(return_annotation=annotation)
 
-    assert action._validate_result(result) is is_valid
+    assert action._validate_result(result)
 
-    if not is_valid:
-        expected_log_level, expected_log_message = expected_log
-        logot.assert_logged(logged.log(expected_log_level, expected_log_message))
+
+@pytest.mark.parametrize(
+    "annotation, result",
+    [
+        (str, 123456),
+        (str, None),
+    ],
+)
+def test_action_validate_result_invalid(logot: Logot, action: Action, annotation: type, result: Any) -> None:
+    """Test the Action class validate_result method with invalid result."""
+    action._func = AsyncMock()
+    action._func.__signature__ = Signature(return_annotation=annotation)
+
+    with pytest.raises(TypeCheckError):
+        action._validate_result(result)
 
 
 @pytest.mark.asyncio
@@ -314,10 +313,8 @@ async def test_action_send_result_invalid(logot: Logot, action: Action, mock_upd
     action._func = AsyncMock()
     action._func.__signature__ = Signature(return_annotation=str)
 
-    result = await action._send_result(123456, mock_update, mock_context)
-
-    logot.assert_logged(logged.error("Action returned an unexpected type: expected <class 'str'>, got <class 'int'>"))
-    assert result is None
+    with pytest.raises(TypeError, match="Unexpected return type <class 'int'>"):
+        await action._send_result(123456, mock_update, mock_context)
 
 
 @pytest.mark.asyncio
@@ -350,7 +347,7 @@ async def test_action_send_result_unexpected_type(action: Action, mock_update, m
     # Use an unexpected type that doesn't match any case
     result = 42  # int doesn't match any case
 
-    with pytest.raises(TypeError, match=f"Unexpected return type {int} from action 'test_action'"):
+    with pytest.raises(TypeError, match=f"Unexpected return type {int}"):
         await action._send_result(result, mock_update, mock_context)
 
 
