@@ -231,111 +231,93 @@ def test_action_validate_result(
 
 
 @pytest.mark.asyncio
-async def test_action_send_result_photo_object(action: Action, mock_update, mock_context) -> None:
-    """Test _send_result with Photo object."""
-    action._func = AsyncMock()
-    action._func.__signature__ = Signature(return_annotation=str)
-
-    result = Photo(path="/test/photo.jpg", caption="Test photo")
-
-    with patch("kamihi.bot.action.send_photo") as mock_send_photo:
-        await action._send_result(result, mock_update, mock_context)
-
-        mock_send_photo.assert_called_once_with(
-            result.path, caption=result.caption, update=mock_update, context=mock_context
-        )
-
-
-@pytest.mark.asyncio
-async def test_action_send_result_document_object(action: Action, mock_update, mock_context) -> None:
-    """Test _send_result with Document object."""
-    action._func = AsyncMock()
-    action._func.__signature__ = Signature(return_annotation=str)
-
-    result = Document(path="/test/doc.pdf", caption="Test document")
-
-    with patch("kamihi.bot.action.send_document") as mock_send_document:
-        await action._send_result(result, mock_update, mock_context)
-
-        mock_send_document.assert_called_once_with(
-            result.path, caption=result.caption, update=mock_update, context=mock_context
-        )
-
-
-@pytest.mark.asyncio
-async def test_action_send_result_path_with_photo_annotation(action: Action, mock_update, mock_context) -> None:
-    """Test _send_result with Path and Photo annotation."""
-    action._func = AsyncMock()
-    action._func.__signature__ = Signature(return_annotation=Annotated[Path, Photo(caption="Annotated photo")])
-
-    result = Path("/test/image.png")
-
-    with patch("kamihi.bot.action.send_photo") as mock_send_photo:
-        await action._send_result(result, mock_update, mock_context)
-
-        mock_send_photo.assert_called_once_with(
-            result, caption="Annotated photo", update=mock_update, context=mock_context
-        )
-
-
-@pytest.mark.asyncio
-async def test_action_send_result_path_with_photo_annotation_no_caption(
-    action: Action, mock_update, mock_context
+@pytest.mark.parametrize(
+    "result,signature,expected_call,expected_args,expected_kwargs",
+    [
+        ("Test string result", Signature.empty, "kamihi.bot.action.send_text", ["Test string result"], {}),
+        ("Test string result", str, "kamihi.bot.action.send_text", ["Test string result"], {}),
+        (Path("/test/doc.txt"), Signature.empty, "kamihi.bot.action.send_document", [Path("/test/doc.txt")], {}),
+        (Path("/test/photo.jpg"), Signature.empty, "kamihi.bot.action.send_document", [Path("/test/photo.jpg")], {}),
+        (
+            Path("/test/doc.txt"),
+            Annotated[Path, Document()],
+            "kamihi.bot.action.send_document",
+            [Path("/test/doc.txt")],
+            {"caption": None},
+        ),
+        (
+            Path("/test/photo.jpg"),
+            Annotated[Path, Photo()],
+            "kamihi.bot.action.send_photo",
+            [Path("/test/photo.jpg")],
+            {"caption": None},
+        ),
+        (
+            Path("/test/doc.txt"),
+            Annotated[Path, Document(caption="Test caption")],
+            "kamihi.bot.action.send_document",
+            [Path("/test/doc.txt")],
+            {"caption": "Test caption"},
+        ),
+        (
+            Path("/test/photo.jpg"),
+            Annotated[Path, Photo(caption="Test caption")],
+            "kamihi.bot.action.send_photo",
+            [Path("/test/photo.jpg")],
+            {"caption": "Test caption"},
+        ),
+        (
+            Document(Path("/test/doc.pdf")),
+            Signature.empty,
+            "kamihi.bot.action.send_document",
+            [Path("/test/doc.pdf")],
+            {"caption": None},
+        ),
+        (
+            Document(Path("/test/doc.pdf"), caption="Test document"),
+            Document,
+            "kamihi.bot.action.send_document",
+            [Path("/test/doc.pdf")],
+            {"caption": "Test document"},
+        ),
+        (
+            Photo(Path("/test/photo.jpg")),
+            Photo,
+            "kamihi.bot.action.send_photo",
+            [Path("/test/photo.jpg")],
+            {"caption": None},
+        ),
+        (
+            Photo(Path("/test/photo.jpg"), caption="Test photo"),
+            Signature.empty,
+            "kamihi.bot.action.send_photo",
+            [Path("/test/photo.jpg")],
+            {"caption": "Test photo"},
+        ),
+    ],
+)
+async def test_action_send_result(
+    action: Action, mock_update, mock_context, result, expected_call, signature, expected_args, expected_kwargs
 ) -> None:
-    """Test _send_result with Path and Photo annotation without caption."""
     action._func = AsyncMock()
-    action._func.__signature__ = Signature(return_annotation=Annotated[Path, Photo()])
+    action._func.__signature__ = Signature(return_annotation=signature)
 
-    result = Path("/test/image.png")
-
-    with patch("kamihi.bot.action.send_photo") as mock_send_photo:
+    with patch(expected_call) as mock_send:
         await action._send_result(result, mock_update, mock_context)
 
-        mock_send_photo.assert_called_once_with(result, caption=result.name, update=mock_update, context=mock_context)
+        mock_send.assert_called_once_with(*expected_args, mock_update, mock_context, **expected_kwargs)
 
 
 @pytest.mark.asyncio
-async def test_action_send_result_path_with_document_annotation(action: Action, mock_update, mock_context) -> None:
-    """Test _send_result with Path and Document annotation."""
-    action._func = AsyncMock()
-    action._func.__signature__ = Signature(return_annotation=Annotated[Path, Document(caption="Annotated document")])
-
-    result = Path("/test/file.txt")
-
-    with patch("kamihi.bot.action.send_document") as mock_send_document:
-        await action._send_result(result, mock_update, mock_context)
-
-        mock_send_document.assert_called_once_with(
-            result, caption="Annotated document", update=mock_update, context=mock_context
-        )
-
-
-@pytest.mark.asyncio
-async def test_action_send_result_path_without_annotation(action: Action, mock_update, mock_context) -> None:
-    """Test _send_result with Path without specific annotation."""
-    action._func = AsyncMock()
-    action._func.__signature__ = Signature(return_annotation=Path)
-
-    result = Path("/test/generic.file")
-
-    with patch("kamihi.bot.action.send_document") as mock_send_document:
-        await action._send_result(result, mock_update, mock_context)
-
-        mock_send_document.assert_called_once_with(result, update=mock_update, context=mock_context)
-
-
-@pytest.mark.asyncio
-async def test_action_send_result_string(action: Action, mock_update, mock_context) -> None:
-    """Test _send_result with string result."""
+async def test_action_send_result_invalid(logot: Logot, action: Action, mock_update, mock_context) -> None:
+    """Test _send_result with an invalid result."""
     action._func = AsyncMock()
     action._func.__signature__ = Signature(return_annotation=str)
 
-    result = "Test string result"
+    result = await action._send_result(123456, mock_update, mock_context)
 
-    with patch("kamihi.bot.action.send_text") as mock_send_text:
-        await action._send_result(result, mock_update, mock_context)
-
-        mock_send_text.assert_called_once_with(result, update=mock_update, context=mock_context)
+    logot.assert_logged(logged.error("Action returned an unexpected type: expected <class 'str'>, got <class 'int'>"))
+    assert result is None
 
 
 @pytest.mark.asyncio
@@ -363,13 +345,29 @@ async def test_action_send_result_none(logot: Logot, action: Action, mock_update
 async def test_action_send_result_unexpected_type(action: Action, mock_update, mock_context) -> None:
     """Test _send_result with unexpected return type raises TypeError."""
     action._func = AsyncMock()
-    action._func.__signature__ = Signature(return_annotation=str)
+    action._func.__signature__ = Signature(return_annotation=Signature.empty)
 
     # Use an unexpected type that doesn't match any case
     result = 42  # int doesn't match any case
 
     with pytest.raises(TypeError, match=f"Unexpected return type {int} from action 'test_action'"):
         await action._send_result(result, mock_update, mock_context)
+
+
+@pytest.mark.asyncio
+async def test_action_send_list_result(logot: Logot, action: Action, mock_update, mock_context) -> None:
+    """Test _send_result with a list of results."""
+    action._func = AsyncMock()
+    action._func.__signature__ = Signature(return_annotation=Signature.empty)
+
+    results = ["First result", "Second result"]
+
+    with patch("kamihi.bot.action.send_text") as mock_send_text:
+        await action._send_result(results, mock_update, mock_context)
+
+        assert mock_send_text.call_count == 2
+        mock_send_text.assert_any_call("First result", mock_update, mock_context)
+        mock_send_text.assert_any_call("Second result", mock_update, mock_context)
 
 
 @pytest.mark.asyncio
