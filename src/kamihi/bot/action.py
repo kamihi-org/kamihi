@@ -10,14 +10,13 @@ from __future__ import annotations
 
 import inspect
 import pathlib
-import typing
 from collections.abc import Callable
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Any
 
 import loguru
 from loguru import logger
-from telegram import Update
+from telegram import Message, Update
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
@@ -176,28 +175,43 @@ class Action:
 
         return True
 
-    async def _send_result(self, result: Any, update: Update, context: CallbackContext) -> None:  # noqa: ANN401
+    async def _send_result(
+        self,
+        result: Any,  # noqa: ANN401
+        update: Update,
+        context: CallbackContext,
+    ) -> Message | list[Message] | None:
         """Send the result of the action."""
+        if not self._validate_result(result):
+            return None
+
         ann_type, ann_metadata = parse_annotation(inspect.signature(self._func).return_annotation)
 
-        match result:
-            case Photo():
-                await send_photo(result.path, caption=result.caption, update=update, context=context)
-            case Document():
-                await send_document(result.path, caption=result.caption, update=update, context=context)
-            case Path() if ann_type is pathlib.Path and isinstance(ann_metadata, Photo):
-                await send_photo(result, caption=ann_metadata.caption or result.name, update=update, context=context)
-            case Path() if ann_type is pathlib.Path and isinstance(ann_metadata, Document):
-                await send_document(result, caption=ann_metadata.caption, update=update, context=context)
-            case Path():
-                await send_document(result, update=update, context=context)
-            case str():
-                await send_text(result, update=update, context=context)
-            case None:
-                self._logger.debug("Function returned None, skipping reply")
-            case _:
-                msg = f"Unexpected return type {type(result)} from action '{self.name}'"
-                raise TypeError(msg)
+        if isinstance(result, (list, tuple)):
+            return [await self._send_result(item, update, context) for item in result]
+
+        if isinstance(result, Photo):
+            return await send_photo(result.path, update, context, caption=result.caption)
+
+        if isinstance(result, Document):
+            return await send_document(result.path, update, context, caption=result.caption)
+
+        if isinstance(result, Path):
+            if ann_type is pathlib.Path and isinstance(ann_metadata, Document):
+                return await send_document(result, update, context, caption=ann_metadata.caption)
+            if ann_type is pathlib.Path and isinstance(ann_metadata, Photo):
+                return await send_photo(result, update, context, caption=ann_metadata.caption)
+            return await send_document(result, update, context)
+
+        if isinstance(result, str):
+            return await send_text(result, update, context)
+
+        if result is None:
+            self._logger.debug("Function returned None, skipping reply")
+            return None
+
+        msg = f"Unexpected return type {type(result)} from action '{self.name}'"
+        raise TypeError(msg)
 
     async def __call__(self, update: Update, context: CallbackContext) -> None:
         """Execute the action."""
@@ -233,8 +247,7 @@ class Action:
 
         result: Any = await self._func(*pos_args, **keyword_args)
 
-        if self._validate_result(result):
-            await self._send_result(result, update, context)
+        await self._send_result(result, update, context)
 
         self._logger.debug("Executed")
         raise ApplicationHandlerStop
