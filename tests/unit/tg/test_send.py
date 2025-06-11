@@ -11,7 +11,6 @@ License:
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
-import numpy as np
 from loguru import logger
 import pytest
 from logot import Logot, logged
@@ -31,6 +30,7 @@ def mock_ptb_bot():
     bot = Mock(spec=Bot)
     bot.send_message = AsyncMock(return_value=Mock(spec=Message))
     bot.send_document = AsyncMock(return_value=Mock(spec=Message))
+    bot.send_photo = AsyncMock(return_value=Mock(spec=Message))
     return bot
 
 
