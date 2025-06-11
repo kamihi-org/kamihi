@@ -142,12 +142,12 @@ async def send_photo(file: Path, update: Update, context: CallbackContext, capti
     if not _check_path(file, lg, max_size=FileSizeLimit.PHOTOSIZE_UPLOAD):
         return None
 
-    with lg.catch(exception=TelegramError, message="Failed to send file"):
+    with lg.catch(exception=TelegramError, message="Failed to send photo"):
         message_reply = await context.bot.send_photo(
             chat_id=update.effective_chat.id,
             photo=file,
             filename=file.name,
             caption=md(caption) if caption else None,
         )
-        lg.bind(response_id=message_reply.message_id).debug("File sent")
+        lg.bind(response_id=message_reply.message_id).debug("Photo sent")
         return message_reply

@@ -108,7 +108,7 @@ async def test_send_text_error_handling(logot: Logot, mock_ptb_bot, mock_update,
     )
 
     # Verify that the logger was called
-    logot.assert_logged(logged.debug("Message sent"))
+    logot.assert_logged(logged.error("Failed to send message"))
 
 
 def test_check_path(tmp_file):
