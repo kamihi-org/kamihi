@@ -10,6 +10,7 @@ import io
 
 import numpy as np
 from PIL import Image
+from telegram.constants import FileSizeLimit
 
 
 def random_image() -> bytes:
@@ -33,7 +34,7 @@ def random_image() -> bytes:
         img.save(img_bytes_io, format="JPEG", quality=85, optimize=True)
 
         file_size_bytes = img_bytes_io.tell()
-        if not file_size_bytes <= 10 * 1024 * 1024:
+        if not file_size_bytes <= FileSizeLimit.PHOTOSIZE_UPLOAD:
             continue
 
         return img_bytes_io.getvalue()

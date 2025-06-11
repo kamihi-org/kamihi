@@ -22,36 +22,6 @@ if typing.TYPE_CHECKING:
     from loguru import Logger
 
 
-def _send_details(
-    context: CallbackContext, update: Update | None = None, chat_id: int = None
-) -> tuple[Bot, int | None, int | None, Logger]:
-    """
-    Get bot, chat ID and message ID for sending a message.
-
-    Args:
-        update (Update | None): The Telegram update object, if available.
-        context (CallbackContext | None): The callback context, if available.
-        chat_id (int | None): The chat ID to send the message to, if provided.
-
-    Returns:
-        tuple[Bot, int | None, int | None]: A tuple containing the bot instance, chat ID, and reply_to_message_id.
-
-    """
-    bot = context.bot
-    reply_id = update.effective_message.message_id if update and update.effective_message else None
-
-    if not chat_id and not bool(update and update.effective_chat and update.effective_chat.id):
-        raise ValueError("Cannot determine chat_id. Provide it explicitly or ensure update contains it")
-
-    cid = chat_id or update.effective_chat.id
-    lg = logger.bind(chat_id=cid)
-
-    if reply_id:
-        lg = lg.bind(reply_to_message_id=reply_id)
-
-    return bot, cid, reply_id, lg
-
-
 def _check_path(file: Path, lg: Logger, max_size: FileSizeLimit = FileSizeLimit.FILESIZE_UPLOAD) -> bool:
     """
     Check if the file path is valid.
@@ -93,37 +63,31 @@ def _check_path(file: Path, lg: Logger, max_size: FileSizeLimit = FileSizeLimit.
     return True
 
 
-async def send_text(text: str, **kwargs: CallbackContext | Update | int | None) -> Message | None:
+async def send_text(text: str, update: Update, context: CallbackContext) -> Message | None:
     """
     Send a text message to a chat.
 
     Args:
         text (str): The text message to send.
-        kwargs (CallbackContext | Update | int | None): Additional parameters including:
-            - context (CallbackContext): The callback context containing the bot instance.
-            - update (Update | None): The Telegram update object, if available.
-            - chat_id (int | None): The chat ID to send the message to, if provided.
+        update (Update): The Telegram update object containing the chat information.
+        context (CallbackContext): The callback context containing the bot instance.
 
     Returns:
         Message | None: The response from the Telegram API, or None if an error occurs.
 
     """
-    bot, chat_id, reply_to_message_id, lg = _send_details(**kwargs)
-    lg = logger.bind(response_text=text)
+    lg = logger.bind(chat_id=update.effective_chat.id, response_text=text)
 
     with lg.catch(exception=TelegramError, message="Failed to send message"):
-        message_reply = await bot.send_message(
-            chat_id,
+        message_reply = await context.bot.send_message(
+            update.effective_chat.id,
             md(text if text else ""),
-            reply_to_message_id=reply_to_message_id,
         )
-        lg.bind(response_id=message_reply.message_id).debug("Reply sent" if reply_to_message_id else "Message sent")
+        lg.bind(response_id=message_reply.message_id).debug("Message sent")
         return message_reply
 
 
-async def send_document(
-    file: Path, caption: str = None, **kwargs: CallbackContext | Update | int | None
-) -> Message | None:
+async def send_document(file: Path, update: Update, context: CallbackContext, caption: str = None) -> Message | None:
     """
     Send a file to a chat.
 
@@ -132,37 +96,31 @@ async def send_document(
 
     Args:
         file (Path): The file to send.
+        update (Update): The Telegram update object containing the chat information.
+        context (CallbackContext): The callback context containing the bot instance.
         caption (str, optional): The caption for the file. Defaults to None.
-        kwargs (dict): Additional parameters including:
-            - context (CallbackContext): The callback context containing the bot instance.
-            - update (Update | None): The Telegram update object, if available.
-            - chat_id (int | None): The chat ID to send the message to, if provided.
 
     Returns:
         Message | None: The response from the Telegram API, or None if an error occurs.
 
     """
-    bot, chat_id, reply_to_message_id, lg = _send_details(**kwargs)
-    lg = logger.bind(path=file)
+    lg = logger.bind(chat_id=update.effective_chat.id, path=file)
 
     if not _check_path(file, lg):
         return None
 
     with lg.catch(exception=TelegramError, message="Failed to send file"):
-        message_reply = await bot.send_document(
-            chat_id=chat_id,
+        message_reply = await context.bot.send_document(
+            chat_id=update.effective_chat.id,
             document=file,
             filename=file.name,
             caption=md(caption) if caption else None,
-            reply_to_message_id=reply_to_message_id,
         )
         lg.bind(response_id=message_reply.message_id).debug("File sent")
         return message_reply
 
 
-async def send_photo(
-    file: Path, caption: str = None, **kwargs: CallbackContext | Update | int | None
-) -> Message | None:
+async def send_photo(file: Path, update: Update, context: CallbackContext, caption: str = None) -> Message | None:
     """
     Send a photo to a chat.
 
@@ -171,29 +129,25 @@ async def send_photo(
 
     Args:
         file (Path): The photo file to send.
+        update (Update): The Telegram update object containing the chat information.
+        context (CallbackContext): The callback context containing the bot instance.
         caption (str, optional): The caption for the photo. Defaults to None.
-        kwargs (dict): Additional parameters including:
-            - context (CallbackContext): The callback context containing the bot instance.
-            - update (Update | None): The Telegram update object, if available.
-            - chat_id (int | None): The chat ID to send the message to, if provided.
 
     Returns:
         Message | None: The response from the Telegram API, or None if an error occurs.
 
     """
-    bot, chat_id, reply_to_message_id, lg = _send_details(**kwargs)
-    lg = logger.bind(path=file)
+    lg = logger.bind(chat_id=update.effective_chat.id, path=file)
 
     if not _check_path(file, lg, max_size=FileSizeLimit.PHOTOSIZE_UPLOAD):
         return None
 
-    with lg.catch(exception=TelegramError, message="Failed to send photo"):
-        message_reply = await bot.send_photo(
-            chat_id=chat_id,
+    with lg.catch(exception=TelegramError, message="Failed to send file"):
+        message_reply = await context.bot.send_photo(
+            chat_id=update.effective_chat.id,
             photo=file,
-            caption=md(caption) if caption else None,
             filename=file.name,
-            reply_to_message_id=reply_to_message_id,
+            caption=md(caption) if caption else None,
         )
-        lg.bind(response_id=message_reply.message_id).debug("Photo sent")
+        lg.bind(response_id=message_reply.message_id).debug("File sent")
         return message_reply
