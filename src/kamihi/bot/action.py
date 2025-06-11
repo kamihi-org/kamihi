@@ -158,13 +158,6 @@ class Action:
         signature = inspect.signature(self._func).return_annotation
         ann_type, ann_metadata = parse_annotation(signature)
 
-        if signature is inspect.Signature.empty and not isinstance(result, str):
-            self._logger.error(
-                "Action with no return type specified returned a value of type {typ} when it should have been str",
-                typ=type(result),
-            )
-            return False
-
         if ann_type is not inspect.Signature.empty:
             if ann_type is not type(None) and result is None:
                 self._logger.error(
