@@ -26,6 +26,8 @@ from pathlib import Path
 
 from jinja2 import BaseLoader, ChoiceLoader, DictLoader, Environment, FileSystemLoader, PrefixLoader, select_autoescape
 
+from kamihi.bot import Action
+
 
 class Templates:
     """
@@ -93,6 +95,25 @@ class Templates:
         if action_name not in self._loaders:
             self._loaders[action_name] = []
         self._loaders[action_name].append(DictLoader({path.name: path.read_text()}))
+
+    def add_action(self, action: Action) -> None:
+        """
+        Add an action to the template loaders.
+
+        This method allows you to add an action to the template loaders. The
+        templates associated with the action will be loaded when the load()
+        method is called. The action's name is used to organize the templates
+        under the action's name in the template loaders.
+
+        Args:
+            action (Action): The action to add to the template loaders.
+
+        """
+        if self._env is not None:
+            raise RuntimeError(self._error_already_loaded)
+        if action.name not in self._loaders:
+            self._loaders[action.name] = []
+        self._loaders[action.name].append(FileSystemLoader(Path.cwd() / "actions" / action.name))
 
     def load(self) -> None:
         """

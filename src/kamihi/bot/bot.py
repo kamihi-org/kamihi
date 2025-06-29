@@ -83,6 +83,10 @@ class Bot:
         # Connects to the database
         connect(self.settings.db)
 
+        # Starts the template engine
+        self.templates = Templates(self.settings.autoreload_templates)
+        logger.trace("Initialized templating engine")
+
     @dispatch([(str, Callable)])
     def action(self, *args: str | Callable, description: str = None) -> Action | Callable:
         """
@@ -108,6 +112,9 @@ class Bot:
         # Create and store the action
         action = Action(func.__name__, commands, description, func)
         self._actions.append(action)
+
+        # Load the templates for the action
+        self.templates.add_action(action)
 
         # The action is returned so it can be used by the user if needed
         return action
@@ -204,6 +211,10 @@ class Bot:
         if not self._valid_actions:
             logger.warning("No valid actions were registered. The bot will not respond to any commands.")
 
+        # Loads the templates
+        self.templates.load()
+        logger.trace("Loaded templates")
+
         # Loads the Telegram client
         self._client = TelegramClient(self.settings, self._handlers)
         logger.trace("Initialized Telegram client")
@@ -225,10 +236,6 @@ class Bot:
         )
         logger.trace("Initialized web server")
         self._web.start()
-
-        # Loads the template engine
-        self.templates = Templates(self.settings.autoreload_templates)
-        logger.trace("Initialized templating engine")
 
         # Runs the client
         self._client.run()
