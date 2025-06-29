@@ -122,20 +122,15 @@ class Action:
 
         # Check if the function has valid parameters
         parameters = inspect.signature(self._func).parameters
-        for name, param in parameters.items():
-            if name not in ("update", "context", "logger", "user", "template"):
-                self._logger.warning(
-                    "Invalid parameter '{name}' in function",
-                    name=name,
-                )
-                self._valid = False
-
-            if param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
-                self._logger.warning(
-                    "Special arguments '*args' and '**kwargs' are not supported in action"
-                    " parameters, they will be ignored. Beware that this may cause issues."
-                )
-                self._valid = False
+        if any(
+            param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+            for param in parameters.values()
+        ):
+            self._logger.warning(
+                "Special arguments '*args' and '**kwargs' are not supported in action"
+                " parameters, they will be ignored. Beware that this may cause issues."
+            )
+            self._valid = False
 
     @property
     def handler(self) -> AuthHandler:
@@ -158,7 +153,7 @@ class Action:
         """Clean up the action from the database."""
         RegisteredAction.objects(name__nin=keep).delete()
 
-    async def __call__(self, update: Update, context: CallbackContext) -> None:
+    async def __call__(self, update: Update, context: CallbackContext) -> None:  # noqa: C901
         """Execute the action."""
         if not self.is_valid():
             self._logger.warning("Not valid, skipping execution")
@@ -179,9 +174,18 @@ class Action:
                     value = self._logger
                 case "user":
                     value = get_user_from_telegram_id(update.effective_user.id)
+                case "templates":
+                    value = {
+                        name: self._templates.get_template(name)
+                        for name in self._templates.list_templates(extensions=".jinja")
+                    }
                 case "template":
                     value = self._templates.get_template(f"{self.name}.md.jinja")
                 case _:
+                    logger.warning(
+                        "Parameter '{name}' is not supported, it will be set to None",
+                        name=name,
+                    )
                     value = None
 
             if param.kind == inspect.Parameter.POSITIONAL_ONLY:
