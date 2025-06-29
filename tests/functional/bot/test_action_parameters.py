@@ -85,3 +85,65 @@ async def test_action_parameter_user_custom(
     response = await chat.get_response()
 
     assert response.text == f"Hello, {user_in_db['name']}!"
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("kamihi")
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        {
+            "actions/start/__init__.py": "".encode(),
+            "actions/start/start.py": dedent("""\
+                from jinja2 import Template
+                from kamihi import bot
+                
+                
+                @bot.action
+                async def start(template: Template):
+                    return template.render(name="John Doe")
+            """).encode(),
+            "actions/start/start.md.jinja": "Hello, {{ name }}!".encode(),
+        }
+    ],
+)
+async def test_action_parameter_template_single(
+    user_in_db, add_permission_for_user, chat: Conversation, actions_folder
+):
+    """Test the action decorator without parentheses."""
+    add_permission_for_user(user_in_db, "start")
+
+    await chat.send_message("/start")
+    response = await chat.get_response()
+
+    assert response.text == f"Hello, John Doe!"
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("kamihi")
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        {
+            "actions/start/__init__.py": "".encode(),
+            "actions/start/start.py": dedent("""\
+                from jinja2 import Template
+                from kamihi import bot
+                
+                @bot.action
+                async def start(templates: dict[str, Template]):
+                    return templates["start.md.jinja"].render(name="John Doe") + " " + templates["start2.md.jinja"].render(name="John Doe")
+            """).encode(),
+            "actions/start/start.md.jinja": "Hello, {{ name }}!".encode(),
+            "actions/start/start2.md.jinja": "Bye, {{ name }}!".encode(),
+        }
+    ],
+)
+async def test_action_parameter_template_list(user_in_db, add_permission_for_user, chat: Conversation, actions_folder):
+    """Test the action decorator without parentheses."""
+    add_permission_for_user(user_in_db, "start")
+
+    await chat.send_message("/start")
+    response = await chat.get_response()
+
+    assert response.text == f"Hello, John Doe! Bye, John Doe!"

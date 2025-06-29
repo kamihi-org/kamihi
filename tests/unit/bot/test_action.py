@@ -97,34 +97,6 @@ def test_action_init_sync_function(logot: Logot):
 
 
 @pytest.mark.parametrize(
-    "parameter, valid",
-    [
-        ("update", True),
-        ("context", True),
-        ("logger", True),
-        ("invalid", False),
-        ("aaaaaaaaaaaaaaaaa", False),
-        ("a123", False),
-    ],
-)
-def test_action_init_function_parameter_names(logot: Logot, parameter: str, valid: bool) -> None:
-    """Test the Action class initialization with function signature."""
-    mock_function = AsyncMock()
-    mock_function.__signature__ = Signature([Parameter(name=parameter, kind=Parameter.POSITIONAL_OR_KEYWORD)])
-    mock_function.__code__.co_filename = __file__
-
-    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
-
-    if valid:
-        logot.assert_logged(logged.debug("Successfully registered"))
-        assert action.is_valid() is True
-    else:
-        logot.assert_logged(logged.warning(f"Invalid parameter '{parameter}' in function"))
-        logot.assert_logged(logged.warning("Failed to register"))
-        assert action.is_valid() is False
-
-
-@pytest.mark.parametrize(
     "parameter, kind",
     [
         ("args", Parameter.VAR_POSITIONAL),
