@@ -111,6 +111,7 @@ def test_action_init_function_parameter_names(logot: Logot, parameter: str, vali
     """Test the Action class initialization with function signature."""
     mock_function = AsyncMock()
     mock_function.__signature__ = Signature([Parameter(name=parameter, kind=Parameter.POSITIONAL_OR_KEYWORD)])
+    mock_function.__code__.co_filename = __file__
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
 
@@ -201,6 +202,7 @@ async def test_action_call(logot: Logot, mock_update, mock_context) -> None:
     mock_function.__signature__ = Signature([])
     mock_function.__name__ = "test_function"
     mock_function.return_value = "test result"
+    mock_function.__code__.co_filename = __file__
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
 
@@ -227,6 +229,7 @@ async def test_action_call_update(logot: Logot, mock_update, mock_context, kind)
     mock_function.__signature__ = Signature([Parameter("update", kind=kind)])
     mock_function.__name__ = "test_function"
     mock_function.return_value = "test result"
+    mock_function.__code__.co_filename = __file__
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
 
@@ -252,6 +255,7 @@ async def test_action_call_context(logot: Logot, mock_update, mock_context, kind
     mock_function.__signature__ = Signature([Parameter("context", kind=kind)])
     mock_function.__name__ = "test_function"
     mock_function.return_value = "test result"
+    mock_function.__code__.co_filename = __file__
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
 
@@ -277,6 +281,7 @@ async def test_action_call_logger(logot: Logot, mock_update, mock_context, kind)
     mock_function.__signature__ = Signature([Parameter("logger", kind=kind)])
     mock_function.__name__ = "test_function"
     mock_function.return_value = "test result"
+    mock_function.__code__.co_filename = __file__
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
 
@@ -302,6 +307,7 @@ async def test_action_call_user(logot: Logot, mock_update, mock_context, kind) -
     mock_function.__signature__ = Signature([Parameter("user", kind=kind)])
     mock_function.__name__ = "test_function"
     mock_function.return_value = "test result"
+    mock_function.__code__.co_filename = __file__
 
     mock_user = User(telegram_id=123456789, is_admin=True)
 
@@ -328,6 +334,7 @@ async def test_action_call_unknown_parameter(logot: Logot, mock_update, mock_con
     mock_function.__signature__ = Signature([Parameter("unknown", kind=Parameter.POSITIONAL_OR_KEYWORD)])
     mock_function.__name__ = "test_function"
     mock_function.return_value = "test result"
+    mock_function.__code__.co_filename = __file__
 
     # Bypass validation to create a valid action with an unknown parameter
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)

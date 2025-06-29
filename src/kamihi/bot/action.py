@@ -10,10 +10,11 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import loguru
-from jinja2 import Environment, PackageLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, PackageLoader, select_autoescape
 from loguru import logger
 from telegram import Update
 from telegram.constants import BotCommandLimit
@@ -79,7 +80,7 @@ class Action:
         self._db_object = self.save_to_db()
 
         self._templates = Environment(
-            loader=PackageLoader(f"kamihi.actions.{self.name}", "."),
+            loader=FileSystemLoader(Path(self._func.__code__.co_filename).parent),
             autoescape=select_autoescape(default_for_string=False),
         )
 
