@@ -29,7 +29,6 @@ from telegram import BotCommand
 
 from kamihi.base.config import KamihiSettings
 from kamihi.db.mongo import connect, disconnect
-from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
 from kamihi.tg.handlers import AuthHandler
 from kamihi.tg.media import Audio, Document, Location, Photo, Video, Voice
@@ -52,12 +51,10 @@ class Bot:
 
     Attributes:
         settings (KamihiSettings): The settings for the bot.
-        templates (Templates): The templates loaded by the bot.
 
     """
 
     settings: KamihiSettings
-    templates: Templates
 
     Document: Document = Document
     Photo: Photo = Photo
@@ -82,10 +79,6 @@ class Bot:
 
         # Connects to the database
         connect(self.settings.db)
-
-        # Starts the template engine
-        self.templates = Templates(self.settings.autoreload_templates)
-        logger.trace("Initialized templating engine")
 
     @dispatch([(str, Callable)])
     def action(self, *args: str | Callable, description: str = None) -> Action | Callable:
@@ -112,9 +105,6 @@ class Bot:
         # Create and store the action
         action = Action(func.__name__, commands, description, func)
         self._actions.append(action)
-
-        # Load the templates for the action
-        self.templates.add_action(action)
 
         # The action is returned so it can be used by the user if needed
         return action
@@ -210,10 +200,6 @@ class Bot:
         # Warns the user if there are no valid actions registered
         if not self._valid_actions:
             logger.warning("No valid actions were registered. The bot will not respond to any commands.")
-
-        # Loads the templates
-        self.templates.load()
-        logger.trace("Loaded templates")
 
         # Loads the Telegram client
         self._client = TelegramClient(self.settings, self._handlers)

@@ -13,6 +13,7 @@ from collections.abc import Callable
 from typing import Any
 
 import loguru
+from jinja2 import Environment, PackageLoader, select_autoescape
 from loguru import logger
 from telegram import Update
 from telegram.constants import BotCommandLimit
@@ -47,6 +48,7 @@ class Action:
     _valid: bool = True
     _logger: loguru.Logger
     _db_object: RegisteredAction | None
+    _templates: Environment
 
     def __init__(self, name: str, commands: list[str], description: str, func: Callable) -> None:
         """
@@ -69,12 +71,19 @@ class Action:
         self._validate_commands()
         self._validate_function()
 
-        if self.is_valid():
-            self._db_object = self.save_to_db()
-            self._logger.debug("Successfully registered")
-        else:
+        if not self.is_valid():
             self._db_object = None
             self._logger.warning("Failed to register")
+            return
+
+        self._db_object = self.save_to_db()
+
+        self._templates = Environment(
+            loader=PackageLoader(f"kamihi.actions.{self.name}", "."),
+            autoescape=select_autoescape(default_for_string=False),
+        )
+
+        self._logger.debug("Successfully registered")
 
     def _validate_commands(self) -> None:
         """Filter valid commands and log invalid ones."""
@@ -113,7 +122,7 @@ class Action:
         # Check if the function has valid parameters
         parameters = inspect.signature(self._func).parameters
         for name, param in parameters.items():
-            if name not in ("update", "context", "logger", "user"):
+            if name not in ("update", "context", "logger", "user", "template"):
                 self._logger.warning(
                     "Invalid parameter '{name}' in function",
                     name=name,
@@ -169,6 +178,8 @@ class Action:
                     value = self._logger
                 case "user":
                     value = get_user_from_telegram_id(update.effective_user.id)
+                case "template":
+                    value = self._templates.get_template(f"{self.name}.md.jinja")
                 case _:
                     value = None
 
