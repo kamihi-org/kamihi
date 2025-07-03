@@ -9,7 +9,7 @@ import pytest
 from telethon import TelegramClient
 from telethon.tl.custom import Conversation, Message
 
-from tests.conftest import random_image, random_video_path
+from tests.conftest import random_image, random_video_path, random_audio
 
 
 @pytest.mark.asyncio
@@ -495,6 +495,136 @@ async def test_action_returns_video_captioned(
     assert response.video is not None
 
     path = tmp_path / "video.mp4"
+    await tg_client.download_media(response, str(path))
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("kamihi")
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        {
+            "start/__init__.py": "",
+            "start/start.py": """\
+                from kamihi import bot
+                from pathlib import Path
+                from typing import Annotated
+                             
+                @bot.action
+                async def start() -> Annotated[Path, bot.Audio()]:
+                    return Path("actions/start/audio.mp3")
+            """,
+            "start/audio.mp3": random_audio(),
+        },
+        {
+            "start/__init__.py": "",
+            "start/start.py": """\
+                from kamihi import bot
+                from pathlib import Path
+                from typing import Annotated
+                             
+                @bot.action
+                async def start():
+                    return bot.Audio(Path("actions/start/audio.mp3"))
+            """,
+            "start/audio.mp3": random_audio(),
+        },
+        {
+            "start/__init__.py": "",
+            "start/start.py": """\
+                from kamihi import bot
+                from pathlib import Path
+                from typing import Annotated
+                             
+                @bot.action
+                async def start() -> bot.Audio:
+                    return bot.Audio(Path("actions/start/audio.mp3"))
+            """,
+            "start/audio.mp3": random_audio(),
+        },
+    ],
+    ids=["annotated", "class", "class_ra"],
+)
+async def test_action_returns_audio(
+    user_in_db, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+):
+    """Test that the action sends an audio to Telegram when a Path is returned and the bot.Audio annotation is used."""
+    add_permission_for_user(user_in_db, "start")
+
+    await chat.send_message("/start")
+    response: Message = await chat.get_response()
+
+    assert response.audio is not None
+
+    path = tmp_path / "audio.mp3"
+    await tg_client.download_media(response, str(path))
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("kamihi")
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        {
+            "start/__init__.py": "",
+            "start/start.py": """\
+                from kamihi import bot
+                from pathlib import Path
+                from typing import Annotated
+                             
+                @bot.action
+                async def start() -> Annotated[Path, bot.Audio(caption="This is an audio caption.")]:
+                    return Path("actions/start/audio.mp3")
+            """,
+            "start/audio.mp3": random_audio(),
+        },
+        {
+            "start/__init__.py": "",
+            "start/start.py": """\
+                from kamihi import bot
+                from pathlib import Path
+                from typing import Annotated
+                             
+                @bot.action
+                async def start():
+                    return bot.Audio(Path("actions/start/audio.mp3"), caption="This is an audio caption.")
+            """,
+            "start/audio.mp3": random_audio(),
+        },
+        {
+            "start/__init__.py": "",
+            "start/start.py": """\
+                from kamihi import bot
+                from pathlib import Path
+                from typing import Annotated
+                             
+                @bot.action
+                async def start() -> bot.Audio:
+                    return bot.Audio(Path("actions/start/audio.mp3"), caption="This is an audio caption.")
+            """,
+            "start/audio.mp3": random_audio(),
+        },
+    ],
+    ids=["annotated", "class", "class_ra"],
+)
+async def test_action_returns_audio_captioned(
+    user_in_db, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+):
+    """Test that the action sends an audio with a caption to Telegram when a Path is returned and the bot.Audio annotation is used."""
+    add_permission_for_user(user_in_db, "start")
+
+    await chat.send_message("/start")
+    response: Message = await chat.get_response()
+
+    assert response.text == "This is an audio caption."
+
+    assert response.audio is not None
+
+    path = tmp_path / "audio.mp3"
     await tg_client.download_media(response, str(path))
     assert path.exists()
     assert path.stat().st_size > 0
