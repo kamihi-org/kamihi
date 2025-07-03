@@ -3,6 +3,11 @@
 # Use the Astral UV image with Python 3.12 and Debian Bookworm as the base image.
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:045d04b19438e1ff212eee05f1671fdc0d98144b50790cc87575eeb5e2127f88
 
+# Install system dependencies required for Kamihi.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libmagic1 && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copy the current local version of Kamihi to the image.
 COPY . /lib/kamihi
 
