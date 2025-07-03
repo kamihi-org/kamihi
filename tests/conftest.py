@@ -17,6 +17,8 @@ from PIL import Image
 from pydub import AudioSegment
 from telegram.constants import FileSizeLimit
 
+from kamihi.bot.media import Location
+
 
 def random_image() -> bytes:
     """Fixture to provide a random JPEG image as bytes."""
@@ -90,3 +92,17 @@ def random_audio(output_format: Literal["mp3", "m4a"] = "mp3") -> bytes:
     audio_segment.export(audio_bytes_io, format=output_format, parameters=["-q:a", "4"])
 
     return audio_bytes_io.getvalue()
+
+
+@pytest.fixture
+def random_location() -> Location:
+    """
+    Generates a random location with latitude and longitude.
+
+    Returns:
+        tuple[float, float]: A tuple containing latitude and longitude.
+
+    """
+    latitude = random.uniform(-90.0, 90.0)
+    longitude = random.uniform(-180.0, 180.0)
+    return Location(latitude=latitude, longitude=longitude)

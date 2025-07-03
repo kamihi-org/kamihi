@@ -21,7 +21,8 @@ from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
 
-from kamihi.tg.send import send_text, send_document, _check_path, send_photo, send_video, send_audio
+from kamihi.bot.media import Location
+from kamihi.tg.send import send_text, send_document, _check_path, send_photo, send_video, send_audio, send_location
 from tests.conftest import random_image, random_video_path, random_audio
 
 
@@ -424,4 +425,35 @@ async def test_send_audio_invalid_mime_type(logot: Logot, mock_ptb_bot, mock_upd
     # Verify that the logger was called with an error
     logot.assert_logged(logged.error("File is not a valid audio"))
     # Verify function returns None
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_send_location(logot: Logot, random_location, mock_ptb_bot, mock_update, mock_context):
+    """Test that send_location sends a location message."""
+    # Call function
+    await send_location(random_location, update=mock_update, context=mock_context)
+
+    # Verify send_location was called with correct parameters
+    mock_ptb_bot.send_location.assert_called_once_with(
+        chat_id=mock_update.effective_chat.id,
+        latitude=random_location.latitude,
+        longitude=random_location.longitude,
+    )
+    logot.assert_logged(logged.debug("Location sent"))
+
+
+@pytest.mark.asyncio
+async def test_send_location_telegram_error_handling(
+    logot: Logot, random_location, mock_ptb_bot, mock_update, mock_context
+):
+    """Test that send_location properly catches and logs TelegramError."""
+    # Make send_location raise a TelegramError
+    mock_ptb_bot.send_location.side_effect = TelegramError("Test error")
+
+    # Call function
+    result = await send_location(random_location, update=mock_update, context=mock_context)
+
+    # Verify that the logger was called
+    logot.assert_logged(logged.error("Failed to send location"))
     assert result is None

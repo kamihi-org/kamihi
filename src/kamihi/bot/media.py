@@ -47,19 +47,37 @@ class Audio(Media):
     """Represents an audio media type."""
 
 
-@dataclass
 class Location:
     """
     Represents a location media type.
 
     Attributes:
-        latitude (float): Latitude of the location.
-        longitude (float): Longitude of the location.
+        latitude (float): Latitude of the location, must be between -90 and 90.
+        longitude (float): Longitude of the location, must be between -180 and 180.
 
     """
 
-    latitude: float
-    longitude: float
+    def __init__(self, latitude: float, longitude: float) -> None:
+        """
+        Initialize a Location instance with validated coordinates.
+
+        Args:
+            latitude (float): Latitude of the location (-90 to 90).
+            longitude (float): Longitude of the location (-180 to 180).
+
+        Raises:
+            ValueError: If latitude or longitude values are out of valid range.
+
+        """
+        if not -90 <= latitude <= 90:
+            msg = f"Latitude must be between -90 and 90, got {latitude}"
+            raise ValueError(msg)
+        if not -180 <= longitude <= 180:
+            msg = f"Longitude must be between -180 and 180, got {longitude}"
+            raise ValueError(msg)
+
+        self.latitude = latitude
+        self.longitude = longitude
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Location":
@@ -71,6 +89,9 @@ class Location:
 
         Returns:
             Location: An instance of Location.
+
+        Raises:
+            ValueError: If latitude or longitude values are out of valid range.
 
         """
         return Location(latitude=data["latitude"], longitude=data["longitude"])
@@ -86,6 +107,9 @@ class Location:
         Returns:
             Location: An instance of Location.
 
+        Raises:
+            ValueError: If latitude or longitude values are out of valid range.
+
         """
         return Location(latitude=data[0], longitude=data[1])
 
@@ -99,6 +123,9 @@ class Location:
 
         Returns:
             Location: An instance of Location.
+
+        Raises:
+            ValueError: If latitude or longitude values are out of valid range.
 
         """
         lat, lon = map(float, data.split(","))
