@@ -36,7 +36,7 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run pytest tests/functional -x --retries 3
+          uv run pytest tests/functional
         env:
           KAMIHI_TESTING__BOT_TOKEN: ${{ secrets.TOKEN }}
           KAMIHI_TESTING__BOT_USERNAME: ${{ secrets.BOT_USERNAME }}

@@ -163,7 +163,7 @@ version_files = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=src --cov-report=xml --cov-report=term-missing"
+addopts = "--cov=src --cov-report=xml --cov-report=term-missing -x --retries 3"
 testpaths = ["tests/"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
@@ -177,9 +177,4 @@ timeout_func_only = true
 omit = [
     "tests/*",
     ".idea/*",
-]
-
-[tool.uv.workspace]
-members = [
-    "a",
 ]
