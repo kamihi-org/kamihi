@@ -533,6 +533,7 @@ dependencies = [
     { name = "multipledispatch" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
+    { name = "python-magic" },
     { name = "python-telegram-bot", extra = ["job-queue"] },
     { name = "pytz" },
     { name = "starlette" },
@@ -560,7 +561,6 @@ docs = [
     { name = "mkdocs-typer2" },
     { name = "mkdocstrings", extra = ["python"] },
     { name = "pymdown-extensions" },
-    { name = "python-magic" },
     { name = "termynal" },
 ]
 func = [
@@ -591,6 +591,7 @@ requires-dist = [
     { name = "multipledispatch", specifier = ">=1.0.0" },
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pydantic-settings", specifier = ">=2.8.1" },
+    { name = "python-magic", specifier = ">=0.4.27" },
     { name = "python-telegram-bot", extras = ["job-queue"], specifier = ">=22.0" },
     { name = "pytz", specifier = ">=2025.2" },
     { name = "starlette", specifier = ">=0.46.2" },
@@ -618,7 +619,6 @@ docs = [
     { name = "mkdocs-typer2", specifier = ">=0.1.4" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.29.0" },
     { name = "pymdown-extensions", specifier = ">=10.14.3" },
-    { name = "python-magic", specifier = ">=0.4.27" },
     { name = "termynal", specifier = ">=0.13.0" },
 ]
 func = [
