@@ -21,10 +21,10 @@ from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 from typeguard import TypeCheckError, check_type
 
-from kamihi.bot.media import Document, Photo, Video
+from kamihi.bot.media import Audio, Document, Photo, Video
 from kamihi.tg import send_document, send_text
 from kamihi.tg.handlers import AuthHandler
-from kamihi.tg.send import send_photo, send_video
+from kamihi.tg.send import send_audio, send_photo, send_video
 from kamihi.users import get_user_from_telegram_id
 
 from .models import RegisteredAction
@@ -172,6 +172,9 @@ class Action:
         if isinstance(result, (list, tuple)):
             return [await self._send_result(item, update, context) for item in result]
 
+        if isinstance(result, Audio):
+            return await send_audio(result.path, update, context, caption=result.caption)
+
         if isinstance(result, Video):
             return await send_video(result.path, update, context, caption=result.caption)
 
@@ -188,6 +191,8 @@ class Action:
                 return await send_photo(result, update, context, caption=ann_metadata.caption)
             if ann_type is pathlib.Path and isinstance(ann_metadata, Video):
                 return await send_video(result, update, context, caption=ann_metadata.caption)
+            if ann_type is pathlib.Path and isinstance(ann_metadata, Audio):
+                return await send_audio(result, update, context, caption=ann_metadata.caption)
             return await send_document(result, update, context)
 
         if isinstance(result, str):

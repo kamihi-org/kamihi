@@ -64,7 +64,7 @@ def _check_path(file: Path, lg: Logger, max_size: FileSizeLimit = FileSizeLimit.
     return True
 
 
-def _check_mime_type(file: Path, mime_type: str, lg: Logger) -> bool:
+def _check_mime_type(file: Path, mime_type: str | list[str], lg: Logger) -> bool:
     """
     Check if the file's MIME type matches the expected MIME type.
 
@@ -80,8 +80,11 @@ def _check_mime_type(file: Path, mime_type: str, lg: Logger) -> bool:
     if not _check_path(file, lg):
         return False
 
+    if isinstance(mime_type, str):
+        mime_type = [mime_type]
+
     with lg.catch(exception=magic.MagicException, message="Failed to check MIME type"):
-        return magic.from_file(file, mime=True) == mime_type
+        return magic.from_file(file, mime=True) in mime_type
 
 
 async def send_text(text: str, update: Update, context: CallbackContext) -> Message | None:
@@ -208,4 +211,41 @@ async def send_video(file: Path, update: Update, context: CallbackContext, capti
             caption=md(caption) if caption else None,
         )
         lg.bind(response_id=message_reply.message_id).debug("Video sent")
+        return message_reply
+
+
+async def send_audio(file: Path, update: Update, context: CallbackContext, caption: str = None) -> Message | None:
+    """
+    Send an audio file to a chat.
+
+    This function sends an audio file to a specified chat using the provided bot instance.
+    Performs validation checks to ensure the file exists, is readable, and is within size limits.
+
+    Args:
+        file (Path): The audio file to send.
+        update (Update): The Telegram update object containing the chat information.
+        context (CallbackContext): The callback context containing the bot instance.
+        caption (str, optional): The caption for the audio. Defaults to None.
+
+    Returns:
+        Message | None: The response from the Telegram API, or None if an error occurs.
+
+    """
+    lg = logger.bind(chat_id=update.effective_chat.id, path=file)
+
+    if not _check_path(file, lg):
+        return None
+
+    if not _check_mime_type(file, ["audio/mpeg", "audio/mp4"], lg):
+        lg.error("File is not a valid audio")
+        return None
+
+    with lg.catch(exception=TelegramError, message="Failed to send audio"):
+        message_reply = await context.bot.send_audio(
+            chat_id=update.effective_chat.id,
+            audio=file,
+            filename=file.name,
+            caption=md(caption) if caption else None,
+        )
+        lg.bind(response_id=message_reply.message_id).debug("Audio sent")
         return message_reply

@@ -39,3 +39,8 @@ class Photo(Media):
 @dataclass
 class Video(Media):
     """Represents a video media type."""
+
+
+@dataclass
+class Audio(Media):
+    """Represents an audio media type."""
