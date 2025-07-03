@@ -8,6 +8,7 @@ License:
     MIT
 """
 
+import random
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
@@ -20,8 +21,8 @@ from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
 
-from kamihi.tg.send import send_text, send_document, _check_path, send_photo, send_video
-from tests.conftest import random_image, random_video_path
+from kamihi.tg.send import send_text, send_document, _check_path, send_photo, send_video, send_audio
+from tests.conftest import random_image, random_video_path, random_audio
 
 
 @pytest.fixture
@@ -32,6 +33,7 @@ def mock_ptb_bot():
     bot.send_document = AsyncMock(return_value=Mock(spec=Message))
     bot.send_photo = AsyncMock(return_value=Mock(spec=Message))
     bot.send_video = AsyncMock(return_value=Mock(spec=Message))
+    bot.send_audio = AsyncMock(return_value=Mock(spec=Message))
     return bot
 
 
@@ -77,6 +79,17 @@ def tmp_image_file(tmp_path):
 def tmp_video_file(tmp_path):
     """Fixture that provides a random video file path."""
     return random_video_path()
+
+
+@pytest.fixture
+def tmp_audio_file(tmp_path):
+    """Fixture that provides a random audio file path."""
+    fmt = random.choice(["m4a"])
+    audio_path = tmp_path / f"test_audio.{fmt}"
+    audio_data = random_audio(output_format=fmt)
+    with open(audio_path, "wb") as f:
+        f.write(audio_data)
+    return audio_path
 
 
 @pytest.mark.asyncio
@@ -348,5 +361,67 @@ async def test_send_video_invalid_mime_type(logot: Logot, mock_ptb_bot, mock_upd
 
     # Verify that the logger was called with an error
     logot.assert_logged(logged.error("File is not a valid MP4 video"))
+    # Verify function returns None
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_send_audio(logot: Logot, tmp_audio_file, mock_ptb_bot, mock_update, mock_context):
+    """Test basic functionality of send_audio with minimal parameters."""
+    # Call function
+    result = await send_audio(tmp_audio_file, update=mock_update, context=mock_context)
+
+    # Verify send_audio was called with correct parameters
+    mock_ptb_bot.send_audio.assert_called_once_with(
+        chat_id=mock_update.effective_chat.id,
+        audio=tmp_audio_file,
+        caption=None,
+        filename=tmp_audio_file.name,
+    )
+    assert result is not None
+    logot.assert_logged(logged.debug("Audio sent"))
+
+
+@pytest.mark.asyncio
+async def test_send_audio_invalid(logot: Logot, mock_ptb_bot, mock_update, mock_context):
+    """Test that send_audio handles invalid Path content."""
+    invalid_path = Path("invalid/path/to/file.mp3")
+
+    # Call function
+    result = await send_audio(invalid_path, update=mock_update, context=mock_context)
+
+    # Verify that the logger was called with an error
+    logot.assert_logged(logged.error("File does not exist"))
+    # Verify function returns None
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_send_audio_telegram_error_handling(
+    logot: Logot, mock_ptb_bot, tmp_audio_file, mock_update, mock_context
+):
+    """Test that send_audio properly catches and logs TelegramError."""
+    # Make send_audio raise a TelegramError
+    mock_ptb_bot.send_audio.side_effect = TelegramError("Test error")
+
+    # Call function
+    result = await send_audio(tmp_audio_file, update=mock_update, context=mock_context)
+
+    # Verify that the logger was called
+    logot.assert_logged(logged.error("Failed to send audio"))
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_send_audio_invalid_mime_type(logot: Logot, mock_ptb_bot, mock_update, mock_context, tmp_path):
+    """Test that send_audio handles invalid MIME type."""
+    invalid_audio = tmp_path / "invalid_audio.txt"
+    invalid_audio.write_text("This is not an audio file.")
+
+    # Call function
+    result = await send_audio(invalid_audio, update=mock_update, context=mock_context)
+
+    # Verify that the logger was called with an error
+    logot.assert_logged(logged.error("File is not a valid audio"))
     # Verify function returns None
     assert result is None

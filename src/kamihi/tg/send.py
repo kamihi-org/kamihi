@@ -236,7 +236,7 @@ async def send_audio(file: Path, update: Update, context: CallbackContext, capti
     if not _check_path(file, lg):
         return None
 
-    if not _check_mime_type(file, ["audio/mpeg", "audio/mp4"], lg):
+    if not _check_mime_type(file, ["audio/mpeg", "audio/mp4", "audio/x-m4a"], lg):
         lg.error("File is not a valid audio")
         return None
 
