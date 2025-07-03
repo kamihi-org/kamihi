@@ -11,6 +11,7 @@ from __future__ import annotations
 import typing
 from pathlib import Path
 
+import magic
 from loguru import logger
 from telegram import Bot, Message, Update
 from telegram.constants import FileSizeLimit
@@ -61,6 +62,26 @@ def _check_path(file: Path, lg: Logger, max_size: FileSizeLimit = FileSizeLimit.
         lg.debug("File is empty, but sending anyway")
 
     return True
+
+
+def _check_mime_type(file: Path, mime_type: str, lg: Logger) -> bool:
+    """
+    Check if the file's MIME type matches the expected MIME type.
+
+    Args:
+        file (Path): The file path to check.
+        mime_type (str): The expected MIME type of the file.
+        lg (Logger): The logger instance for logging.
+
+    Returns:
+        bool: True if the file's MIME type matches the expected MIME type, False otherwise.
+
+    """
+    if not _check_path(file, lg):
+        return False
+
+    with lg.catch(exception=magic.MagicException, message="Failed to check MIME type"):
+        return magic.from_file(file, mime=True) == mime_type
 
 
 async def send_text(text: str, update: Update, context: CallbackContext) -> Message | None:
@@ -150,4 +171,41 @@ async def send_photo(file: Path, update: Update, context: CallbackContext, capti
             caption=md(caption) if caption else None,
         )
         lg.bind(response_id=message_reply.message_id).debug("Photo sent")
+        return message_reply
+
+
+async def send_video(file: Path, update: Update, context: CallbackContext, caption: str = None) -> Message | None:
+    """
+    Send a video to a chat.
+
+    This function sends a video file to a specified chat using the provided bot instance.
+    Performs validation checks to ensure the file exists, is readable, and is within size limits.
+
+    Args:
+        file (Path): The video file to send.
+        update (Update): The Telegram update object containing the chat information.
+        context (CallbackContext): The callback context containing the bot instance.
+        caption (str, optional): The caption for the video. Defaults to None.
+
+    Returns:
+        Message | None: The response from the Telegram API, or None if an error occurs.
+
+    """
+    lg = logger.bind(chat_id=update.effective_chat.id, path=file)
+
+    if not _check_path(file, lg):
+        return None
+
+    if not _check_mime_type(file, "video/mp4", lg):
+        lg.error("File is not a valid MP4 video")
+        return None
+
+    with lg.catch(exception=TelegramError, message="Failed to send video"):
+        message_reply = await context.bot.send_video(
+            chat_id=update.effective_chat.id,
+            video=file,
+            filename=file.name,
+            caption=md(caption) if caption else None,
+        )
+        lg.bind(response_id=message_reply.message_id).debug("Video sent")
         return message_reply

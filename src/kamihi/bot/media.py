@@ -34,3 +34,8 @@ class Document(Media):
 @dataclass
 class Photo(Media):
     """Represents a photo media type."""
+
+
+@dataclass
+class Video(Media):
+    """Represents a video media type."""
