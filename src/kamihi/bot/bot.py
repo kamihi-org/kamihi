@@ -29,7 +29,7 @@ from telegram import BotCommand
 from telegram.ext import CommandHandler
 
 from kamihi.base.config import KamihiSettings
-from kamihi.bot.media import Audio, Document, Photo, Video
+from kamihi.bot.media import Audio, Document, Location, Photo, Video
 from kamihi.db.mongo import connect, disconnect
 from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
@@ -63,6 +63,7 @@ class Bot:
     Photo: Photo = Photo
     Video: Video = Video
     Audio: Audio = Audio
+    Location: Location = Location
 
     _client: TelegramClient
     _web: KamihiWeb

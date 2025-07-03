@@ -19,6 +19,8 @@ from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
 
+from kamihi.bot.media import Location
+
 if typing.TYPE_CHECKING:
     from loguru import Logger
 
@@ -248,4 +250,29 @@ async def send_audio(file: Path, update: Update, context: CallbackContext, capti
             caption=md(caption) if caption else None,
         )
         lg.bind(response_id=message_reply.message_id).debug("Audio sent")
+        return message_reply
+
+
+async def send_location(location: Location, update: Update, context: CallbackContext) -> Message | None:
+    """
+    Send a location to a chat.
+
+    Args:
+        location (Location): The location object containing latitude and longitude.
+        update (Update): The Telegram update object containing the chat information.
+        context (CallbackContext): The callback context containing the bot instance.
+
+    Returns:
+        Message | None: The response from the Telegram API, or None if an error occurs.
+
+    """
+    lg = logger.bind(chat_id=update.effective_chat.id, latitude=location.latitude, longitude=location.longitude)
+
+    with lg.catch(exception=TelegramError, message="Failed to send location"):
+        message_reply = await context.bot.send_location(
+            chat_id=update.effective_chat.id,
+            latitude=location.latitude,
+            longitude=location.longitude,
+        )
+        lg.bind(response_id=message_reply.message_id).debug("Location sent")
         return message_reply

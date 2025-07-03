@@ -21,10 +21,10 @@ from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 from typeguard import TypeCheckError, check_type
 
-from kamihi.bot.media import Audio, Document, Photo, Video
+from kamihi.bot.media import Audio, Document, Location, Photo, Video
 from kamihi.tg import send_document, send_text
 from kamihi.tg.handlers import AuthHandler
-from kamihi.tg.send import send_audio, send_photo, send_video
+from kamihi.tg.send import send_audio, send_location, send_photo, send_video
 from kamihi.users import get_user_from_telegram_id
 
 from .models import RegisteredAction
@@ -171,6 +171,9 @@ class Action:
 
         if isinstance(result, (list, tuple)):
             return [await self._send_result(item, update, context) for item in result]
+
+        if isinstance(result, Location):
+            return await send_location(result, update, context)
 
         if isinstance(result, Audio):
             return await send_audio(result.path, update, context, caption=result.caption)
