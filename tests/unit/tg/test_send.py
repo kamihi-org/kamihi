@@ -21,7 +21,7 @@ from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
 
 from kamihi.tg.send import send_text, send_document, _check_path, send_photo, send_video
-from tests.conftest import random_image
+from tests.conftest import random_image, random_video_path
 
 
 @pytest.fixture
@@ -71,6 +71,12 @@ def tmp_image_file(tmp_path):
         f.write(random_image())
 
     return file
+
+
+@pytest.fixture
+def tmp_video_file(tmp_path):
+    """Fixture that provides a random video file path."""
+    return random_video_path()
 
 
 @pytest.mark.asyncio
@@ -285,17 +291,17 @@ async def test_send_photo_telegram_error_handling(
 
 
 @pytest.mark.asyncio
-async def test_send_video(logot: Logot, random_video_path, mock_ptb_bot, mock_update, mock_context):
+async def test_send_video(logot: Logot, tmp_video_file, mock_ptb_bot, mock_update, mock_context):
     """Test basic functionality of send_video with minimal parameters."""
     # Call function
-    result = await send_video(random_video_path, update=mock_update, context=mock_context)
+    result = await send_video(tmp_video_file, update=mock_update, context=mock_context)
 
     # Verify send_video was called with correct parameters
     mock_ptb_bot.send_video.assert_called_once_with(
         chat_id=mock_update.effective_chat.id,
-        video=random_video_path,
+        video=tmp_video_file,
         caption=None,
-        filename=random_video_path.name,
+        filename=tmp_video_file.name,
     )
     assert result is not None
     logot.assert_logged(logged.debug("Video sent"))
@@ -317,14 +323,14 @@ async def test_send_video_invalid(logot: Logot, mock_ptb_bot, mock_update, mock_
 
 @pytest.mark.asyncio
 async def test_send_video_telegram_error_handling(
-    logot: Logot, mock_ptb_bot, random_video_path, mock_update, mock_context
+    logot: Logot, mock_ptb_bot, tmp_video_file, mock_update, mock_context
 ):
     """Test that send_video properly catches and logs TelegramError."""
     # Make send_video raise a TelegramError
     mock_ptb_bot.send_video.side_effect = TelegramError("Test error")
 
     # Call function
-    result = await send_video(random_video_path, update=mock_update, context=mock_context)
+    result = await send_video(tmp_video_file, update=mock_update, context=mock_context)
 
     # Verify that the logger was called
     logot.assert_logged(logged.error("Failed to send video"))

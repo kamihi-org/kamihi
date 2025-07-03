@@ -43,7 +43,6 @@ def random_image() -> bytes:
         return img_bytes_io.getvalue()
 
 
-@pytest.fixture
 def random_video_path() -> Path:
     """Fixture to provide a random video as bytes."""
     return random.choice(list(Path("tests/static/videos").glob("*.mp4")))
