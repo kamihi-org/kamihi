@@ -359,9 +359,7 @@ async def test_action_returns_photo_captioned(
         ),
     ],
 )
-async def test_action_returns_multiple_messages(
-    user_in_db, add_permission_for_user, chat: Conversation, actions_folder, messages
-):
+async def test_action_returns_list(user_in_db, add_permission_for_user, chat: Conversation, actions_folder, messages):
     """Test actions that return multiple messages."""
     add_permission_for_user(user_in_db, "start")
 

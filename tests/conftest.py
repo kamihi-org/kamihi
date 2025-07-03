@@ -7,8 +7,11 @@ License:
 """
 
 import io
+import random
+from pathlib import Path
 
 import numpy as np
+import pytest
 from PIL import Image
 from telegram.constants import FileSizeLimit
 
@@ -38,3 +41,9 @@ def random_image() -> bytes:
             continue
 
         return img_bytes_io.getvalue()
+
+
+@pytest.fixture
+def random_video_path() -> Path:
+    """Fixture to provide a random video as bytes."""
+    return random.choice(list(Path("tests/static/videos").glob("*.mp4")))
