@@ -79,54 +79,30 @@ class Location:
         self.latitude = latitude
         self.longitude = longitude
 
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "Location":
+    @classmethod
+    def parse(cls, data: str | dict[str, Any] | tuple[float, float]) -> "Location":
         """
-        Create a Location instance from a dictionary.
+        Parse a location from various formats.
 
         Args:
-            data (dict[str, Any]): Dictionary containing latitude and longitude.
+            data (str | dict[str, Any] | tuple[float, float]): Location data in string,
+                dictionary, or tuple format.
 
         Returns:
             Location: An instance of Location.
 
         Raises:
-            ValueError: If latitude or longitude values are out of valid range.
+            ValueError: If the input format is invalid or values are out of valid range.
 
         """
-        return Location(latitude=data["latitude"], longitude=data["longitude"])
+        if isinstance(data, str):
+            lat, lon = map(float, data.split(","))
+            return Location(latitude=lat, longitude=lon)
 
-    @staticmethod
-    def from_tuple(data: tuple[float, float]) -> "Location":
-        """
-        Create a Location instance from a tuple.
+        if isinstance(data, dict) and "latitude" in data and "longitude" in data:
+            return Location(latitude=data["latitude"], longitude=data["longitude"])
 
-        Args:
-            data (tuple[float, float]): Tuple containing latitude and longitude.
+        if isinstance(data, (tuple, list)) and len(data) == 2:
+            return Location(latitude=data[0], longitude=data[1])
 
-        Returns:
-            Location: An instance of Location.
-
-        Raises:
-            ValueError: If latitude or longitude values are out of valid range.
-
-        """
-        return Location(latitude=data[0], longitude=data[1])
-
-    @staticmethod
-    def from_string(data: str) -> "Location":
-        """
-        Create a Location instance from a string.
-
-        Args:
-            data (str): String containing latitude and longitude separated by a comma.
-
-        Returns:
-            Location: An instance of Location.
-
-        Raises:
-            ValueError: If latitude or longitude values are out of valid range.
-
-        """
-        lat, lon = map(float, data.split(","))
-        return Location(latitude=lat, longitude=lon)
+        raise ValueError("Invalid location data format")

@@ -70,41 +70,6 @@ def test_location_initialization():
     assert location.longitude == 139.6917
 
 
-def test_location_from_dict():
-    """Test creating Location from dictionary."""
-    location_dict = {"latitude": 35.6895, "longitude": 139.6917}
-    location = Location.from_dict(location_dict)
-    assert location.latitude == 35.6895
-    assert location.longitude == 139.6917
-
-
-def test_location_from_tuple():
-    """Test creating Location from tuple."""
-    location_tuple = (35.6895, 139.6917)
-    location = Location.from_tuple(location_tuple)
-    assert location.latitude == 35.6895
-    assert location.longitude == 139.6917
-
-
-@pytest.mark.parametrize(
-    "coordinate_string,expected_latitude,expected_longitude",
-    [
-        ("35.6895,139.6917", 35.6895, 139.6917),  # Both positive
-        ("-33.8688,-151.2093", -33.8688, -151.2093),  # Both negative
-        ("37.7749,-122.4194", 37.7749, -122.4194),  # Positive lat, negative long
-        ("-34.6037,58.3816", -34.6037, 58.3816),  # Negative lat, positive long
-        ("0,0", 0, 0),  # Zero coordinates
-        ("-90,180", -90, 180),  # Extreme valid coordinates
-        ("90,-180", 90, -180),  # Extreme valid coordinates opposite
-    ],
-)
-def test_location_from_string(coordinate_string, expected_latitude, expected_longitude):
-    """Test creating Location from string with various coordinate combinations."""
-    location = Location.from_string(coordinate_string)
-    assert location.latitude == expected_latitude
-    assert location.longitude == expected_longitude
-
-
 @pytest.mark.parametrize(
     "latitude,longitude,should_raise",
     [
@@ -130,16 +95,23 @@ def test_location_validation(latitude, longitude, should_raise):
         assert location.longitude == longitude
 
 
-def test_location_factory_methods_validation():
-    """Test that factory methods correctly validate coordinates."""
-    # Invalid coordinates through dictionary
-    with pytest.raises(ValueError):
-        Location.from_dict({"latitude": 100, "longitude": 50})
-
-    # Invalid coordinates through tuple
-    with pytest.raises(ValueError):
-        Location.from_tuple((50, 200))
-
-    # Invalid coordinates through string
-    with pytest.raises(ValueError):
-        Location.from_string("-100,30")
+@pytest.mark.parametrize(
+    "res,expected_latitude,expected_longitude",
+    [
+        ("35.6895,139.6917", 35.6895, 139.6917),  # Both positive
+        ("-33.8688,-151.2093", -33.8688, -151.2093),  # Both negative
+        ("37.7749,-122.4194", 37.7749, -122.4194),  # Positive lat, negative long
+        ("-34.6037,58.3816", -34.6037, 58.3816),  # Negative lat, positive long
+        ("0,0", 0, 0),  # Zero coordinates
+        ("-90,180", -90, 180),  # Extreme valid coordinates
+        ("90,-180", 90, -180),  # Extreme valid coordinates opposite
+        ((35.6895, 139.6917), 35.6895, 139.6917),  # Tuple input
+        ([-33.8688, -151.2093], -33.8688, -151.2093),  # List input
+        ({"latitude": 37.7749, "longitude": -122.4194}, 37.7749, -122.4194),  # Dict input
+    ],
+)
+def test_location_parse(res, expected_latitude, expected_longitude):
+    """Test creating Location from string with various coordinate combinations."""
+    location = Location.parse(res)
+    assert location.latitude == expected_latitude
+    assert location.longitude == expected_longitude

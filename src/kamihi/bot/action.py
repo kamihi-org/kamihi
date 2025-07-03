@@ -175,6 +175,14 @@ class Action:
         if isinstance(result, Location):
             return await send_location(result, update, context)
 
+        if isinstance(ann_metadata, Location):
+            try:
+                location = Location.parse(result)
+                return await send_location(location, update, context)
+            except (ValueError, TypeCheckError) as e:
+                self._logger.exception("Failed to parse location: {error}", error=e)
+                return None
+
         if isinstance(result, Audio):
             return await send_audio(result.path, update, context, caption=result.caption)
 
