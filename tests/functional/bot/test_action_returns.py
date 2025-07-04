@@ -5,11 +5,27 @@ License:
     MIT
 """
 
+import random
+
 import pytest
 from telethon import TelegramClient
 from telethon.tl.custom import Conversation, Message
 
+from kamihi.bot.media import Location
 from tests.conftest import random_image, random_video_path, random_audio
+
+
+def random_location() -> Location:
+    """
+    Generates a random location with latitude and longitude.
+
+    Returns:
+        tuple[float, float]: A tuple containing latitude and longitude.
+
+    """
+    latitude = random.uniform(-90.0, 90.0)
+    longitude = random.uniform(-180.0, 180.0)
+    return Location(latitude=latitude, longitude=longitude)
 
 
 @pytest.mark.asyncio
@@ -628,3 +644,75 @@ async def test_action_returns_audio_captioned(
     await tg_client.download_media(response, str(path))
     assert path.exists()
     assert path.stat().st_size > 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("kamihi")
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        {
+            "start/__init__.py": "",
+            "start/start.py": f"""\
+                from kamihi import bot
+                             
+                @bot.action
+                async def start():
+                    return bot.Location(latitude={random_location().latitude}, longitude={random_location().latitude})
+            """,
+        },
+        {
+            "start/__init__.py": "",
+            "start/start.py": f"""\
+                from kamihi import bot
+                from typing import Annotated
+                             
+                @bot.action
+                async def start() -> Annotated[str, bot.Location]:
+                    return "{random_location().latitude}, {random_location().latitude}"
+            """,
+        },
+        {
+            "start/__init__.py": "",
+            "start/start.py": f"""\
+                from kamihi import bot
+                from typing import Annotated
+                             
+                @bot.action
+                async def start() -> Annotated[tuple, bot.Location]:
+                    return {random_location().latitude}, {random_location().latitude}
+            """,
+        },
+        {
+            "start/__init__.py": "",
+            "start/start.py": f"""\
+                from kamihi import bot
+                from typing import Annotated
+                             
+                @bot.action
+                async def start() -> Annotated[list, bot.Location]:
+                    return [{random_location().latitude}, {random_location().latitude}]
+            """,
+        },
+        {
+            "start/__init__.py": "",
+            "start/start.py": f"""\
+                from kamihi import bot
+                from typing import Annotated
+                             
+                @bot.action
+                async def start() -> Annotated[dict, bot.Location]:
+                    return {{"latitude": {random_location().latitude}, "longitude": {random_location().latitude}}}
+            """,
+        },
+    ],
+    ids=["class", "annotated_string", "annotated_tuple", "annotated_list", "annotated_dict"],
+)
+async def test_action_returns_location(user_in_db, add_permission_for_user, chat: Conversation, actions_folder):
+    """Test that the action sends a location to Telegram when a Location is returned."""
+    add_permission_for_user(user_in_db, "start")
+
+    await chat.send_message("/start")
+    response: Message = await chat.get_response()
+
+    assert response.geo is not None

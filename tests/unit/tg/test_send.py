@@ -93,6 +93,14 @@ def tmp_audio_file(tmp_path):
     return audio_path
 
 
+@pytest.fixture
+def random_location():
+    """Fixture to provide a random Location object."""
+    latitude = random.uniform(-90.0, 90.0)
+    longitude = random.uniform(-180.0, 180.0)
+    return Location(latitude=latitude, longitude=longitude)
+
+
 @pytest.mark.asyncio
 async def test_send_text(logot: Logot, mock_update, mock_context):
     """Test basic functionality of send_text with minimal parameters."""

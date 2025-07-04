@@ -169,19 +169,16 @@ class Action:
         """Send the result of the action."""
         ann_type, ann_metadata = parse_annotation(inspect.signature(self._func).return_annotation)
 
+        if isinstance(ann_metadata, Location) or ann_metadata is Location:
+            with self._logger.catch(ValueError, message="Failed to parse location", reraise=True):
+                location = Location.parse(result)
+                return await send_location(location, update, context)
+
         if isinstance(result, (list, tuple)):
             return [await self._send_result(item, update, context) for item in result]
 
         if isinstance(result, Location):
             return await send_location(result, update, context)
-
-        if isinstance(ann_metadata, Location):
-            try:
-                location = Location.parse(result)
-                return await send_location(location, update, context)
-            except (ValueError, TypeCheckError) as e:
-                self._logger.exception("Failed to parse location: {error}", error=e)
-                return None
 
         if isinstance(result, Audio):
             return await send_audio(result.path, update, context, caption=result.caption)
