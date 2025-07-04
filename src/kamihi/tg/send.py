@@ -26,7 +26,7 @@ if typing.TYPE_CHECKING:
     from loguru import Logger
 
 
-def check_path(file: Path) -> None:
+def check_file(file: Path) -> None:
     """
     Check if the file path is valid.
 
@@ -82,10 +82,12 @@ def mime(file: Path, lg: Logger) -> str | None:
         str | None: The MIME type of the file, or None if it cannot be determined.
 
     """
-    check_path(file)
+    check_file(file)
 
     with lg.catch(exception=magic.MagicException, message="Failed to get MIME type", reraise=True):
-        return magic.from_file(file, mime=True)
+        t = magic.from_file(file, mime=True)
+        lg.trace("MIME type for {file} detected as {t}", file=file, t=t)
+        return t
 
 
 async def send(obj: Any, update: Update, context: CallbackContext) -> Message | list[Message]:  # noqa: ANN401, C901
@@ -107,62 +109,70 @@ async def send(obj: Any, update: Update, context: CallbackContext) -> Message | 
     lg = logger.bind(chat_id=update.effective_chat.id, response_text=str(obj))
 
     if isinstance(obj, str):
+        lg = lg.bind(text=obj)
         method = context.bot.send_message
         kwargs = {"text": md(obj)}
+        lg.debug("Sending as text message")
     elif isinstance(obj, Path):
         lg = lg.bind(path=obj)
 
-        check_path(obj)
+        check_file(obj)
 
-        match mime(obj, lg):
-            case "image/":
-                method = context.bot.send_photo
-                limit = FileSizeLimit.PHOTOSIZE_UPLOAD
-                kwargs = {"photo": obj, "filename": obj.name}
-            case "video/mp4":
-                method = context.bot.send_video
-                limit = FileSizeLimit.FILESIZE_UPLOAD
-                kwargs = {"video": obj, "filename": obj.name}
-            case "audio/mpeg" | "audio/mp4" | "audio/x-m4a":
-                method = context.bot.send_audio
-                limit = FileSizeLimit.FILESIZE_UPLOAD
-                kwargs = {"audio": obj, "filename": obj.name}
-            case _:
-                method = context.bot.send_document
-                limit = FileSizeLimit.FILESIZE_UPLOAD
-                kwargs = {"document": obj, "filename": obj.name}
+        mimetype = mime(obj, lg)
+        if "image/" in mimetype:
+            method = context.bot.send_photo
+            limit = FileSizeLimit.PHOTOSIZE_UPLOAD
+            kwargs = {"photo": obj, "filename": obj.name}
+            lg.debug("Sending as photo")
+        elif mimetype == "video/mp4":
+            method = context.bot.send_video
+            limit = FileSizeLimit.FILESIZE_UPLOAD
+            kwargs = {"video": obj, "filename": obj.name}
+            lg.debug("Sending as video")
+        elif mimetype in ("audio/mpeg", "audio/mp4", "audio/x-m4a"):
+            method = context.bot.send_audio
+            limit = FileSizeLimit.FILESIZE_UPLOAD
+            kwargs = {"audio": obj, "filename": obj.name}
+            lg.debug("Sending as audio")
+        else:
+            method = context.bot.send_document
+            limit = FileSizeLimit.FILESIZE_UPLOAD
+            kwargs = {"document": obj, "filename": obj.name}
+            lg.debug("Sending as generic file")
 
         check_filesize(obj, limit)
     elif isinstance(obj, Media):
         caption = md(obj.caption) if obj.caption else None
         lg = lg.bind(path=obj.path, caption=caption)
+        limit = FileSizeLimit.FILESIZE_UPLOAD
 
         if isinstance(obj, Document):
             method = context.bot.send_document
             kwargs = {"document": obj.path, "filename": obj.path.name, "caption": caption}
-            limit = FileSizeLimit.FILESIZE_UPLOAD
+            lg.debug("Sending as generic file")
         elif isinstance(obj, Photo):
             method = context.bot.send_photo
             kwargs = {"photo": obj.path, "filename": obj.path.name, "caption": caption}
             limit = FileSizeLimit.PHOTOSIZE_UPLOAD
+            lg.debug("Sending as photo")
         elif isinstance(obj, Video):
             method = context.bot.send_video
             kwargs = {"video": obj.path, "filename": obj.path.name, "caption": caption}
-            limit = FileSizeLimit.FILESIZE_UPLOAD
+            lg.debug("Sending as video")
         elif isinstance(obj, Audio):
             method = context.bot.send_audio
             kwargs = {"audio": obj.path, "filename": obj.path.name, "caption": caption}
-            limit = FileSizeLimit.FILESIZE_UPLOAD
-        else:
-            mes = f"Unsupported media type {type(obj)}"
-            raise TypeError(mes)
+            lg.debug("Sending as audio")
 
+        check_file(obj.path)
         check_filesize(obj.path, limit)
     elif isinstance(obj, Location):
+        lg = lg.bind(latitude=obj.latitude, longitude=obj.longitude)
         method = context.bot.send_location
         kwargs = {"latitude": obj.latitude, "longitude": obj.longitude}
-        lg = lg.bind(latitude=obj.latitude, longitude=obj.longitude)
+        lg.debug("Sending as location")
     elif isinstance(obj, (list, tuple)):
+        lg.debug("Sending as list of items")
         return [await send(item, update, context) for item in obj]
     else:
         mes = f"Object of type {type(obj)} cannot be sent"

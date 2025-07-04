@@ -41,7 +41,7 @@ async def test_default_handler(mock_update, mock_context):
     """Test that the default handler calls reply with the correct message."""
     # Patch reply to verify it's called with the right parameters
     with (
-        patch("kamihi.tg.default_handlers.send_text", new=AsyncMock()) as mock_reply,
+        patch("kamihi.tg.default_handlers.send", new=AsyncMock()) as mock_reply,
         pytest.raises(ApplicationHandlerStop),
     ):
         # Call the default handler
@@ -58,7 +58,7 @@ async def test_default_handler_logging(logot: Logot, mock_update, mock_context):
     """Test that the default handler logs the message correctly."""
     # Patch reply to avoid actually calling it
     with (
-        patch("kamihi.tg.default_handlers.send_text", new=AsyncMock()) as mock_reply,
+        patch("kamihi.tg.default_handlers.send", new=AsyncMock()) as mock_reply,
         pytest.raises(ApplicationHandlerStop),
     ):
         # Call the default handler
@@ -82,7 +82,7 @@ async def test_error_handler_update(logot: Logot, mock_update, mock_context):
 
     # Patch reply to verify it gets called
     with (
-        patch("kamihi.tg.default_handlers.send_text", new=AsyncMock()) as mock_reply,
+        patch("kamihi.tg.default_handlers.send", new=AsyncMock()) as mock_reply,
         pytest.raises(ApplicationHandlerStop),
     ):
         # Call the error handler with a valid update
@@ -106,7 +106,7 @@ async def test_error_handler_no_update(logot: Logot):
 
     # Patch reply to verify it's NOT called when there's no update
     with (
-        patch("kamihi.tg.default_handlers.send_text", new=AsyncMock()) as mock_reply,
+        patch("kamihi.tg.default_handlers.send", new=AsyncMock()) as mock_reply,
         pytest.raises(ApplicationHandlerStop),
     ):
         # Call the error handler with no update (None)
