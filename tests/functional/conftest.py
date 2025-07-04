@@ -248,7 +248,6 @@ class KamihiContainer(Container):
             stream = self.logs(stream=True)
         for line in stream:
             line = line.decode().strip()
-            print("\t" + line)
             if parse_json:
                 log_entry = self.parse_log_json(line)
                 if (
@@ -403,6 +402,14 @@ def kamihi(kamihi_container: KamihiContainer, run_command, request) -> Generator
 
     yield kamihi_container
 
+    if request.node.rep_call.failed:
+        title = f" Kamihi container logs for {request.node.name} "
+        print(f"\n{title:=^80}")
+        for line in kamihi_container.logs():
+            if jline := kamihi_container.parse_log_json(line):
+                print(jline["text"].strip())
+            else:
+                print(line.strip())
     if run_command == "kamihi run":
         kamihi_container.stop()
 
