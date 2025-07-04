@@ -26,7 +26,7 @@ if typing.TYPE_CHECKING:
     from loguru import Logger
 
 
-def _check_path(file: Path) -> None:
+def check_path(file: Path) -> None:
     """
     Check if the file path is valid.
 
@@ -53,7 +53,7 @@ def _check_path(file: Path) -> None:
         raise ValueError(mes)
 
 
-def _check_filesize(file: Path, limit: FileSizeLimit) -> None:
+def check_filesize(file: Path, limit: FileSizeLimit) -> None:
     """
     Check if the file size is within the specified limit.
 
@@ -70,7 +70,7 @@ def _check_filesize(file: Path, limit: FileSizeLimit) -> None:
         raise ValueError(mes)
 
 
-def _mime(file: Path, lg: Logger) -> str | None:
+def mime(file: Path, lg: Logger) -> str | None:
     """
     Get the MIME type of a file.
 
@@ -82,7 +82,7 @@ def _mime(file: Path, lg: Logger) -> str | None:
         str | None: The MIME type of the file, or None if it cannot be determined.
 
     """
-    _check_path(file)
+    check_path(file)
 
     with lg.catch(exception=magic.MagicException, message="Failed to get MIME type", reraise=True):
         return magic.from_file(file, mime=True)
@@ -112,9 +112,9 @@ async def send(obj: Any, update: Update, context: CallbackContext) -> Message | 
     elif isinstance(obj, Path):
         lg = lg.bind(path=obj)
 
-        _check_path(obj)
+        check_path(obj)
 
-        match _mime(obj, lg):
+        match mime(obj, lg):
             case "image/":
                 method = context.bot.send_photo
                 limit = FileSizeLimit.PHOTOSIZE_UPLOAD
@@ -132,7 +132,7 @@ async def send(obj: Any, update: Update, context: CallbackContext) -> Message | 
                 limit = FileSizeLimit.FILESIZE_UPLOAD
                 kwargs = {"document": obj, "filename": obj.name}
 
-        _check_filesize(obj, limit)
+        check_filesize(obj, limit)
     elif isinstance(obj, Media):
         caption = md(obj.caption) if obj.caption else None
         lg = lg.bind(path=obj.path, caption=caption)
@@ -157,7 +157,7 @@ async def send(obj: Any, update: Update, context: CallbackContext) -> Message | 
             mes = f"Unsupported media type {type(obj)}"
             raise TypeError(mes)
 
-        _check_filesize(obj.path, limit)
+        check_filesize(obj.path, limit)
     elif isinstance(obj, Location):
         method = context.bot.send_location
         kwargs = {"latitude": obj.latitude, "longitude": obj.longitude}
