@@ -8,271 +8,170 @@ License:
 
 from __future__ import annotations
 
+import os
 import typing
 from pathlib import Path
 
 import magic
 from loguru import logger
-from telegram import Bot, Message, Update
+from telegram import Message, Update
 from telegram.constants import FileSizeLimit
 from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
 
-from kamihi.bot.media import Location
+from kamihi.bot.media import *
 
 if typing.TYPE_CHECKING:
     from loguru import Logger
 
 
-def _check_path(file: Path, lg: Logger, max_size: FileSizeLimit = FileSizeLimit.FILESIZE_UPLOAD) -> bool:
+def _check_path(file: Path) -> None:
     """
     Check if the file path is valid.
 
     Args:
         file (Path): The file path to check.
-        lg (Logger): The logger instance for logging.
-        max_size (FileSizeLimit): The maximum file size allowed. Defaults to FileSizeLimit.FILESIZE_UPLOAD.
 
-    Returns:
-        bool: True if the file path is valid, False otherwise.
+    Raises:
+        ValueError: If the file does not exist, is not a file, or no read permission is granted.
 
     """
     # Validate file exists
     if not file.exists():
-        lg.error("File does not exist")
-        return False
+        mes = f"File {file} does not exist"
+        raise ValueError(mes)
 
     # Validate it's a file, not a directory
     if not file.is_file():
-        lg.error("Path is not a file")
-        return False
+        mes = f"Path {file} is not a file"
+        raise ValueError(mes)
 
     # Check read permissions
-    try:
-        file.read_bytes()
-    except PermissionError:
-        lg.error("No read permission for file")
-        return False
-
-    # Check file size
-    file_size = file.stat().st_size
-    if file_size > max_size:
-        lg.error("File size ({} bytes) exceeds Telegram limit of {} bytes", file_size, max_size)
-        return False
-    if file_size == 0:
-        lg.debug("File is empty, but sending anyway")
-
-    return True
+    if not os.access(file, os.R_OK):
+        mes = f"File {file} is not readable"
+        raise ValueError(mes)
 
 
-def _check_mime_type(file: Path, mime_type: str | list[str], lg: Logger) -> bool:
+def _check_filesize(file: Path, limit: FileSizeLimit) -> None:
     """
-    Check if the file's MIME type matches the expected MIME type.
+    Check if the file size is within the specified limit.
 
     Args:
         file (Path): The file path to check.
-        mime_type (str): The expected MIME type of the file.
+        limit (FileSizeLimit): The maximum allowed file size.
+
+    Raises:
+        ValueError: If the file size exceeds the limit.
+
+    """
+    if file.stat().st_size > limit:
+        mes = f"File {file} exceeds the size limit of {limit} bytes"
+        raise ValueError(mes)
+
+
+def _mime(file: Path, lg: Logger) -> str | None:
+    """
+    Get the MIME type of a file.
+
+    Args:
+        file (Path): The file path to check.
         lg (Logger): The logger instance for logging.
 
     Returns:
-        bool: True if the file's MIME type matches the expected MIME type, False otherwise.
+        str | None: The MIME type of the file, or None if it cannot be determined.
 
     """
-    if not _check_path(file, lg):
-        return False
+    _check_path(file)
 
-    if isinstance(mime_type, str):
-        mime_type = [mime_type]
-
-    with lg.catch(exception=magic.MagicException, message="Failed to check MIME type"):
-        return magic.from_file(file, mime=True) in mime_type
+    with lg.catch(exception=magic.MagicException, message="Failed to get MIME type", reraise=True):
+        return magic.from_file(file, mime=True)
 
 
-async def send_text(text: str, update: Update, context: CallbackContext) -> Message | None:
+async def send(obj: Any, update: Update, context: CallbackContext) -> Message | list[Message]:  # noqa: ANN401, C901
     """
-    Send a text message to a chat.
+    Send a message based on the provided object and annotation.
 
     Args:
-        text (str): The text message to send.
+        obj (Any): The object to send.
         update (Update): The Telegram update object containing the chat information.
         context (CallbackContext): The callback context containing the bot instance.
 
     Returns:
-        Message | None: The response from the Telegram API, or None if an error occurs.
+        Message | list[Message]: The response from the Telegram API, or a list of responses if multiple objects are sent.
+
+    Raises:
+        TypeError: If the object type is not supported for sending.
 
     """
-    lg = logger.bind(chat_id=update.effective_chat.id, response_text=text)
+    lg = logger.bind(chat_id=update.effective_chat.id, response_text=str(obj))
 
-    with lg.catch(exception=TelegramError, message="Failed to send message"):
-        message_reply = await context.bot.send_message(
-            update.effective_chat.id,
-            md(text if text else ""),
-        )
-        lg.bind(response_id=message_reply.message_id).debug("Message sent")
-        return message_reply
+    if isinstance(obj, str):
+        method = context.bot.send_message
+        kwargs = {"text": md(obj)}
+    elif isinstance(obj, Path):
+        lg = lg.bind(path=obj)
 
+        _check_path(obj)
 
-async def send_document(file: Path, update: Update, context: CallbackContext, caption: str = None) -> Message | None:
-    """
-    Send a file to a chat.
+        match _mime(obj, lg):
+            case "image/":
+                method = context.bot.send_photo
+                limit = FileSizeLimit.PHOTOSIZE_UPLOAD
+                kwargs = {"photo": obj, "filename": obj.name}
+            case "video/mp4":
+                method = context.bot.send_video
+                limit = FileSizeLimit.FILESIZE_UPLOAD
+                kwargs = {"video": obj, "filename": obj.name}
+            case "audio/mpeg" | "audio/mp4" | "audio/x-m4a":
+                method = context.bot.send_audio
+                limit = FileSizeLimit.FILESIZE_UPLOAD
+                kwargs = {"audio": obj, "filename": obj.name}
+            case _:
+                method = context.bot.send_document
+                limit = FileSizeLimit.FILESIZE_UPLOAD
+                kwargs = {"document": obj, "filename": obj.name}
 
-    This function sends a file to a specified chat using the provided bot instance.
-    Performs validation checks to ensure the file exists, is readable, and is within size limits.
+        _check_filesize(obj, limit)
+    elif isinstance(obj, Media):
+        caption = md(obj.caption) if obj.caption else None
+        lg = lg.bind(path=obj.path, caption=caption)
 
-    Args:
-        file (Path): The file to send.
-        update (Update): The Telegram update object containing the chat information.
-        context (CallbackContext): The callback context containing the bot instance.
-        caption (str, optional): The caption for the file. Defaults to None.
+        if isinstance(obj, Document):
+            method = context.bot.send_document
+            kwargs = {"document": obj.path, "filename": obj.path.name, "caption": caption}
+            limit = FileSizeLimit.FILESIZE_UPLOAD
+        elif isinstance(obj, Photo):
+            method = context.bot.send_photo
+            kwargs = {"photo": obj.path, "filename": obj.path.name, "caption": caption}
+            limit = FileSizeLimit.PHOTOSIZE_UPLOAD
+        elif isinstance(obj, Video):
+            method = context.bot.send_video
+            kwargs = {"video": obj.path, "filename": obj.path.name, "caption": caption}
+            limit = FileSizeLimit.FILESIZE_UPLOAD
+        elif isinstance(obj, Audio):
+            method = context.bot.send_audio
+            kwargs = {"audio": obj.path, "filename": obj.path.name, "caption": caption}
+            limit = FileSizeLimit.FILESIZE_UPLOAD
+        else:
+            mes = f"Unsupported media type {type(obj)}"
+            raise TypeError(mes)
 
-    Returns:
-        Message | None: The response from the Telegram API, or None if an error occurs.
+        _check_filesize(obj.path, limit)
+    elif isinstance(obj, Location):
+        method = context.bot.send_location
+        kwargs = {"latitude": obj.latitude, "longitude": obj.longitude}
+        lg = lg.bind(latitude=obj.latitude, longitude=obj.longitude)
+    elif isinstance(obj, (list, tuple)):
+        return [await send(item, update, context) for item in obj]
+    else:
+        mes = f"Object of type {type(obj)} cannot be sent"
+        raise TypeError(mes)
 
-    """
-    lg = logger.bind(chat_id=update.effective_chat.id, path=file)
-
-    if not _check_path(file, lg):
-        return None
-
-    with lg.catch(exception=TelegramError, message="Failed to send file"):
-        message_reply = await context.bot.send_document(
+    with lg.catch(exception=TelegramError, message="Failed to send"):
+        message = await method(
             chat_id=update.effective_chat.id,
-            document=file,
-            filename=file.name,
-            caption=md(caption) if caption else None,
+            **kwargs,
         )
-        lg.bind(response_id=message_reply.message_id).debug("File sent")
-        return message_reply
-
-
-async def send_photo(file: Path, update: Update, context: CallbackContext, caption: str = None) -> Message | None:
-    """
-    Send a photo to a chat.
-
-    This function sends a photo file to a specified chat using the provided bot instance.
-    Performs validation checks to ensure the file exists, is readable, and is within size limits.
-
-    Args:
-        file (Path): The photo file to send.
-        update (Update): The Telegram update object containing the chat information.
-        context (CallbackContext): The callback context containing the bot instance.
-        caption (str, optional): The caption for the photo. Defaults to None.
-
-    Returns:
-        Message | None: The response from the Telegram API, or None if an error occurs.
-
-    """
-    lg = logger.bind(chat_id=update.effective_chat.id, path=file)
-
-    if not _check_path(file, lg, max_size=FileSizeLimit.PHOTOSIZE_UPLOAD):
-        return None
-
-    with lg.catch(exception=TelegramError, message="Failed to send photo"):
-        message_reply = await context.bot.send_photo(
-            chat_id=update.effective_chat.id,
-            photo=file,
-            filename=file.name,
-            caption=md(caption) if caption else None,
-        )
-        lg.bind(response_id=message_reply.message_id).debug("Photo sent")
-        return message_reply
-
-
-async def send_video(file: Path, update: Update, context: CallbackContext, caption: str = None) -> Message | None:
-    """
-    Send a video to a chat.
-
-    This function sends a video file to a specified chat using the provided bot instance.
-    Performs validation checks to ensure the file exists, is readable, and is within size limits.
-
-    Args:
-        file (Path): The video file to send.
-        update (Update): The Telegram update object containing the chat information.
-        context (CallbackContext): The callback context containing the bot instance.
-        caption (str, optional): The caption for the video. Defaults to None.
-
-    Returns:
-        Message | None: The response from the Telegram API, or None if an error occurs.
-
-    """
-    lg = logger.bind(chat_id=update.effective_chat.id, path=file)
-
-    if not _check_path(file, lg):
-        return None
-
-    if not _check_mime_type(file, "video/mp4", lg):
-        lg.error("File is not a valid MP4 video")
-        return None
-
-    with lg.catch(exception=TelegramError, message="Failed to send video"):
-        message_reply = await context.bot.send_video(
-            chat_id=update.effective_chat.id,
-            video=file,
-            filename=file.name,
-            caption=md(caption) if caption else None,
-        )
-        lg.bind(response_id=message_reply.message_id).debug("Video sent")
-        return message_reply
-
-
-async def send_audio(file: Path, update: Update, context: CallbackContext, caption: str = None) -> Message | None:
-    """
-    Send an audio file to a chat.
-
-    This function sends an audio file to a specified chat using the provided bot instance.
-    Performs validation checks to ensure the file exists, is readable, and is within size limits.
-
-    Args:
-        file (Path): The audio file to send.
-        update (Update): The Telegram update object containing the chat information.
-        context (CallbackContext): The callback context containing the bot instance.
-        caption (str, optional): The caption for the audio. Defaults to None.
-
-    Returns:
-        Message | None: The response from the Telegram API, or None if an error occurs.
-
-    """
-    lg = logger.bind(chat_id=update.effective_chat.id, path=file)
-
-    if not _check_path(file, lg):
-        return None
-
-    if not _check_mime_type(file, ["audio/mpeg", "audio/mp4", "audio/x-m4a"], lg):
-        lg.error("File is not a valid audio")
-        return None
-
-    with lg.catch(exception=TelegramError, message="Failed to send audio"):
-        message_reply = await context.bot.send_audio(
-            chat_id=update.effective_chat.id,
-            audio=file,
-            filename=file.name,
-            caption=md(caption) if caption else None,
-        )
-        lg.bind(response_id=message_reply.message_id).debug("Audio sent")
-        return message_reply
-
-
-async def send_location(location: Location, update: Update, context: CallbackContext) -> Message | None:
-    """
-    Send a location to a chat.
-
-    Args:
-        location (Location): The location object containing latitude and longitude.
-        update (Update): The Telegram update object containing the chat information.
-        context (CallbackContext): The callback context containing the bot instance.
-
-    Returns:
-        Message | None: The response from the Telegram API, or None if an error occurs.
-
-    """
-    lg = logger.bind(chat_id=update.effective_chat.id, latitude=location.latitude, longitude=location.longitude)
-
-    with lg.catch(exception=TelegramError, message="Failed to send location"):
-        message_reply = await context.bot.send_location(
-            chat_id=update.effective_chat.id,
-            latitude=location.latitude,
-            longitude=location.longitude,
-        )
-        lg.bind(response_id=message_reply.message_id).debug("Location sent")
-        return message_reply
+        lg.bind(response_id=message.message_id).debug("Sent")
+        return message

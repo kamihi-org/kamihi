@@ -9,26 +9,21 @@ License:
 from __future__ import annotations
 
 import inspect
-import pathlib
 from collections.abc import Callable
-from pathlib import Path
 from typing import Any
 
 import loguru
 from loguru import logger
-from telegram import Message, Update
+from telegram import Update
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
-from typeguard import TypeCheckError, check_type
 
-from kamihi.bot.media import Audio, Document, Location, Photo, Video
-from kamihi.tg import send_document, send_text
 from kamihi.tg.handlers import AuthHandler
-from kamihi.tg.send import send_audio, send_location, send_photo, send_video
+from kamihi.tg.send import send
 from kamihi.users import get_user_from_telegram_id
 
 from .models import RegisteredAction
-from .utils import COMMAND_REGEX, parse_annotation
+from .utils import COMMAND_REGEX
 
 
 class Action:
@@ -153,66 +148,6 @@ class Action:
         """Clean up the action from the database."""
         RegisteredAction.objects(name__nin=keep).delete()
 
-    def _validate_result(self, result: Any) -> bool:  # noqa: ANN401
-        """Validate the result of the action."""
-        ann = inspect.signature(self._func).return_annotation
-        if ann is not inspect.Signature.empty:
-            check_type(result, ann)
-        return True
-
-    async def _send_result(  # noqa: C901
-        self,
-        result: Any,  # noqa: ANN401
-        update: Update,
-        context: CallbackContext,
-    ) -> Message | list[Message] | None:
-        """Send the result of the action."""
-        ann_type, ann_metadata = parse_annotation(inspect.signature(self._func).return_annotation)
-
-        if isinstance(ann_metadata, Location) or ann_metadata is Location:
-            with self._logger.catch(ValueError, message="Failed to parse location", reraise=True):
-                location = Location.parse(result)
-                return await send_location(location, update, context)
-
-        if isinstance(result, (list, tuple)):
-            return [await self._send_result(item, update, context) for item in result]
-
-        if isinstance(result, Location):
-            return await send_location(result, update, context)
-
-        if isinstance(result, Audio):
-            return await send_audio(result.path, update, context, caption=result.caption)
-
-        if isinstance(result, Video):
-            return await send_video(result.path, update, context, caption=result.caption)
-
-        if isinstance(result, Photo):
-            return await send_photo(result.path, update, context, caption=result.caption)
-
-        if isinstance(result, Document):
-            return await send_document(result.path, update, context, caption=result.caption)
-
-        if isinstance(result, Path):
-            if ann_type is pathlib.Path and isinstance(ann_metadata, Document):
-                return await send_document(result, update, context, caption=ann_metadata.caption)
-            if ann_type is pathlib.Path and isinstance(ann_metadata, Photo):
-                return await send_photo(result, update, context, caption=ann_metadata.caption)
-            if ann_type is pathlib.Path and isinstance(ann_metadata, Video):
-                return await send_video(result, update, context, caption=ann_metadata.caption)
-            if ann_type is pathlib.Path and isinstance(ann_metadata, Audio):
-                return await send_audio(result, update, context, caption=ann_metadata.caption)
-            return await send_document(result, update, context)
-
-        if isinstance(result, str):
-            return await send_text(result, update, context)
-
-        if result is None:
-            self._logger.debug("Function returned None, skipping reply")
-            return None
-
-        msg = f"Unexpected return type {type(result)}"
-        raise TypeError(msg)
-
     async def __call__(self, update: Update, context: CallbackContext) -> None:
         """Execute the action."""
         if not self.is_valid():
@@ -247,10 +182,9 @@ class Action:
 
         result: Any = await self._func(*pos_args, **keyword_args)
 
-        if self._validate_result(result):
-            await self._send_result(result, update, context)
+        await send(result, update, context)
 
-        self._logger.debug("Executed")
+        self._logger.debug("Finished execution")
         raise ApplicationHandlerStop
 
     def __repr__(self) -> str:
