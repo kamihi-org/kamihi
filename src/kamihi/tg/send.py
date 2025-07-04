@@ -20,7 +20,7 @@ from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
 
-from kamihi.bot.media import *
+from .media import *
 
 if typing.TYPE_CHECKING:
     from loguru import Logger

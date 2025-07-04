@@ -10,7 +10,7 @@ from loguru import logger
 from telegram import Update
 from telegram.ext import ApplicationHandlerStop, CallbackContext
 
-from .send import send_text
+from .send import send
 
 
 async def default(update: Update, context: CallbackContext) -> None:
@@ -27,7 +27,7 @@ async def default(update: Update, context: CallbackContext) -> None:
     )
 
     text = context.bot_data["responses"]["default_message"]
-    await send_text(text, update=update, context=context)
+    await send(text, update=update, context=context)
     raise ApplicationHandlerStop
 
 
@@ -44,6 +44,6 @@ async def error(update: object | None, context: CallbackContext) -> None:
 
     if isinstance(update, Update):
         text = context.bot_data["responses"]["error_message"]
-        await send_text(text, update=update, context=context)
+        await send(text, update=update, context=context)
 
     raise ApplicationHandlerStop

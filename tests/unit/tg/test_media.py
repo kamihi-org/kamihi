@@ -9,7 +9,7 @@ License:
 import pytest
 from pathlib import Path
 
-from kamihi.bot.media import Media, Document, Photo, Video, Audio, Location
+from kamihi.tg.media import Media, Document, Photo, Video, Audio, Location
 
 
 def test_media_initialization():

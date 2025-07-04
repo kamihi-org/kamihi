@@ -21,7 +21,7 @@ from typeguard import TypeCheckError
 
 from kamihi.bot.models import RegisteredAction
 from kamihi.bot.action import Action
-from kamihi.bot.media import Document, Photo
+from kamihi.tg.media import Document, Photo
 from kamihi.tg.handlers import AuthHandler
 from kamihi.users import User
 

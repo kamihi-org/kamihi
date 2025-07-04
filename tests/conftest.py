@@ -12,12 +12,9 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
-import pytest
 from PIL import Image
 from pydub import AudioSegment
 from telegram.constants import FileSizeLimit
-
-from kamihi.bot.media import Location
 
 
 def random_image() -> bytes:

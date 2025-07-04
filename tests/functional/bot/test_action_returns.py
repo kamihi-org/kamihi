@@ -11,7 +11,7 @@ import pytest
 from telethon import TelegramClient
 from telethon.tl.custom import Conversation, Message
 
-from kamihi.bot.media import Location
+from kamihi.tg.media import Location
 from tests.conftest import random_image, random_video_path, random_audio
 
 

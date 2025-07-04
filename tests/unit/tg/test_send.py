@@ -21,7 +21,7 @@ from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
 
-from kamihi.bot.media import Location
+from kamihi.tg.media import Location
 from kamihi.tg.send import send_text, send_document, _check_path, send_photo, send_video, send_audio, send_location
 from tests.conftest import random_image, random_video_path, random_audio
 
