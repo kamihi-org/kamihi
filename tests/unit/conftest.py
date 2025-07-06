@@ -6,6 +6,7 @@ License:
 
 """
 
+import random
 from unittest import mock
 from unittest.mock import Mock, AsyncMock
 
@@ -13,8 +14,11 @@ import mongomock
 import pytest
 from mongoengine import connect
 from telegram import Update, Bot, Message
+from telegram.constants import LocationLimit
 
 from kamihi.db.mongo import disconnect
+from kamihi.tg.media import Location
+from tests.conftest import random_image, random_video_path, random_audio
 
 
 @pytest.fixture
@@ -43,3 +47,48 @@ def mock_mongodb():
     with mock.patch("kamihi.bot.bot.connect"), mock.patch("kamihi.db.mongo.connect"):
         yield
     disconnect()
+
+
+@pytest.fixture
+def tmp_file(tmp_path):
+    """Fixture to provide a mock file path."""
+    file = tmp_path / "test_file.txt"
+    file.write_text("This is a test file.")
+    return file
+
+
+@pytest.fixture
+def tmp_image_file(tmp_path):
+    """Fixture to create a random image in a temporal directory and provide its path."""
+    file = tmp_path / "test_file.jpg"
+
+    with open(file, "wb") as f:
+        f.write(random_image())
+
+    return file
+
+
+@pytest.fixture
+def tmp_video_file(tmp_path):
+    """Fixture that provides a random video file path."""
+    return random_video_path()
+
+
+@pytest.fixture
+def tmp_audio_file(tmp_path):
+    """Fixture that provides a random audio file path."""
+    fmt = random.choice(["m4a"])
+    audio_path = tmp_path / f"test_audio.{fmt}"
+    audio_data = random_audio(output_format=fmt)
+    with open(audio_path, "wb") as f:
+        f.write(audio_data)
+    return audio_path
+
+
+@pytest.fixture
+def random_location():
+    """Fixture to provide a random Location object."""
+    latitude = random.uniform(-90.0, 90.0)
+    longitude = random.uniform(-180.0, 180.0)
+    horizontal_accuracy = random.uniform(0.0, float(LocationLimit.HORIZONTAL_ACCURACY))
+    return Location(latitude=latitude, longitude=longitude, horizontal_accuracy=horizontal_accuracy)

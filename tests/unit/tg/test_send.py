@@ -8,8 +8,7 @@ License:
     MIT
 """
 
-import random
-from unittest.mock import AsyncMock, Mock, MagicMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from logot import Logot, logged
@@ -17,11 +16,9 @@ from telegram import Bot, Message, Update
 from telegram.constants import FileSizeLimit
 from telegram.error import TelegramError
 from telegram.ext import CallbackContext
-from telegramify_markdown import markdownify as md
 
 from kamihi.tg.media import *
 from kamihi.tg.send import check_file, send, check_filesize
-from tests.conftest import random_image, random_video_path, random_audio
 
 
 @pytest.fixture
@@ -53,50 +50,6 @@ def mock_context(mock_ptb_bot):
     context = Mock(spec=CallbackContext)
     context.bot = mock_ptb_bot
     return context
-
-
-@pytest.fixture
-def tmp_file(tmp_path):
-    """Fixture to provide a mock file path."""
-    file = tmp_path / "test_file.txt"
-    file.write_text("This is a test file.")
-    return file
-
-
-@pytest.fixture
-def tmp_image_file(tmp_path):
-    """Fixture to create a random image in a temporal directory and provide its path."""
-    file = tmp_path / "test_file.jpg"
-
-    with open(file, "wb") as f:
-        f.write(random_image())
-
-    return file
-
-
-@pytest.fixture
-def tmp_video_file(tmp_path):
-    """Fixture that provides a random video file path."""
-    return random_video_path()
-
-
-@pytest.fixture
-def tmp_audio_file(tmp_path):
-    """Fixture that provides a random audio file path."""
-    fmt = random.choice(["m4a"])
-    audio_path = tmp_path / f"test_audio.{fmt}"
-    audio_data = random_audio(output_format=fmt)
-    with open(audio_path, "wb") as f:
-        f.write(audio_data)
-    return audio_path
-
-
-@pytest.fixture
-def random_location():
-    """Fixture to provide a random Location object."""
-    latitude = random.uniform(-90.0, 90.0)
-    longitude = random.uniform(-180.0, 180.0)
-    return Location(latitude=latitude, longitude=longitude)
 
 
 def test_check_file(tmp_file):
@@ -147,7 +100,9 @@ def test_check_filesize_too_large(tmp_file):
     large_file.write_text("A" * (FileSizeLimit.FILESIZE_UPLOAD + 1))
 
     # Call function
-    with pytest.raises(ValueError, match=f"File {large_file} exceeds the size limit of {FileSizeLimit.FILESIZE_UPLOAD} bytes"):
+    with pytest.raises(
+        ValueError, match=f"File {large_file} exceeds the size limit of {FileSizeLimit.FILESIZE_UPLOAD} bytes"
+    ):
         check_filesize(large_file, FileSizeLimit.FILESIZE_UPLOAD)
 
 
@@ -201,8 +156,9 @@ async def test_send_path_photo(logot: Logot, tmp_image_file, mock_ptb_bot, mock_
     # Verify send_photo was called with correct parameters
     mock_ptb_bot.send_photo.assert_called_once_with(
         chat_id=mock_update.effective_chat.id,
-        photo=tmp_image_file,
         filename=tmp_image_file.name,
+        caption=None,
+        photo=tmp_image_file,
     )
     assert result is not None
     logot.assert_logged(logged.debug("Sending as photo"))
@@ -218,8 +174,9 @@ async def test_send_path_video(logot: Logot, tmp_video_file, mock_ptb_bot, mock_
     # Verify send_video was called with correct parameters
     mock_ptb_bot.send_video.assert_called_once_with(
         chat_id=mock_update.effective_chat.id,
-        video=tmp_video_file,
         filename=tmp_video_file.name,
+        caption=None,
+        video=tmp_video_file,
     )
     assert result is not None
     logot.assert_logged(logged.debug("Sending as video"))
@@ -235,8 +192,9 @@ async def test_send_path_audio(logot: Logot, tmp_audio_file, mock_ptb_bot, mock_
     # Verify send_audio was called with correct parameters
     mock_ptb_bot.send_audio.assert_called_once_with(
         chat_id=mock_update.effective_chat.id,
-        audio=tmp_audio_file,
         filename=tmp_audio_file.name,
+        caption=None,
+        audio=tmp_audio_file,
     )
     assert result is not None
     logot.assert_logged(logged.debug("Sending as audio"))
@@ -252,8 +210,9 @@ async def test_send_path_document(logot: Logot, tmp_file, mock_ptb_bot, mock_upd
     # Verify send_document was called with correct parameters
     mock_ptb_bot.send_document.assert_called_once_with(
         chat_id=mock_update.effective_chat.id,
-        document=tmp_file,
         filename=tmp_file.name,
+        caption=None,
+        document=tmp_file,
     )
     assert result is not None
     logot.assert_logged(logged.debug("Sending as generic file"))
@@ -280,9 +239,9 @@ async def test_send_media_document(logot: Logot, tmp_file, caption, mock_ptb_bot
     # Verify send_document was called with correct parameters
     mock_ptb_bot.send_document.assert_called_once_with(
         chat_id=mock_update.effective_chat.id,
-        document=tmp_file,
         filename=tmp_file.name,
-        caption=(caption),
+        document=tmp_file,
+        caption=md(caption) if caption else None,
     )
     logot.assert_logged(logged.debug("Sending as generic file"))
     logot.assert_logged(logged.debug("Sent"))
@@ -298,8 +257,8 @@ async def test_send_media_photo(logot: Logot, tmp_image_file, caption, mock_ptb_
     # Verify send_photo was called with correct parameters
     mock_ptb_bot.send_photo.assert_called_once_with(
         chat_id=mock_update.effective_chat.id,
-        photo=tmp_image_file,
         filename=tmp_image_file.name,
+        photo=tmp_image_file,
         caption=caption,
     )
     logot.assert_logged(logged.debug("Sending as photo"))
@@ -316,8 +275,8 @@ async def test_send_media_video(logot: Logot, tmp_video_file, caption, mock_ptb_
     # Verify send_video was called with correct parameters
     mock_ptb_bot.send_video.assert_called_once_with(
         chat_id=mock_update.effective_chat.id,
-        video=tmp_video_file,
         filename=tmp_video_file.name,
+        video=tmp_video_file,
         caption=caption,
     )
     logot.assert_logged(logged.debug("Sending as video"))
@@ -334,8 +293,8 @@ async def test_send_media_audio(logot: Logot, tmp_audio_file, caption, mock_ptb_
     # Verify send_audio was called with correct parameters
     mock_ptb_bot.send_audio.assert_called_once_with(
         chat_id=mock_update.effective_chat.id,
-        audio=tmp_audio_file,
         filename=tmp_audio_file.name,
+        audio=tmp_audio_file,
         caption=caption,
     )
     logot.assert_logged(logged.debug("Sending as audio"))
@@ -365,6 +324,7 @@ async def test_send_location(logot: Logot, random_location, mock_ptb_bot, mock_u
         chat_id=mock_update.effective_chat.id,
         latitude=location.latitude,
         longitude=location.longitude,
+        horizontal_accuracy=location.horizontal_accuracy,
     )
     logot.assert_logged(logged.debug("Sending as location"))
     logot.assert_logged(logged.debug("Sent"))
@@ -382,14 +342,15 @@ async def test_send_list(logot: Logot, tmp_file, tmp_image_file, mock_update, mo
     assert len(results) == 3
     mock_context.bot.send_document.assert_called_with(
         chat_id=mock_update.effective_chat.id,
-        document=tmp_file,
         filename=tmp_file.name,
+        caption=None,
+        document=tmp_file,
     )
     mock_context.bot.send_photo.assert_called_with(
         chat_id=mock_update.effective_chat.id,
-        photo=tmp_image_file,
         filename=tmp_image_file.name,
         caption=md("Test caption"),
+        photo=tmp_image_file,
     )
     mock_context.bot.send_message.assert_called_with(
         chat_id=mock_update.effective_chat.id,
