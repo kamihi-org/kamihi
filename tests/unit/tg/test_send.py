@@ -20,7 +20,7 @@ from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
 
 from kamihi.tg.media import *
-from kamihi.tg.send import check_file, send
+from kamihi.tg.send import check_file, send, check_filesize
 from tests.conftest import random_image, random_video_path, random_audio
 
 
@@ -132,6 +132,23 @@ def test_check_file_with_no_read_permission(logot: Logot, mock_ptb_bot, tmp_path
     # Call function
     with pytest.raises(ValueError, match=f"File {no_permission_file} is not readable"):
         check_file(no_permission_file)
+
+
+def test_check_filesize(tmp_file):
+    """Test that send_file checks file size correctly."""
+    # Call function, it should not raise an error
+    check_filesize(tmp_file, FileSizeLimit.FILESIZE_UPLOAD)
+
+
+def test_check_filesize_too_large(tmp_file):
+    """Test that send_file raises an error for files that are too large."""
+    # Create a large file
+    large_file = tmp_file.with_name("large_file.txt")
+    large_file.write_text("A" * (FileSizeLimit.FILESIZE_UPLOAD + 1))
+
+    # Call function
+    with pytest.raises(ValueError, match=f"File {large_file} exceeds the size limit of {FileSizeLimit.FILESIZE_UPLOAD} bytes"):
+        check_filesize(large_file, FileSizeLimit.FILESIZE_UPLOAD)
 
 
 @pytest.mark.asyncio
