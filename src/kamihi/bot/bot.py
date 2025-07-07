@@ -64,6 +64,7 @@ class Bot:
     Video: Video = Video
     Audio: Audio = Audio
     Location: Location = Location
+    Voice: Voice = Voice
 
     _client: TelegramClient
     _web: KamihiWeb

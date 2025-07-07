@@ -13,7 +13,7 @@ from typing import IO
 
 from telegram import InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo
 from telegram import Location as InputMediaLocation
-from telegram.constants import LocationLimit
+from telegram.constants import FileSizeLimit, LocationLimit
 from telegramify_markdown import markdownify as md
 
 
@@ -25,14 +25,47 @@ class Media:
     This is a base class for different media types like Photo and Document.
 
     Attributes:
-        path (os.PathLike): Path to the media file.
+        file (str | Path | IO[bytes] | bytes): The path to the media file or the file-like object.
         caption (str | None): Optional caption for the media.
 
     """
 
-    path: str | Path | IO[bytes] | bytes
+    file: str | Path | IO[bytes] | bytes
     caption: str | None = None
     filename: str | None = None
+
+    _size_limit: float = float(FileSizeLimit.FILESIZE_UPLOAD)
+
+    def __post_init__(self) -> None:
+        """Post-initialization to ensure the media is valid."""
+        if isinstance(self.file, str):
+            self.file = Path(self.file)
+
+        if isinstance(self.file, Path):
+            # Validate file exists
+            if not self.file.exists():
+                mes = f"File {self.file} does not exist"
+                raise ValueError(mes)
+
+            # Validate it's a file, not a directory
+            if not self.file.is_file():
+                mes = f"Path {self.file} is not a file"
+                raise ValueError(mes)
+
+            # Check read permissions
+            if not os.access(self.file, os.R_OK):
+                mes = f"File {self.file} is not readable"
+                raise ValueError(mes)
+
+            # Check file size limit
+            if self.file.stat().st_size > self._size_limit:
+                mes = f"File {self.file} exceeds the size limit of {self._size_limit} bytes"
+                raise ValueError(mes)
+        elif isinstance(self.file, bytes):
+            # Check file size limit
+            if len(self.file) > self._size_limit:
+                mes = f"Byte data exceeds the size limit of {self._size_limit} bytes"
+                raise ValueError(mes)
 
     def _get_filename(self) -> str | None:
         """
@@ -45,8 +78,8 @@ class Media:
         if self.filename:
             return self.filename
 
-        if isinstance(self.path, Path):
-            return self.path.name
+        if isinstance(self.file, Path):
+            return self.file.name
 
         return None
 
@@ -64,7 +97,7 @@ class Document(Media):
 
         """
         return InputMediaDocument(
-            media=self.path.read_bytes(),
+            media=self.file.read_bytes() if isinstance(self.file, Path) else self.file,
             caption=md(self.caption) if self.caption else None,
             filename=self._get_filename(),
         )
@@ -73,6 +106,12 @@ class Document(Media):
 @dataclass
 class Photo(Media):
     """Represents a photo media type."""
+
+    def __post_init__(self) -> None:
+        """Post-initialization to ensure the photo is valid with photo-specific size limit."""
+        # Set the correct size limit before calling parent's __post_init__
+        self._size_limit = float(FileSizeLimit.PHOTOSIZE_UPLOAD)
+        super().__post_init__()
 
     def as_input_media(self) -> InputMediaPhoto:
         """
@@ -83,7 +122,7 @@ class Photo(Media):
 
         """
         return InputMediaPhoto(
-            media=self.path.read_bytes(),
+            media=self.file.read_bytes() if isinstance(self.file, Path) else self.file,
             caption=md(self.caption) if self.caption else None,
             filename=self._get_filename(),
         )
@@ -102,7 +141,7 @@ class Video(Media):
 
         """
         return InputMediaVideo(
-            media=self.path.read_bytes(),
+            media=self.file.read_bytes() if isinstance(self.file, Path) else self.file,
             caption=md(self.caption) if self.caption else None,
             filename=self._get_filename(),
         )
@@ -124,12 +163,23 @@ class Audio(Media):
 
         """
         return InputMediaAudio(
-            media=self.path.read_bytes(),
+            media=self.file.read_bytes() if isinstance(self.file, Path) else self.file,
             caption=md(self.caption) if self.caption else None,
             filename=self._get_filename(),
             performer=self.performer,
             title=self.title,
         )
+
+
+@dataclass
+class Voice(Media):
+    """Represents a voice media type."""
+
+    def __post_init__(self) -> None:
+        """Post-initialization to ensure the voice is valid with voice-specific size limit."""
+        # Set the correct size limit before calling parent's __post_init__
+        self._size_limit = float(FileSizeLimit.VOICE_NOTE_FILE_SIZE)
+        super().__post_init__()
 
 
 class Location:
