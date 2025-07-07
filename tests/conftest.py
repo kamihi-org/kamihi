@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
+import pytest
 from PIL import Image
 from pydub import AudioSegment
 from telegram.constants import FileSizeLimit
@@ -22,30 +23,55 @@ def random_image() -> bytes:
     # Pre-computed valid (width, height) pairs for sum=10000 and aspect ratio <=20
     # This eliminates computation overhead and ensures fast, reliable generation
     valid_pairs = [
-        (476, 9524), (500, 9500), (600, 9400), (700, 9300), (800, 9200),
-        (900, 9100), (1000, 9000), (1200, 8800), (1500, 8500), (2000, 8000),
-        (2500, 7500), (3000, 7000), (3500, 6500), (4000, 6000), (4500, 5500),
-        (5000, 5000), (5500, 4500), (6000, 4000), (6500, 3500), (7000, 3000),
-        (7500, 2500), (8000, 2000), (8500, 1500), (8800, 1200), (9000, 1000),
-        (9100, 900), (9200, 800), (9300, 700), (9400, 600), (9500, 500), (9524, 476)
+        (476, 9524),
+        (500, 9500),
+        (600, 9400),
+        (700, 9300),
+        (800, 9200),
+        (900, 9100),
+        (1000, 9000),
+        (1200, 8800),
+        (1500, 8500),
+        (2000, 8000),
+        (2500, 7500),
+        (3000, 7000),
+        (3500, 6500),
+        (4000, 6000),
+        (4500, 5500),
+        (5000, 5000),
+        (5500, 4500),
+        (6000, 4000),
+        (6500, 3500),
+        (7000, 3000),
+        (7500, 2500),
+        (8000, 2000),
+        (8500, 1500),
+        (8800, 1200),
+        (9000, 1000),
+        (9100, 900),
+        (9200, 800),
+        (9300, 700),
+        (9400, 600),
+        (9500, 500),
+        (9524, 476),
     ]
-    
+
     # Randomly select a pair
     width, height = random.choice(valid_pairs)
-    
+
     # Conservative scaling to ensure file size compliance
     max_pixels = 1_500_000
     if width * height > max_pixels:
         scale = (max_pixels / (width * height)) ** 0.5
         width = int(width * scale)
         height = int(height * scale)
-    
+
     # Generate pixel data efficiently
     pixel_data = np.random.randint(0, 256, size=(height, width, 3), dtype=np.uint8)
     img = Image.fromarray(pixel_data, "RGB")
     img_bytes_io = io.BytesIO()
     img.save(img_bytes_io, format="JPEG", quality=85, optimize=True)
-    
+
     return img_bytes_io.getvalue()
 
 
@@ -54,65 +80,103 @@ def random_video_path() -> Path:
     return random.choice(list(Path("tests/static/videos").glob("*.mp4")))
 
 
-def random_audio(output_format: Literal["mp3", "m4a"] = "mp3") -> bytes:
+def random_audio_generator(
+    output_format: Literal["mp3", "m4a"] = "mp3",
+    min_size_bytes: int | None = None,
+    max_size_bytes: int | None = None,
+    max_attempts: int = 8,
+) -> bytes:
     """
     Generates random audio data as bytes in MP3 or M4A format.
 
+    Optimized for speed using pure white noise generation - the fastest approach
+    when size constraints are involved, while still being very fast without constraints.
+
     Args:
         output_format (Literal["mp3", "m4a"]): The format of the output audio file.
+        min_size_bytes (int | None): Minimum file size in bytes. If None, no minimum.
+        max_size_bytes (int | None): Maximum file size in bytes. If None, no maximum.
+        max_attempts (int): Maximum attempts to generate audio within size constraints.
 
     Returns:
         bytes: The generated audio data in the specified format.
-
     """
-    sample_rate = 44100
-    duration_ms = random.randint(1000, 20000)
+    sample_rate = 22050
 
-    num_samples = int(sample_rate * (duration_ms / 1000))
+    if output_format == "mp3":
+        bytes_per_second = 4000
+    else:
+        bytes_per_second = 5000
 
-    t = np.linspace(0, duration_ms / 1000, num_samples, endpoint=False)
-    random_frequency = np.random.uniform(100, 1000)
+    for attempt in range(max_attempts):
+        if min_size_bytes or max_size_bytes:
+            if min_size_bytes:
+                min_duration = max(0.5, (min_size_bytes * 1.1) / bytes_per_second)
+            else:
+                min_duration = 0.5
 
-    audio_data_float = np.random.normal(0, 0.4, num_samples) + 0.1 * np.sin(2 * np.pi * t * random_frequency)
-    audio_data_float = audio_data_float / np.max(np.abs(audio_data_float)) * 0.9
-    audio_data_int16 = (audio_data_float * 32767).astype(np.int16)
+            if max_size_bytes:
+                max_duration = min(20.0, (max_size_bytes * 0.9) / bytes_per_second)
+            else:
+                max_duration = 5.0
 
-    # Create an AudioSegment from the numpy array
-    audio_segment = AudioSegment(
-        audio_data_int16.tobytes(),
-        frame_rate=sample_rate,
-        sample_width=audio_data_int16.dtype.itemsize,
-        channels=1,
+            duration = random.uniform(min_duration, min(max_duration, min_duration * 1.1))
+        else:
+            duration = random.uniform(1.0, 2.0)
+
+        num_samples = int(sample_rate * duration)
+
+        # Fastest possible: just random noise
+        audio_data = np.random.randint(-8192, 8191, num_samples, dtype=np.int16)
+
+        audio_segment = AudioSegment(
+            audio_data.tobytes(),
+            frame_rate=sample_rate,
+            sample_width=2,
+            channels=1,
+        )
+
+        audio_bytes_io = io.BytesIO()
+        export_format = "ipod" if output_format == "m4a" else output_format
+        audio_segment.export(audio_bytes_io, format=export_format, parameters=["-q:a", "9", "-ac", "1"])
+
+        result = audio_bytes_io.getvalue()
+        result_size = len(result)
+
+        if min_size_bytes and result_size < min_size_bytes:
+            bytes_per_second = max(bytes_per_second * 0.8, result_size / duration)
+            continue
+        if max_size_bytes and result_size > max_size_bytes:
+            bytes_per_second = min(bytes_per_second * 1.2, result_size / duration)
+            continue
+
+        return result
+
+    return result
+
+
+def random_audio():
+    """
+    Fixture to provide random audio data.
+
+    It provides what Telegram considers an audio file, as opposed to a voice note, to ensure
+    that the file is not considered a voice note by Telegram.
+    """
+    return random_audio_generator(
+        output_format=random.choice(["mp3", "m4a"]),
+        min_size_bytes=FileSizeLimit.VOICE_NOTE_FILE_SIZE + 10000,
+        max_size_bytes=FileSizeLimit.FILESIZE_UPLOAD,
     )
 
-    audio_bytes_io = io.BytesIO()
 
-    if output_format == "m4a":
-        output_format = "ipod"
+def random_voice_note():
+    """
+    Fixture to provide random voice note data.
 
-    # Export to the desired format with a reasonable quality
-    audio_segment.export(audio_bytes_io, format=output_format, parameters=["-q:a", "4"])
-
-    return audio_bytes_io.getvalue()
-
-
-if __name__ == "__main__":
-    import time
-    
-    def time_function(func, iterations=10):
-        """Time a function over multiple iterations."""
-        times = []
-        for i in range(iterations):
-            start = time.perf_counter()
-            result = func()
-            end = time.perf_counter()
-            times.append(end - start)
-            print(f"Iteration {i+1}: {times[-1]:.4f}s, size: {len(result)} bytes")
-        
-        avg_time = sum(times) / len(times)
-        print(f"Average time: {avg_time:.4f}s")
-        return avg_time
-    
-    print("Testing current random_image function with constant:")
-    print(f"FileSizeLimit.PHOTOSIZE_UPLOAD = {FileSizeLimit.PHOTOSIZE_UPLOAD}")
-    time_function(random_image, 5)
+    It provides what Telegram considers a voice note, ensuring that the file is small enough
+    to be considered a voice note instead of a regular audio file.
+    """
+    return random_audio_generator(
+        output_format=random.choice(["mp3", "m4a"]),
+        max_size_bytes=FileSizeLimit.VOICE_NOTE_FILE_SIZE,
+    )

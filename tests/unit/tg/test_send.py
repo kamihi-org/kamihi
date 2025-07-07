@@ -13,12 +13,11 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 from logot import Logot, logged
 from telegram import Bot, Message, Update
-from telegram.constants import FileSizeLimit
 from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 
 from kamihi.tg.media import *
-from kamihi.tg.send import check_file, send, check_filesize
+from kamihi.tg.send import send
 
 
 @pytest.fixture
@@ -50,60 +49,6 @@ def mock_context(mock_ptb_bot):
     context = Mock(spec=CallbackContext)
     context.bot = mock_ptb_bot
     return context
-
-
-def test_check_file(tmp_file):
-    """Test that send_file handles invalid Path content."""
-    # Call function, it should not raise an error
-    check_file(tmp_file)
-
-
-def test_check_file_with_invalid_path(logot: Logot):
-    """Test that send_file handles invalid Path content."""
-    invalid_path = Path("invalid/path/to/file.txt")
-
-    # Call function
-    with pytest.raises(ValueError, match=f"File {invalid_path} does not exist"):
-        check_file(invalid_path)
-
-
-def test_check_file_with_directory_path(logot: Logot, mock_ptb_bot, tmp_path):
-    """Test that send_file handles directory Path content."""
-    # Call function
-    with pytest.raises(ValueError, match=f"Path {tmp_path} is not a file"):
-        check_file(tmp_path)
-
-
-def test_check_file_with_no_read_permission(logot: Logot, mock_ptb_bot, tmp_path):
-    """Test that send_file handles no read permission for file."""
-    no_permission_file = tmp_path / "no_permission_file.txt"
-    no_permission_file.write_text("This file has no read permission.")
-
-    # Remove read permissions
-    no_permission_file.chmod(0o000)
-
-    # Call function
-    with pytest.raises(ValueError, match=f"File {no_permission_file} is not readable"):
-        check_file(no_permission_file)
-
-
-def test_check_filesize(tmp_file):
-    """Test that send_file checks file size correctly."""
-    # Call function, it should not raise an error
-    check_filesize(tmp_file, FileSizeLimit.FILESIZE_UPLOAD)
-
-
-def test_check_filesize_too_large(tmp_file):
-    """Test that send_file raises an error for files that are too large."""
-    # Create a large file
-    large_file = tmp_file.with_name("large_file.txt")
-    large_file.write_text("A" * (FileSizeLimit.FILESIZE_UPLOAD + 1))
-
-    # Call function
-    with pytest.raises(
-        ValueError, match=f"File {large_file} exceeds the size limit of {FileSizeLimit.FILESIZE_UPLOAD} bytes"
-    ):
-        check_filesize(large_file, FileSizeLimit.FILESIZE_UPLOAD)
 
 
 @pytest.mark.asyncio
@@ -202,6 +147,24 @@ async def test_send_path_audio(logot: Logot, tmp_audio_file, mock_ptb_bot, mock_
 
 
 @pytest.mark.asyncio
+async def test_send_path_voice(logot: Logot, tmp_voice_file, mock_ptb_bot, mock_update, mock_context):
+    """Test sending a voice note file using just the path."""
+    # Call function
+    result = await send(tmp_voice_file, update=mock_update, context=mock_context)
+
+    # Verify send_voice was called with correct parameters
+    mock_ptb_bot.send_voice.assert_called_once_with(
+        chat_id=mock_update.effective_chat.id,
+        filename=tmp_voice_file.name,
+        caption=None,
+        voice=tmp_voice_file,
+    )
+    assert result is not None
+    logot.assert_logged(logged.debug("Sending as voice note"))
+    logot.assert_logged(logged.debug("Sent"))
+
+
+@pytest.mark.asyncio
 async def test_send_path_document(logot: Logot, tmp_file, mock_ptb_bot, mock_update, mock_context):
     """Test sending a file using just the path."""
     # Call function
@@ -225,7 +188,7 @@ async def test_send_path_invalid(logot: Logot, mock_ptb_bot, mock_update, mock_c
     invalid_path = Path("invalid/path/to/file.txt")
 
     # Call function
-    with pytest.raises(ValueError, match=f"File {invalid_path} does not exist"):
+    with pytest.raises(FileNotFoundError):
         await send(invalid_path, update=mock_update, context=mock_context)
 
 
@@ -302,6 +265,24 @@ async def test_send_media_audio(logot: Logot, tmp_audio_file, caption, mock_ptb_
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("caption", [None, md("Test caption")])
+async def test_send_media_voice(logot: Logot, tmp_voice_file, caption, mock_ptb_bot, mock_update, mock_context):
+    """Test basic functionality of send_voice with minimal parameters."""
+    # Call function
+    await send(Voice(tmp_voice_file, caption=caption), update=mock_update, context=mock_context)
+
+    # Verify send_voice was called with correct parameters
+    mock_ptb_bot.send_voice.assert_called_once_with(
+        chat_id=mock_update.effective_chat.id,
+        filename=tmp_voice_file.name,
+        voice=tmp_voice_file,
+        caption=caption,
+    )
+    logot.assert_logged(logged.debug("Sending as voice note"))
+    logot.assert_logged(logged.debug("Sent"))
+
+
+@pytest.mark.asyncio
 async def test_send_media_invalid(logot: Logot, mock_ptb_bot, mock_update, mock_context):
     """Test sending an invalid Media object."""
     invalid_path = Path("invalid/path/to/file.txt")
@@ -361,7 +342,7 @@ async def test_send_list(logot: Logot, tmp_file, tmp_image_file, mock_update, mo
 
 
 @pytest.mark.asyncio
-async def test_send_invalid_type(logot: Logot, mock_update, mock_context):
+async def test_send_invalid_type(mock_update, mock_context):
     """Test sending an unsupported object type."""
     invalid_obj = object()
 

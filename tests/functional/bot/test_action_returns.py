@@ -12,7 +12,7 @@ from telethon import TelegramClient
 from telethon.tl.custom import Conversation, Message
 
 from kamihi.tg.media import Location
-from tests.conftest import random_image, random_video_path, random_audio
+from tests.conftest import random_image, random_video_path, random_audio, random_voice_note
 
 
 def random_location() -> Location:
@@ -414,6 +414,93 @@ async def test_action_returns_audio_captioned(
     assert response.audio is not None
 
     path = tmp_path / "audio.mp3"
+    await tg_client.download_media(response, str(path))
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("kamihi")
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        {
+            "start/__init__.py": "",
+            "start/start.py": """\
+                from kamihi import bot
+                from pathlib import Path
+                
+                @bot.action
+                async def start() -> Path:
+                    return Path("actions/start/voice.mp3")
+            """,
+            "start/voice.mp3": random_voice_note(),
+        },
+        {
+            "start/__init__.py": "",
+            "start/start.py": """\
+                from kamihi import bot
+                from pathlib import Path
+                             
+                @bot.action
+                async def start() -> bot.Voice:
+                    return bot.Voice(Path("actions/start/voice.mp3"))
+            """,
+            "start/voice.mp3": random_voice_note(),
+        },
+    ],
+    ids=["implicit", "explicit"],
+)
+async def test_action_returns_voice(
+    user_in_db, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+):
+    """Test actions that returns a voice note."""
+    add_permission_for_user(user_in_db, "start")
+
+    await chat.send_message("/start")
+    response: Message = await chat.get_response()
+
+    assert response.voice is not None
+
+    path = tmp_path / "voice.mp3"
+    await tg_client.download_media(response, str(path))
+    assert path.exists()
+    assert path.stat().st_size > 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("kamihi")
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        {
+            "start/__init__.py": "",
+            "start/start.py": """\
+                from kamihi import bot
+                from pathlib import Path
+                
+                @bot.action
+                async def start() -> bot.Voice:
+                    return bot.Voice(Path("actions/start/voice.mp3"), caption="This is a voice note caption.")
+            """,
+            "start/voice.mp3": random_voice_note(),
+        },
+    ],
+)
+async def test_action_returns_voice_captioned(
+    user_in_db, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+):
+    """Test actions that return a voice note with a caption."""
+    add_permission_for_user(user_in_db, "start")
+
+    await chat.send_message("/start")
+    response: Message = await chat.get_response()
+
+    assert response.text == "This is a voice note caption."
+
+    assert response.voice is not None
+
+    path = tmp_path / "voice.mp3"
     await tg_client.download_media(response, str(path))
     assert path.exists()
     assert path.stat().st_size > 0

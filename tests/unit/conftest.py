@@ -18,7 +18,7 @@ from telegram.constants import LocationLimit
 
 from kamihi.db.mongo import disconnect
 from kamihi.tg.media import Location
-from tests.conftest import random_image, random_video_path, random_audio
+from tests.conftest import random_image, random_video_path, random_audio, random_voice_note
 
 
 @pytest.fixture
@@ -77,12 +77,23 @@ def tmp_video_file(tmp_path):
 @pytest.fixture
 def tmp_audio_file(tmp_path):
     """Fixture that provides a random audio file path."""
-    fmt = random.choice(["m4a"])
+    fmt = random.choice(["mp3", "m4a"])
     audio_path = tmp_path / f"test_audio.{fmt}"
-    audio_data = random_audio(output_format=fmt)
+    audio_data = random_audio()
     with open(audio_path, "wb") as f:
         f.write(audio_data)
     return audio_path
+
+
+@pytest.fixture
+def tmp_voice_file(tmp_path):
+    """Fixture that provides a random voice note file path."""
+    fmt = random.choice(["mp3", "m4a"])
+    voice_path = tmp_path / f"test_voice.{fmt}"
+    voice_data = random_voice_note()
+    with open(voice_path, "wb") as f:
+        f.write(voice_data)
+    return voice_path
 
 
 @pytest.fixture

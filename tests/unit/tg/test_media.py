@@ -6,120 +6,227 @@ License:
 
 """
 
+import os
+
 import pytest
-from pathlib import Path
 
 from telegram import InputMediaDocument, InputMediaVideo, InputMediaAudio, InputMediaPhoto
-from telegram.constants import LocationLimit
+from telegram.constants import LocationLimit, FileSizeLimit
 from telegramify_markdown import markdownify as md
 
-from kamihi.tg.media import Media, Document, Photo, Video, Audio, Location
+from kamihi.tg.media import Media, Document, Photo, Video, Audio, Location, Voice
 
 
-def test_media_initialization(tmp_file):
+@pytest.fixture
+def tmp_image_file_too_large(tmp_image_file):
+    """Fixture to create a random image file that exceeds the size limit."""
+    chunk_size = 4096  # Add 4KB at a time
+    padding_data = b"\x00" * chunk_size  # Null bytes work perfectly as filler
+
+    with open(tmp_image_file, "ab") as f:
+        while os.path.getsize(tmp_image_file) <= FileSizeLimit.PHOTOSIZE_UPLOAD + chunk_size:
+            f.write(padding_data)
+
+    return tmp_image_file
+
+
+@pytest.fixture
+def tmp_voice_file_too_large(tmp_audio_file):
+    """Fixture to create a random audio file that exceeds the size limit."""
+    return tmp_audio_file
+
+
+def test_media_initialization_path(tmp_file):
     """Test that Media class can be initialized with and without optional parameters."""
-    media = Media(path=tmp_file, caption="Media caption", filename="media_file.txt")
-    assert media.path == tmp_file
+    media = Media(file=tmp_file, caption="Media caption", filename="media_file.txt")
+    assert media.file == tmp_file
     assert media.caption == "Media caption"
     assert media.filename == "media_file.txt"
     assert isinstance(media, Media)
 
 
+def test_media_initialization_str(tmp_file):
+    """Test that Media class can be initialized with a string path."""
+    media_str_path = Media(file=str(tmp_file), caption="Media caption")
+    assert media_str_path.file == tmp_file
+    assert media_str_path.caption == "Media caption"
+    assert media_str_path.filename is None
+    assert isinstance(media_str_path, Media)
+
+
+def test_media_initialization_bytes(tmp_file):
+    """Test that Media class can be initialized with bytes."""
+    media_bytes = Media(file=tmp_file.read_bytes(), caption="Media caption")
+    assert media_bytes.caption == "Media caption"
+    assert media_bytes.file is not None  # File content should not be None
+    assert isinstance(media_bytes, Media)
+
+
+def test_media_initialization_io(tmp_file):
+    """Test that Media class can be initialized with a file-like object."""
+    with open(tmp_file, "rb") as file_obj:
+        media_io = Media(file=file_obj, caption="Media caption")
+        assert media_io.caption == "Media caption"
+        assert media_io.file is not None  # File content should not be None
+        assert isinstance(media_io, Media)
+
+
 def test_media_initialization_no_optional(tmp_file):
     """Test that Media class can be initialized without optional parameters."""
-    media_no_optional = Media(path=tmp_file)
-    assert media_no_optional.path == tmp_file
+    media_no_optional = Media(file=tmp_file)
+    assert media_no_optional.file == tmp_file
     assert media_no_optional.caption is None
     assert media_no_optional.filename is None
 
 
+def test_media_initialization_invalid_path():
+    """Test that Media class raises an error for an invalid file path."""
+    with pytest.raises(ValueError, match="File /invalid/path/to/file.txt does not exist"):
+        Media(file="/invalid/path/to/file.txt")
+
+
+def test_media_initialization_directory_path(tmp_path):
+    """Test that Media class raises an error for a directory path."""
+    directory_path = tmp_path / "test_directory"
+    directory_path.mkdir()
+
+    with pytest.raises(ValueError, match=f"Path {directory_path} is not a file"):
+        Media(file=directory_path)
+
+
+def test_media_initialization_no_read_permission(tmp_path):
+    """Test that Media class raises an error for a file with no read permission."""
+    no_read_permission_file = tmp_path / "no_read_permission.txt"
+    no_read_permission_file.write_text("This file has no read permission.")
+
+    # Remove read permission
+    no_read_permission_file.chmod(0o000)
+
+    with pytest.raises(ValueError, match=f"File {no_read_permission_file} is not readable"):
+        Media(file=no_read_permission_file)
+
+
+def test_media_initialization_exceeds_size_limit(tmp_file):
+    """Test that Media class raises an error for files that exceed the size limit."""
+    # Create a large file for testing
+    large_file = tmp_file.with_name("large_file.txt")
+    large_file.write_text("A" * (FileSizeLimit.FILESIZE_UPLOAD + 1))  # Exceeding the size limit
+
+    with pytest.raises(
+        ValueError, match=f"File {large_file} exceeds the size limit of {float(FileSizeLimit.FILESIZE_UPLOAD)} bytes"
+    ):
+        Media(file=large_file)
+
+
 def test_media_filename(tmp_file):
     """Test that Media class can derive filename from path."""
-    media = Media(path=tmp_file)
+    media = Media(file=tmp_file)
     assert media._get_filename() == tmp_file.name
 
 
 def test_media_filename_with_custom_name(tmp_file):
     """Test with a filename set explicitly."""
-    media_with_filename = Media(path=tmp_file, filename="custom_name.txt")
+    media_with_filename = Media(file=tmp_file, filename="custom_name.txt")
     assert media_with_filename._get_filename() == "custom_name.txt"
 
 
-def test_media_filename_with_no_path():
+def test_media_filename_with_no_path(tmp_file):
     """Test that Media class returns None for filename when path is not a string or Path."""
-    media_str_path = Media(path="/s/t/r/path")
+    media_str_path = Media(file=tmp_file.read_bytes())
     assert media_str_path._get_filename() is None
 
 
 def test_document_initialization(tmp_file):
     """Test that Document class can be initialized correctly."""
-    document = Document(path=tmp_file, caption="Document caption")
-    assert document.path == tmp_file
+    document = Document(file=tmp_file, caption="Document caption")
+    assert document.file == tmp_file
     assert document.caption == "Document caption"
     assert isinstance(document, Media)
 
 
 def test_document_as_input_media(tmp_file):
     """Test that Document class can be converted to InputMediaDocument."""
-    document = Document(path=tmp_file, caption="Document caption")
+    document = Document(file=tmp_file, caption="Document caption")
     input_media = document.as_input_media()
     assert isinstance(input_media, InputMediaDocument)
     assert input_media.media.input_file_content == tmp_file.read_bytes()
     assert input_media.caption == md("Document caption")
 
 
-def test_photo_initialization():
+def test_photo_initialization(tmp_image_file):
     """Test that Photo class can be initialized correctly."""
-    path = Path("/path/to/photo.jpg")
-    photo = Photo(path=path, caption="Photo caption")
-    assert photo.path == path
+    photo = Photo(file=tmp_image_file, caption="Photo caption")
+    assert photo.file == tmp_image_file
     assert photo.caption == "Photo caption"
-    assert isinstance(photo, Media)
+
+
+def test_photo_initialization_too_large(tmp_image_file_too_large):
+    """Test that Photo class raises an error for files that exceed the size limit."""
+    with pytest.raises(
+        ValueError,
+        match=f"File {tmp_image_file_too_large} exceeds the size limit of {float(FileSizeLimit.PHOTOSIZE_UPLOAD)} bytes",
+    ):
+        Photo(file=tmp_image_file_too_large)
 
 
 def test_photo_as_input_media(tmp_file):
     """Test that Photo class can be converted to InputMediaPhoto."""
-    photo = Photo(path=tmp_file, caption="Photo caption")
+    photo = Photo(file=tmp_file, caption="Photo caption")
     input_media = photo.as_input_media()
     assert isinstance(input_media, InputMediaPhoto)
     assert input_media.caption == md("Photo caption")
     assert input_media.media.input_file_content == tmp_file.read_bytes()
 
 
-def test_video_initialization():
+def test_video_initialization(tmp_video_file):
     """Test that Video class can be initialized correctly."""
-    path = Path("/path/to/video.mp4")
-    video = Video(path=path, caption="Video caption")
-    assert video.path == path
+    video = Video(file=tmp_video_file, caption="Video caption")
+    assert video.file == tmp_video_file
     assert video.caption == "Video caption"
     assert isinstance(video, Media)
 
 
 def test_video_as_input_media(tmp_file):
     """Test that Video class can be converted to InputMediaVideo."""
-    video = Video(path=tmp_file, caption="Video caption")
+    video = Video(file=tmp_file, caption="Video caption")
     input_media = video.as_input_media()
     assert isinstance(input_media, InputMediaVideo)
     assert input_media.caption == md("Video caption")
     assert input_media.media.input_file_content == tmp_file.read_bytes()
 
 
-def test_audio_initialization():
+def test_audio_initialization(tmp_audio_file):
     """Test that Audio class can be initialized correctly."""
-    path = Path("/path/to/audio.mp3")
-    audio = Audio(path=path, caption="Audio caption")
-    assert audio.path == path
+    audio = Audio(file=tmp_audio_file, caption="Audio caption")
+    assert audio.file == tmp_audio_file
     assert audio.caption == "Audio caption"
     assert isinstance(audio, Media)
 
 
 def test_audio_as_input_media(tmp_file):
     """Test that Audio class can be converted to InputMediaAudio."""
-    audio = Audio(path=tmp_file, caption="Audio caption")
+    audio = Audio(file=tmp_file, caption="Audio caption")
     input_media = audio.as_input_media()
     assert isinstance(input_media, InputMediaAudio)
     assert input_media.caption == md("Audio caption")
     assert input_media.media.input_file_content == tmp_file.read_bytes()
+
+
+def test_voice_initialization(tmp_voice_file):
+    """Test that Voice class can be initialized correctly."""
+    voice = Voice(file=tmp_voice_file, caption="Voice caption")
+    assert voice.file == tmp_voice_file
+    assert voice.caption == "Voice caption"
+    assert isinstance(voice, Media)
+
+
+def test_voice_too_large(tmp_voice_file_too_large):
+    """Test that Voice class raises an error for files that exceed the size limit."""
+    with pytest.raises(
+        ValueError,
+        match=f"File {tmp_voice_file_too_large} exceeds the size limit of {float(FileSizeLimit.VOICE_NOTE_FILE_SIZE)} bytes",
+    ):
+        Voice(file=tmp_voice_file_too_large, caption="Voice caption")
 
 
 def test_location_initialization():
