@@ -8,6 +8,7 @@ License:
     MIT
 """
 
+from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -16,7 +17,7 @@ from telegram import Bot, Message, Update
 from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 
-from kamihi.tg.media import *
+from kamihi.tg.media import Audio, Document, Location, Photo, Video, Voice
 from kamihi.tg.send import send
 
 
@@ -190,6 +191,10 @@ async def test_send_path_invalid(logot: Logot, mock_ptb_bot, mock_update, mock_c
     # Call function
     with pytest.raises(FileNotFoundError):
         await send(invalid_path, update=mock_update, context=mock_context)
+
+
+def md(param):
+    pass
 
 
 @pytest.mark.asyncio

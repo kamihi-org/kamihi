@@ -33,7 +33,7 @@ from kamihi.db.mongo import connect, disconnect
 from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
 from kamihi.tg.handlers import AuthHandler
-from kamihi.tg.media import *
+from kamihi.tg.media import Audio, Document, Location, Photo, Video, Voice
 from kamihi.users import get_users, is_user_authorized
 from kamihi.users.models import User
 from kamihi.web import KamihiWeb
