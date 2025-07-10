@@ -9,13 +9,9 @@ License:
 import io
 import random
 from pathlib import Path
-from typing import Literal
 
 import numpy as np
-import pytest
 from PIL import Image
-from pydub import AudioSegment
-from telegram.constants import FileSizeLimit
 
 
 def random_image() -> bytes:

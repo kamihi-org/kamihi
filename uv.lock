@@ -539,7 +539,6 @@ dependencies = [
     { name = "starlette" },
     { name = "starlette-admin" },
     { name = "telegramify-markdown" },
-    { name = "typeguard" },
     { name = "typer" },
     { name = "types-pytz" },
     { name = "uvicorn" },
@@ -574,7 +573,6 @@ unit = [
     { name = "mongomock" },
     { name = "numpy" },
     { name = "pillow" },
-    { name = "pydub" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -598,7 +596,6 @@ requires-dist = [
     { name = "starlette", specifier = ">=0.46.2" },
     { name = "starlette-admin", specifier = ">=0.14.1" },
     { name = "telegramify-markdown", specifier = ">=0.5.1" },
-    { name = "typeguard", specifier = ">=4.4.3" },
     { name = "typer", specifier = ">=0.15.3" },
     { name = "types-pytz", specifier = ">=2025.2.0.20250326" },
     { name = "uvicorn", specifier = ">=0.34.2" },
@@ -633,7 +630,6 @@ unit = [
     { name = "mongomock", specifier = ">=4.3.0" },
     { name = "numpy", specifier = ">=2.3.0" },
     { name = "pillow", specifier = ">=11.2.1" },
-    { name = "pydub", specifier = ">=0.25.1" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pytest-asyncio", specifier = ">=1.0.0" },
     { name = "pytest-cov", specifier = ">=6.1.1" },
@@ -1262,15 +1258,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pydub"
-version = "0.25.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fe/9a/e6bca0eed82db26562c73b5076539a4a08d3cffd19c3cc5913a3e61145fd/pydub-0.25.1.tar.gz", hash = "sha256:980a33ce9949cab2a569606b65674d748ecbca4f0796887fd6f46173a7b0d30f", size = 38326, upload-time = "2021-03-10T02:09:54.659Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a6/53/d78dc063216e62fc55f6b2eebb447f6a4b0a59f55c8406376f76bf959b08/pydub-0.25.1-py2.py3-none-any.whl", hash = "sha256:65617e33033874b59d87db603aa1ed450633288aefead953b30bded59cb599a6", size = 32327, upload-time = "2021-03-10T02:09:53.503Z" },
-]
-
-[[package]]
 name = "pyee"
 version = "13.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1814,18 +1801,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b1/09/a439bec5888f00a54b8b9f05fa94d7f901d6735ef4e55dcec9bc37b5d8fa/tomlkit-0.13.2.tar.gz", hash = "sha256:fff5fe59a87295b278abd31bec92c15d9bc4a06885ab12bcea52c71119392e79", size = 192885, upload-time = "2024-08-14T08:19:41.488Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f9/b6/a447b5e4ec71e13871be01ba81f5dfc9d0af7e473da256ff46bc0e24026f/tomlkit-0.13.2-py3-none-any.whl", hash = "sha256:7a974427f6e119197f670fbbbeae7bef749a6c14e793db934baefc1b5f03efde", size = 37955, upload-time = "2024-08-14T08:19:40.05Z" },
-]
-
-[[package]]
-name = "typeguard"
-version = "4.4.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/34/53/f701077a29ddf65ed4556119961ef517d767c07f15f6cdf0717ad985426b/typeguard-4.4.3.tar.gz", hash = "sha256:be72b9c85f322c20459b29060c5c099cd733d5886c4ee14297795e62b0c0d59b", size = 75072, upload-time = "2025-06-04T21:47:07.733Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5c/18/662e2a14fcdbbc9e7842ad801a7f9292fcd6cf7df43af94e59ac9c0da9af/typeguard-4.4.3-py3-none-any.whl", hash = "sha256:7d8b4a3d280257fd1aa29023f22de64e29334bda0b172ff1040f05682223795e", size = 34855, upload-time = "2025-06-04T21:47:03.683Z" },
 ]
 
 [[package]]

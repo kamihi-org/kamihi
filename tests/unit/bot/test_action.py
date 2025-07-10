@@ -9,19 +9,15 @@ License:
 from __future__ import annotations
 
 from inspect import Signature, Parameter
-from pathlib import Path
-from typing import Any, Annotated
 from unittest.mock import AsyncMock, patch
 
 import pytest
 from logot import Logot, logged
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CommandHandler
-from typeguard import TypeCheckError
 
 from kamihi.bot.models import RegisteredAction
 from kamihi.bot.action import Action
-from kamihi.tg.media import Document, Photo
 from kamihi.tg.handlers import AuthHandler
 from kamihi.users import User
 
