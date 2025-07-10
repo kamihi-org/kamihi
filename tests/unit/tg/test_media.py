@@ -7,6 +7,7 @@ License:
 """
 
 import os
+from pathlib import Path
 
 import pytest
 
@@ -50,7 +51,7 @@ def test_media_initialization_str(tmp_file):
     media_str_path = Media(file=str(tmp_file), caption="Media caption")
     assert media_str_path.file == tmp_file
     assert media_str_path.caption == "Media caption"
-    assert media_str_path.filename is None
+    assert media_str_path.filename is Path(tmp_file).name
     assert isinstance(media_str_path, Media)
 
 
@@ -76,7 +77,7 @@ def test_media_initialization_no_optional(tmp_file):
     media_no_optional = Media(file=tmp_file)
     assert media_no_optional.file == tmp_file
     assert media_no_optional.caption is None
-    assert media_no_optional.filename is None
+    assert media_no_optional.filename is Path(tmp_file).name
 
 
 def test_media_initialization_invalid_path():
