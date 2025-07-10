@@ -10,9 +10,9 @@ from __future__ import annotations
 
 import collections.abc
 import typing
-from io import BufferedReader, TextIOWrapper
+from io import BufferedReader
 from pathlib import Path
-from typing import IO, Any, BinaryIO
+from typing import Any
 
 import magic
 from loguru import logger

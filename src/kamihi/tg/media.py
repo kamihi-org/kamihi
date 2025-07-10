@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import IO
 
 from telegram import InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo
-from telegram import Location as InputMediaLocation
 from telegram.constants import FileSizeLimit, LocationLimit
 from telegramify_markdown import markdownify as md
 
