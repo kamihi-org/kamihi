@@ -213,7 +213,7 @@ class Location:
         if not -180 <= longitude <= 180:
             msg = f"Longitude must be between -180 and 180, got {longitude}"
             raise ValueError(msg)
-        if horizontal_accuracy and not (0.0 <= horizontal_accuracy <= float(LocationLimit.HORIZONTAL_ACCURACY)):
+        if horizontal_accuracy and not 0.0 <= horizontal_accuracy <= float(LocationLimit.HORIZONTAL_ACCURACY):
             msg = (
                 f"Horizontal accuracy must be between 0 "
                 f"and {LocationLimit.HORIZONTAL_ACCURACY}, got {horizontal_accuracy}"
