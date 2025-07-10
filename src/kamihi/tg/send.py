@@ -77,7 +77,8 @@ async def send(obj: Any, update: Update, context: CallbackContext) -> Message | 
         context (CallbackContext): The callback context containing the bot instance.
 
     Returns:
-        Message | list[Message]: The response from the Telegram API, or a list of responses if multiple objects are sent.
+        Message | list[Message]: The response from the Telegram API, or a list of responses
+            if multiple objects are sent.
 
     Raises:
         TypeError: If the object type is not supported for sending.
