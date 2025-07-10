@@ -17,7 +17,7 @@ from telegram import Bot, Message, Update
 from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 
-from kamihi.tg.media import Audio, Document, Location, Photo, Video, Voice
+from kamihi.tg.media import Audio, Document, Photo, Video, Voice
 from kamihi.tg.send import send
 
 

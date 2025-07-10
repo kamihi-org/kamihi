@@ -16,7 +16,6 @@ from typing import IO, Any
 import magic
 from loguru import logger
 from telegram import Message, Update
-from telegram.constants import FileSizeLimit
 from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md

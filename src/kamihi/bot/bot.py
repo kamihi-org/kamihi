@@ -26,7 +26,6 @@ from functools import partial
 from loguru import logger
 from multipledispatch import dispatch
 from telegram import BotCommand
-from telegram.ext import CommandHandler
 
 from kamihi.base.config import KamihiSettings
 from kamihi.db.mongo import connect, disconnect
