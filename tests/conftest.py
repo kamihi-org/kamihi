@@ -80,103 +80,21 @@ def random_video_path() -> Path:
     return random.choice(list(Path("tests/static/videos").glob("*.mp4")))
 
 
-def random_audio_generator(
-    output_format: Literal["mp3", "m4a"] = "mp3",
-    min_size_bytes: int | None = None,
-    max_size_bytes: int | None = None,
-    max_attempts: int = 8,
-) -> bytes:
-    """
-    Generates random audio data as bytes in MP3 or M4A format.
-
-    Optimized for speed using pure white noise generation - the fastest approach
-    when size constraints are involved, while still being very fast without constraints.
-
-    Args:
-        output_format (Literal["mp3", "m4a"]): The format of the output audio file.
-        min_size_bytes (int | None): Minimum file size in bytes. If None, no minimum.
-        max_size_bytes (int | None): Maximum file size in bytes. If None, no maximum.
-        max_attempts (int): Maximum attempts to generate audio within size constraints.
-
-    Returns:
-        bytes: The generated audio data in the specified format.
-    """
-    sample_rate = 22050
-
-    if output_format == "mp3":
-        bytes_per_second = 4000
-    else:
-        bytes_per_second = 5000
-
-    for attempt in range(max_attempts):
-        if min_size_bytes or max_size_bytes:
-            if min_size_bytes:
-                min_duration = max(0.5, (min_size_bytes * 1.1) / bytes_per_second)
-            else:
-                min_duration = 0.5
-
-            if max_size_bytes:
-                max_duration = min(20.0, (max_size_bytes * 0.9) / bytes_per_second)
-            else:
-                max_duration = 5.0
-
-            duration = random.uniform(min_duration, min(max_duration, min_duration * 1.1))
-        else:
-            duration = random.uniform(1.0, 2.0)
-
-        num_samples = int(sample_rate * duration)
-
-        # Fastest possible: just random noise
-        audio_data = np.random.randint(-8192, 8191, num_samples, dtype=np.int16)
-
-        audio_segment = AudioSegment(
-            audio_data.tobytes(),
-            frame_rate=sample_rate,
-            sample_width=2,
-            channels=1,
-        )
-
-        audio_bytes_io = io.BytesIO()
-        export_format = "ipod" if output_format == "m4a" else output_format
-        audio_segment.export(audio_bytes_io, format=export_format, parameters=["-q:a", "9", "-ac", "1"])
-
-        result = audio_bytes_io.getvalue()
-        result_size = len(result)
-
-        if min_size_bytes and result_size < min_size_bytes:
-            bytes_per_second = max(bytes_per_second * 0.8, result_size / duration)
-            continue
-        if max_size_bytes and result_size > max_size_bytes:
-            bytes_per_second = min(bytes_per_second * 1.2, result_size / duration)
-            continue
-
-        return result
-
-    return result
-
-
-def random_audio():
+def random_audio() -> Path:
     """
     Fixture to provide random audio data.
 
     It provides what Telegram considers an audio file, as opposed to a voice note, to ensure
     that the file is not considered a voice note by Telegram.
     """
-    return random_audio_generator(
-        output_format=random.choice(["mp3", "m4a"]),
-        min_size_bytes=FileSizeLimit.VOICE_NOTE_FILE_SIZE + 10000,
-        max_size_bytes=FileSizeLimit.FILESIZE_UPLOAD,
-    )
+    return random.choice(list(Path("tests/static/audios").glob("audio_*")))
 
 
-def random_voice_note():
+def random_voice_note() -> Path:
     """
     Fixture to provide random voice note data.
 
     It provides what Telegram considers a voice note, ensuring that the file is small enough
     to be considered a voice note instead of a regular audio file.
     """
-    return random_audio_generator(
-        output_format=random.choice(["mp3", "m4a"]),
-        max_size_bytes=FileSizeLimit.VOICE_NOTE_FILE_SIZE,
-    )
+    return random.choice(list(Path("tests/static/audios").glob("voice_*")))

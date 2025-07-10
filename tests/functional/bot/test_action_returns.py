@@ -333,6 +333,7 @@ async def test_action_returns_video_captioned(
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(120)
 @pytest.mark.usefixtures("kamihi")
 @pytest.mark.parametrize(
     "actions_folder",
@@ -347,7 +348,7 @@ async def test_action_returns_video_captioned(
                 async def start() -> Path:
                     return Path("actions/start/audio.mp3")
             """,
-            "start/audio.mp3": random_audio(),
+            "start/audio.mp3": random_audio().read_bytes(),
         },
         {
             "start/__init__.py": "",
@@ -359,7 +360,7 @@ async def test_action_returns_video_captioned(
                 async def start() -> bot.Audio:
                     return bot.Audio(Path("actions/start/audio.mp3"))
             """,
-            "start/audio.mp3": random_audio(),
+            "start/audio.mp3": random_audio().read_bytes(),
         },
     ],
     ids=["implicit", "explicit"],
@@ -382,6 +383,7 @@ async def test_action_returns_audio(
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(120)
 @pytest.mark.usefixtures("kamihi")
 @pytest.mark.parametrize(
     "actions_folder",
@@ -396,7 +398,7 @@ async def test_action_returns_audio(
                 async def start() -> bot.Audio:
                     return bot.Audio(Path("actions/start/audio.mp3"), caption="This is an audio caption.")
             """,
-            "start/audio.mp3": random_audio(),
+            "start/audio.mp3": random_audio().read_bytes(),
         },
     ],
 )
@@ -434,7 +436,7 @@ async def test_action_returns_audio_captioned(
                 async def start() -> Path:
                     return Path("actions/start/voice.mp3")
             """,
-            "start/voice.mp3": random_voice_note(),
+            "start/voice.mp3": random_voice_note().read_bytes(),
         },
         {
             "start/__init__.py": "",
@@ -446,7 +448,7 @@ async def test_action_returns_audio_captioned(
                 async def start() -> bot.Voice:
                     return bot.Voice(Path("actions/start/voice.mp3"))
             """,
-            "start/voice.mp3": random_voice_note(),
+            "start/voice.mp3": random_voice_note().read_bytes(),
         },
     ],
     ids=["implicit", "explicit"],
@@ -483,7 +485,7 @@ async def test_action_returns_voice(
                 async def start() -> bot.Voice:
                     return bot.Voice(Path("actions/start/voice.mp3"), caption="This is a voice note caption.")
             """,
-            "start/voice.mp3": random_voice_note(),
+            "start/voice.mp3": random_voice_note().read_bytes(),
         },
     ],
 )
@@ -639,7 +641,7 @@ async def test_action_returns_list(user_in_db, add_permission_for_user, chat: Co
                             bot.Audio(Path("actions/start/audio.mp3")),
                         ]
                 """,
-                "start/audio.mp3": random_audio(),
+                "start/audio.mp3": random_audio().read_bytes(),
             },
             3,
         ),

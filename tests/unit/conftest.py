@@ -75,25 +75,15 @@ def tmp_video_file(tmp_path):
 
 
 @pytest.fixture
-def tmp_audio_file(tmp_path):
+def tmp_audio_file():
     """Fixture that provides a random audio file path."""
-    fmt = random.choice(["mp3", "m4a"])
-    audio_path = tmp_path / f"test_audio.{fmt}"
-    audio_data = random_audio()
-    with open(audio_path, "wb") as f:
-        f.write(audio_data)
-    return audio_path
+    return random_audio()
 
 
 @pytest.fixture
-def tmp_voice_file(tmp_path):
+def tmp_voice_file():
     """Fixture that provides a random voice note file path."""
-    fmt = random.choice(["mp3", "m4a"])
-    voice_path = tmp_path / f"test_voice.{fmt}"
-    voice_data = random_voice_note()
-    with open(voice_path, "wb") as f:
-        f.write(voice_data)
-    return voice_path
+    return random_voice_note()
 
 
 @pytest.fixture

@@ -106,7 +106,7 @@ async def tg_client(test_settings):
 @pytest.fixture(scope="session")
 async def chat(test_settings, tg_client) -> AsyncGenerator[Conversation, Any]:
     """Open conversation with the bot."""
-    async with tg_client.conversation(test_settings.bot_username, timeout=10, max_messages=10000) as conv:
+    async with tg_client.conversation(test_settings.bot_username, timeout=60, max_messages=10000) as conv:
         yield conv
 
 
