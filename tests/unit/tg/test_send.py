@@ -447,8 +447,6 @@ async def test_send_invalid_media_type(mock_update, mock_context, tmp_file):
     class InvalidMedia(Media):
         """An invalid media type for testing."""
 
-        pass
-
     # Call function
     with pytest.raises(TypeError, match=f"Object of type {InvalidMedia} cannot be sent"):
         await send(InvalidMedia(tmp_file), update=mock_update, context=mock_context)
