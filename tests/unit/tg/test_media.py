@@ -119,24 +119,6 @@ def test_media_initialization_exceeds_size_limit(tmp_file):
         Media(file=large_file)
 
 
-def test_media_filename(tmp_file):
-    """Test that Media class can derive filename from path."""
-    media = Media(file=tmp_file)
-    assert media._get_filename() == tmp_file.name
-
-
-def test_media_filename_with_custom_name(tmp_file):
-    """Test with a filename set explicitly."""
-    media_with_filename = Media(file=tmp_file, filename="custom_name.txt")
-    assert media_with_filename._get_filename() == "custom_name.txt"
-
-
-def test_media_filename_with_no_path(tmp_file):
-    """Test that Media class returns None for filename when path is not a string or Path."""
-    media_str_path = Media(file=tmp_file.read_bytes())
-    assert media_str_path._get_filename() is None
-
-
 def test_document_initialization(tmp_file):
     """Test that Document class can be initialized correctly."""
     document = Document(file=tmp_file, caption="Document caption")

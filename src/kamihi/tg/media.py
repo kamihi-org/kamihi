@@ -70,22 +70,6 @@ class Media:
                 mes = f"Byte data exceeds the size limit of {self._size_limit} bytes"
                 raise ValueError(mes)
 
-    def _get_filename(self) -> str | None:
-        """
-        Get the filename of the media.
-
-        Returns:
-            str | None: The filename if available, otherwise None.
-
-        """
-        if self.filename:
-            return self.filename
-
-        if isinstance(self.file, Path):
-            return self.file.name
-
-        return None
-
 
 @dataclass
 class Document(Media):
@@ -102,7 +86,7 @@ class Document(Media):
         return InputMediaDocument(
             media=self.file.read_bytes() if isinstance(self.file, Path) else self.file,
             caption=md(self.caption) if self.caption else None,
-            filename=self._get_filename(),
+            filename=self.filename,
         )
 
 
@@ -127,7 +111,7 @@ class Photo(Media):
         return InputMediaPhoto(
             media=self.file.read_bytes() if isinstance(self.file, Path) else self.file,
             caption=md(self.caption) if self.caption else None,
-            filename=self._get_filename(),
+            filename=self.filename,
         )
 
 
@@ -146,7 +130,7 @@ class Video(Media):
         return InputMediaVideo(
             media=self.file.read_bytes() if isinstance(self.file, Path) else self.file,
             caption=md(self.caption) if self.caption else None,
-            filename=self._get_filename(),
+            filename=self.filename,
         )
 
 
@@ -168,7 +152,7 @@ class Audio(Media):
         return InputMediaAudio(
             media=self.file.read_bytes() if isinstance(self.file, Path) else self.file,
             caption=md(self.caption) if self.caption else None,
-            filename=self._get_filename(),
+            filename=self.filename,
             performer=self.performer,
             title=self.title,
         )
