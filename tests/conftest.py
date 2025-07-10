@@ -80,7 +80,7 @@ def random_video_path() -> Path:
     return random.choice(list(Path("tests/static/videos").glob("*.mp4")))
 
 
-def random_audio() -> Path:
+def random_audio_path() -> Path:
     """
     Fixture to provide random audio data.
 
@@ -90,7 +90,7 @@ def random_audio() -> Path:
     return random.choice(list(Path("tests/static/audios").glob("audio_*")))
 
 
-def random_voice_note() -> Path:
+def random_voice_note_path() -> Path:
     """
     Fixture to provide random voice note data.
 
