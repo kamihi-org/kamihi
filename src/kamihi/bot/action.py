@@ -169,9 +169,6 @@ class Action:
                     value = self._logger
                 case "user":
                     value = get_user_from_telegram_id(update.effective_user.id)
-                case "return":
-                    # Skip return annotation
-                    continue
                 case _:
                     value = None
 
