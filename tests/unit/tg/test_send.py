@@ -16,8 +16,9 @@ from logot import Logot, logged
 from telegram import Bot, Message, Update
 from telegram.error import TelegramError
 from telegram.ext import CallbackContext
+from telegramify_markdown import markdownify as md
 
-from kamihi.tg.media import Audio, Document, Photo, Video, Voice
+from kamihi.tg.media import Audio, Document, Photo, Video, Voice, Media
 from kamihi.tg.send import send
 
 
@@ -30,6 +31,9 @@ def mock_ptb_bot():
     bot.send_photo = AsyncMock(return_value=Mock(spec=Message))
     bot.send_video = AsyncMock(return_value=Mock(spec=Message))
     bot.send_audio = AsyncMock(return_value=Mock(spec=Message))
+    bot.send_voice = AsyncMock(return_value=Mock(spec=Message))
+    bot.send_location = AsyncMock(return_value=Mock(spec=Message))
+    bot.send_media_group = AsyncMock(return_value=[Mock(spec=Message)])
     return bot
 
 
@@ -184,6 +188,30 @@ async def test_send_path_document(logot: Logot, tmp_file, mock_ptb_bot, mock_upd
 
 
 @pytest.mark.asyncio
+async def test_send_path_media_group(
+    logot: Logot, tmp_image_file, tmp_video_file, mock_ptb_bot, mock_update, mock_context
+):
+    """Test sending a media group using paths."""
+    # Call function
+    result = await send([tmp_image_file, tmp_video_file], update=mock_update, context=mock_context)
+
+    # Verify send_media_group was called with correct parameters
+    mock_ptb_bot.send_media_group.assert_called_once_with(
+        chat_id=mock_update.effective_chat.id,
+        media=[
+            Photo(tmp_image_file).as_input_media(),
+            Video(tmp_video_file).as_input_media(),
+        ],
+    )
+    assert result is not None
+    logot.assert_logged(
+        logged.debug("Received list of file paths, guessing media types and trying to send as media group")
+    )
+    logot.assert_logged(logged.debug("Sending as media group"))
+    logot.assert_logged(logged.debug("Sent"))
+
+
+@pytest.mark.asyncio
 async def test_send_path_invalid(logot: Logot, mock_ptb_bot, mock_update, mock_context):
     """Test sending an invalid Path."""
     invalid_path = Path("invalid/path/to/file.txt")
@@ -193,8 +221,43 @@ async def test_send_path_invalid(logot: Logot, mock_ptb_bot, mock_update, mock_c
         await send(invalid_path, update=mock_update, context=mock_context)
 
 
-def md(param):
-    pass
+@pytest.mark.asyncio
+async def test_send_bytes(logot: Logot, tmp_file, mock_ptb_bot, mock_update, mock_context):
+    """Test sending a bytes object."""
+    # Call function
+    result = await send(tmp_file.read_bytes(), update=mock_update, context=mock_context)
+
+    # Verify send_document was called with correct parameters
+    mock_ptb_bot.send_document.assert_called_once_with(
+        chat_id=mock_update.effective_chat.id,
+        filename=None,
+        document=tmp_file.read_bytes(),
+        caption=None,
+    )
+    assert result is not None
+    logot.assert_logged(logged.debug("Sending as generic file"))
+    logot.assert_logged(logged.debug("Sent"))
+
+
+@pytest.mark.asyncio
+async def test_send_io(logot: Logot, tmp_file, mock_ptb_bot, mock_update, mock_context):
+    """Test sending an IO object."""
+    # Create the IO object
+    tmp_file = tmp_file.open("rb")
+
+    # Call function
+    result = await send(tmp_file, update=mock_update, context=mock_context)
+
+    # Verify send_document was called with correct parameters
+    mock_ptb_bot.send_document.assert_called_once_with(
+        chat_id=mock_update.effective_chat.id,
+        filename=None,
+        caption=None,
+        document=tmp_file,
+    )
+    assert result is not None
+    logot.assert_logged(logged.debug("Sending as generic file"))
+    logot.assert_logged(logged.debug("Sent"))
 
 
 @pytest.mark.asyncio
@@ -317,6 +380,27 @@ async def test_send_location(logot: Logot, random_location, mock_ptb_bot, mock_u
 
 
 @pytest.mark.asyncio
+async def test_send_media_group(logot: Logot, tmp_image_file, tmp_video_file, mock_update, mock_context):
+    """Test sending a media group with mixed media types."""
+    items = [Photo(tmp_image_file), Video(tmp_video_file)]
+
+    # Call function
+    results = await send(items, update=mock_update, context=mock_context)
+
+    # Verify that send_media_group was called with correct parameters
+    assert len(results) == 1
+    mock_context.bot.send_media_group.assert_called_with(
+        chat_id=mock_update.effective_chat.id,
+        media=[
+            Photo(tmp_image_file).as_input_media(),
+            Video(tmp_video_file).as_input_media(),
+        ],
+    )
+    logot.assert_logged(logged.debug("Sending as media group"))
+    logot.assert_logged(logged.debug("Sent"))
+
+
+@pytest.mark.asyncio
 async def test_send_list(logot: Logot, tmp_file, tmp_image_file, mock_update, mock_context):
     """Test sending a list of mixed objects."""
     items = [tmp_file, Photo(tmp_image_file, caption="Test caption"), "Test message"]
@@ -354,3 +438,17 @@ async def test_send_invalid_type(mock_update, mock_context):
     # Call function
     with pytest.raises(TypeError, match=f"Object of type {type(invalid_obj)} cannot be sent"):
         await send(invalid_obj, update=mock_update, context=mock_context)
+
+
+@pytest.mark.asyncio
+async def test_send_invalid_media_type(mock_update, mock_context, tmp_file):
+    """Test sending an unsupported object type."""
+
+    class InvalidMedia(Media):
+        """An invalid media type for testing."""
+
+        pass
+
+    # Call function
+    with pytest.raises(TypeError, match=f"Object of type {InvalidMedia} cannot be sent"):
+        await send(InvalidMedia(tmp_file), update=mock_update, context=mock_context)

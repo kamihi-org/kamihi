@@ -10,8 +10,9 @@ from __future__ import annotations
 
 import collections.abc
 import typing
+from io import BufferedReader, TextIOWrapper
 from pathlib import Path
-from typing import IO, Any
+from typing import IO, Any, BinaryIO
 
 import magic
 from loguru import logger
@@ -26,12 +27,12 @@ if typing.TYPE_CHECKING:
     from loguru import Logger
 
 
-def guess_media_type(file: Path | bytes | IO[bytes], lg: Logger) -> Media:
+def guess_media_type(file: Path | bytes | BufferedReader, lg: Logger) -> Media:
     """
     Guess the media type of a file based on its MIME type.
 
     Args:
-        file (Path | bytes | IO[bytes]): The file path to check.
+        file (Path | bytes | BufferedReader): The file path to check.
         lg (Logger): The logger instance to use for logging.
 
     Returns:
@@ -39,7 +40,10 @@ def guess_media_type(file: Path | bytes | IO[bytes], lg: Logger) -> Media:
 
     """
     with lg.catch(exception=magic.MagicException, message="Failed to get MIME type", reraise=True):
-        if isinstance(file, (bytes, IO)):
+        if isinstance(file, bytes):
+            mimetype = magic.from_buffer(file, mime=True)
+        elif isinstance(file, BufferedReader):
+            file.seek(0)
             mimetype = magic.from_buffer(file.read(1024), mime=True)
             file.seek(0)
         else:
@@ -48,23 +52,23 @@ def guess_media_type(file: Path | bytes | IO[bytes], lg: Logger) -> Media:
 
     if "image/" in mimetype:
         lg.debug("File detected as image")
-        return Photo(file=file, filename=file.name)
+        return Photo(file=file, filename=file.name if isinstance(file, Path) else None)
 
     if mimetype == "video/mp4":
         lg.debug("File detected as video")
-        return Video(file=file, filename=file.name)
+        return Video(file=file, filename=file.name if isinstance(file, Path) else None)
 
     if mimetype in ("audio/mpeg", "audio/mp4", "audio/x-m4a", "audio/ogg"):
         try:
-            res = Voice(file=file, filename=file.name)
+            res = Voice(file=file, filename=file.name if isinstance(file, Path) else None)
             lg.debug("File detected as voice message")
         except ValueError:
-            res = Audio(file=file, filename=file.name)
+            res = Audio(file=file, filename=file.name if isinstance(file, Path) else None)
             lg.debug("File detected as audio")
         return res
 
     lg.debug("File detected as generic document")
-    return Document(file=file, filename=file.name)
+    return Document(file=file, filename=file.name if isinstance(file, Path) else None)
 
 
 # skipcq: PY-R1000
@@ -92,13 +96,13 @@ async def send(obj: Any, update: Update, context: CallbackContext) -> Message | 
         method = context.bot.send_message
         kwargs = {"text": md(obj)}
         lg.debug("Sending as text message")
-    elif isinstance(obj, (Path, bytes)):
+    elif isinstance(obj, (Path, bytes, BufferedReader)):
         return await send(guess_media_type(obj, lg), update, context)
     elif isinstance(obj, Media):
         caption = md(obj.caption) if obj.caption else None
         lg = lg.bind(path=obj.file, caption=caption)
 
-        kwargs: dict[str, Any] = {"filename": obj.file.name, "caption": caption}
+        kwargs: dict[str, Any] = {"filename": obj.filename, "caption": caption}
 
         if isinstance(obj, Document):
             method = context.bot.send_document

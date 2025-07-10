@@ -42,6 +42,10 @@ class Media:
             self.file = Path(self.file)
 
         if isinstance(self.file, Path):
+            # Add filename
+            if not self.filename:
+                self.filename = self.file.name
+
             # Validate file exists
             if not self.file.exists():
                 mes = f"File {self.file} does not exist"
@@ -223,17 +227,3 @@ class Location:
         self.latitude = latitude
         self.longitude = longitude
         self.horizontal_accuracy = horizontal_accuracy
-
-    def as_input_media(self) -> InputMediaLocation:
-        """
-        Convert the Location to the InputMediaLocation class for sending.
-
-        Returns:
-            InputMediaLocation: An instance of InputMediaLocation with the location data.
-
-        """
-        return InputMediaLocation(
-            latitude=self.latitude,
-            longitude=self.longitude,
-            horizontal_accuracy=self.horizontal_accuracy,
-        )
