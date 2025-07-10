@@ -142,6 +142,17 @@ async def send(obj: Any, update: Update, context: CallbackContext) -> Message | 
         lg.debug("Sending as media group")
         method = context.bot.send_media_group
         kwargs = {"media": [item.as_input_media() for item in obj]}
+    elif (
+        isinstance(obj, collections.abc.Sequence)
+        and 2 <= len(obj) <= 10
+        and all(isinstance(item, Path) for item in obj)
+    ):
+        lg.debug("Received list of file paths, guessing media types and trying to send as media group")
+        return await send(
+            [guess_media_type(item, lg) for item in obj],
+            update,
+            context,
+        )
     elif isinstance(obj, collections.abc.Sequence):
         lg.debug("Sending as list of items")
         return [await send(item, update, context) for item in obj]
