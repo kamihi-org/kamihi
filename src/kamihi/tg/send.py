@@ -67,6 +67,7 @@ def guess_media_type(file: Path | bytes | IO[bytes], lg: Logger) -> Media:
     return Document(file=file, filename=file.name)
 
 
+# skipcq: PY-R1000
 async def send(obj: Any, update: Update, context: CallbackContext) -> Message | list[Message]:  # noqa: ANN401, C901
     """
     Send a message based on the provided object and annotation.
