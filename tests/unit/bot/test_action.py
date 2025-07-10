@@ -24,7 +24,6 @@ from kamihi.users import User
 
 async def func():
     """Dummy function for Action class."""
-    pass
 
 
 @pytest.fixture
