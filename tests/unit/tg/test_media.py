@@ -119,6 +119,18 @@ def test_media_initialization_exceeds_size_limit(tmp_file):
         Media(file=large_file)
 
 
+def test_media_initialization_exceeds_size_limit_bytes(tmp_file):
+    """Test that Media class raises an error for files that exceed the size limit."""
+    # Create a large file for testing
+    large_file = tmp_file.with_name("large_file.txt")
+    large_file.write_text("A" * (FileSizeLimit.FILESIZE_UPLOAD + 1))  # Exceeding the size limit
+
+    with pytest.raises(
+        ValueError, match=f"Byte data exceeds the size limit of {float(FileSizeLimit.FILESIZE_UPLOAD)} bytes"
+    ):
+        Media(file=large_file.read_bytes())
+
+
 def test_document_initialization(tmp_file):
     """Test that Document class can be initialized correctly."""
     document = Document(file=tmp_file, caption="Document caption")
