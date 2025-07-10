@@ -112,7 +112,16 @@ These fixtures provide the content of the project under test in the container. A
 
 #### Web interface fixtures
 
-- **`admin_page`** - Provides an asyncronousuu Playwright `Page` object for the Kamihi admin interface.
+- **`admin_page`** - Provides an asynchronous Playwright `Page` object for the Kamihi admin interface.
+
+#### Content functions
+
+These are not fixtures, you must import them directly from `tests.conftests` and use them as normal functions, not in the test function signature:
+
+- **`random_image()`** - Returns a random image file in bytes format, useful for testing image uploads.
+- **`random_video_path()`** - Returns a random video file path from `tests/static/videos`, useful for testing video uploads.
+- **`random_audio_path()`** - Returns a random audio file path from `tests/static/audios`, useful for testing audio uploads.
+- **`random_voice_note_path()`** - Returns a random voice message file path from `tests/static/audios`, useful for testing voice messages.
 
 #### Utility fixtures
 
@@ -174,13 +183,13 @@ def actions_folder():
     """Custom actions for all tests in this file."""
     return {
         "start/__init__.py": "",
-        "start/start.py": dedent("""\
+        "start/start.py": """\
             from kamihi import bot
             
             @bot.action
             async def start():
                 return "Hello World!"
-        """),
+        """,
     }
 
 def test_my_feature(kamihi, chat):
@@ -198,14 +207,14 @@ Override fixtures for specific tests by decorating individual functions:
     "models_folder",
     [
         {
-            "user.py": dedent("""\
+            "user.py": """\
                 from kamihi import bot, BaseUser
                 from mongoengine import StringField
                  
                 @bot.user_class
                 class MyCustomUser(BaseUser):
                     name: str = StringField()
-            """),
+            """,
         }
     ],
 )
@@ -215,6 +224,44 @@ async def test_custom_user_model(user_in_db, chat, models_folder):
 ```
 
 #### Common patterns
+
+##### Using test media files
+
+You can use the provided utility functions to add media files to your tests:
+
+```python
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("kamihi")
+@pytest.mark.parametrize(
+    "actions_folder",
+    [
+        (
+            {
+                "start/__init__.py": "",
+                "start/start.py": """\
+                    from pathlib import Path
+                    from kamihi import bot
+                
+                    @bot.action
+                    async def start() -> list[bot.Photo]:
+                        return [
+                            bot.Photo(Path("actions/start/image.jpg")),
+                            bot.Video(Path("actions/start/video.mp4")),
+                            bot.Audio(Path("actions/start/audio.mp3")),
+                            bot.Voice(Path("actions/start/audio.m4a")),
+                        ]
+                """,
+                "start/image.jpg": random_image(),
+                "start/video.mp4": random_video_path().read_bytes(),
+                "start/audio.mp3": random_audio_path().read_bytes(),
+                "start/audio.m4a": random_voice_note_path().read_bytes(),
+            },
+        ),
+    ]
+)
+async def test(..., actions_folder): ...
+```
+
 
 ##### Testing CLI commands
 
@@ -255,13 +302,13 @@ async def test_web_feature(admin_page):
     [
         {
             "greet/__init__.py": "",
-            "greet/greet.py": dedent("""\
+            "greet/greet.py": """\
                 from kamihi import bot
                 
                 @bot.action
                 async def greet(user):
                     return f"Hello {user.telegram_id}!"
-            """),
+            """,
         }
     ],
 )
