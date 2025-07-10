@@ -38,10 +38,10 @@ Kamihi supports sending the following media types:
 
 | Media                 | Type           | Allowed formats                    | Max. size | Notes                                                                                       |
 |-----------------------|----------------|------------------------------------|-----------|---------------------------------------------------------------------------------------------|
-| Documents             | `bot.Document` | Any                                | 5MB       | Default sending mode                                                                        |
-| Photos                | `bot.Photo`    | JPG <br/> PNG <br/> GIF <br/> WEBP | 5MB       | -                                                                                           |
-| Videos                | `bot.Video`    | MP4                                | 5MB       | -                                                                                           |
-| Audios                | `bot.Audio`    | MP3 <br/> M4A                      | 5MB       | If less than 1MB, it will be detected as a voice note                                       |
+| Documents             | `bot.Document` | Any                                | 50MB      | Default sending mode                                                                        |
+| Photos                | `bot.Photo`    | JPG <br/> PNG <br/> GIF <br/> WEBP | 10MB      | -                                                                                           |
+| Videos                | `bot.Video`    | MP4                                | 50MB      | -                                                                                           |
+| Audios                | `bot.Audio`    | MP3 <br/> M4A                      | 50MB      | If less than 1MB, it will be detected as a voice note                                       |
 | Voice notes           | `bot.Voice`    | MP3 <br/> M4A <br/> OGG (Opus)     | 1MB       | If more than 1MB, it will be detected as audio                                              |
 | Media groups (albums) | `list`         | -                                  | -         | Only sent as group if all items are of the same type (Photo and Video are considered equal) |
 | Location              | `bot.Location` | -                                  | -         | Defined by latitude, longitude and optional horizontal accuracy                             |
