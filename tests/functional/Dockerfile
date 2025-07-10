@@ -6,7 +6,7 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:045d04b19438e1ff212eee
 # Install system dependencies required for Kamihi.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    libmagic1=5.44 \
+    libmagic1=1:5.44-3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the current local version of Kamihi to the image.
