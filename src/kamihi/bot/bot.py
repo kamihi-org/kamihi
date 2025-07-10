@@ -32,6 +32,7 @@ from kamihi.base.config import KamihiSettings
 from kamihi.db.mongo import connect, disconnect
 from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
+from kamihi.tg.handlers import AuthHandler
 from kamihi.tg.media import *
 from kamihi.users import get_users, is_user_authorized
 from kamihi.users.models import User
@@ -148,7 +149,7 @@ class Bot:
         return [action for action in self._actions if action.is_valid()]
 
     @property
-    def _handlers(self) -> list[CommandHandler]:
+    def _handlers(self) -> list[AuthHandler]:
         """Return the handlers for the bot."""
         return [action.handler for action in self._valid_actions]
 

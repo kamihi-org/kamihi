@@ -9,7 +9,6 @@ License:
 from __future__ import annotations
 
 import collections.abc
-import os
 import typing
 from pathlib import Path
 from typing import IO, Any
@@ -60,7 +59,7 @@ def guess_media_type(file: Path | bytes | IO[bytes], lg: Logger) -> Media:
         try:
             res = Voice(file=file, filename=file.name)
             lg.debug("File detected as voice message")
-        except ValueError as e:
+        except ValueError:
             res = Audio(file=file, filename=file.name)
             lg.debug("File detected as audio")
         return res
@@ -99,7 +98,6 @@ async def send(obj: Any, update: Update, context: CallbackContext) -> Message | 
         lg = lg.bind(path=obj.file, caption=caption)
 
         kwargs: dict[str, Any] = {"filename": obj.file.name, "caption": caption}
-        limit = FileSizeLimit.FILESIZE_UPLOAD
 
         if isinstance(obj, Document):
             method = context.bot.send_document
@@ -108,7 +106,6 @@ async def send(obj: Any, update: Update, context: CallbackContext) -> Message | 
         elif isinstance(obj, Photo):
             method = context.bot.send_photo
             kwargs["photo"] = obj.file
-            limit = FileSizeLimit.PHOTOSIZE_UPLOAD
             lg.debug("Sending as photo")
         elif isinstance(obj, Video):
             method = context.bot.send_video
@@ -121,7 +118,6 @@ async def send(obj: Any, update: Update, context: CallbackContext) -> Message | 
         elif isinstance(obj, Voice):
             method = context.bot.send_voice
             kwargs["voice"] = obj.file
-            limit = FileSizeLimit.VOICE_NOTE_FILE_SIZE
             lg.debug("Sending as voice note")
         else:
             mes = f"Object of type {type(obj)} cannot be sent"
