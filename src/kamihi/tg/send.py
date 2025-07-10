@@ -24,7 +24,7 @@ from telegramify_markdown import markdownify as md
 from .media import Audio, Document, Location, Media, Photo, Video, Voice
 
 if typing.TYPE_CHECKING:
-    from loguru import Logger
+    from loguru import Logger  # skipcq: TCV-001
 
 
 def guess_media_type(file: Path | bytes | BufferedReader, lg: Logger) -> Media:
