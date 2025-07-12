@@ -93,8 +93,8 @@ async def test_action_parameter_user_custom(
     "actions_folder",
     [
         {
-            "actions/start/__init__.py": "".encode(),
-            "actions/start/start.py": dedent("""\
+            "start/__init__.py": "",
+            "start/start.py": """\
                 from jinja2 import Template
                 from kamihi import bot
                 
@@ -102,8 +102,8 @@ async def test_action_parameter_user_custom(
                 @bot.action
                 async def start(template: Template):
                     return template.render(name="John Doe")
-            """).encode(),
-            "actions/start/start.md.jinja": "Hello, {{ name }}!".encode(),
+            """,
+            "start/start.md.jinja": "Hello, {{ name }}!",
         }
     ],
 )
@@ -125,17 +125,17 @@ async def test_action_parameter_template_single(
     "actions_folder",
     [
         {
-            "actions/start/__init__.py": "".encode(),
-            "actions/start/start.py": dedent("""\
+            "start/__init__.py": "",
+            "start/start.py": """\
                 from jinja2 import Template
                 from kamihi import bot
                 
                 @bot.action
                 async def start(templates: dict[str, Template]):
                     return templates["start.md.jinja"].render(name="John Doe") + " " + templates["start2.md.jinja"].render(name="John Doe")
-            """).encode(),
-            "actions/start/start.md.jinja": "Hello, {{ name }}!".encode(),
-            "actions/start/start2.md.jinja": "Bye, {{ name }}!".encode(),
+            """,
+            "start/start.md.jinja": "Hello, {{ name }}!",
+            "start/start2.md.jinja": "Bye, {{ name }}!",
         }
     ],
 )
