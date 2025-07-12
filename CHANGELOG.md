@@ -1,3 +1,9 @@
+## 1.2.0 (2025-07-12)
+
+### Feat
+
+- **bot**: support sending all media types (#94)
+
 ## 1.1.0 (2025-06-04)
 
 ### Feat
