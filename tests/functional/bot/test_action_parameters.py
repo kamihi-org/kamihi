@@ -6,8 +6,6 @@ License:
 
 """
 
-from textwrap import dedent
-
 import pytest
 from telethon.tl.custom import Conversation
 
@@ -18,14 +16,14 @@ from telethon.tl.custom import Conversation
     "actions_folder",
     [
         {
-            "actions/start/__init__.py": "".encode(),
-            "actions/start/start.py": dedent("""\
-            from kamihi import bot
-                         
-            @bot.action
-            async def start(user):
-                return f"Hello, user with ID {user.telegram_id}!"
-        """).encode(),
+            "start/__init__.py": "",
+            "start/start.py": """\
+                from kamihi import bot
+                             
+                @bot.action
+                async def start(user):
+                    return f"Hello, user with ID {user.telegram_id}!"
+            """,
         }
     ],
 )
@@ -45,14 +43,14 @@ async def test_action_parameter_user(user_in_db, add_permission_for_user, chat: 
     "actions_folder",
     [
         {
-            "actions/start/__init__.py": "".encode(),
-            "actions/start/start.py": dedent("""\
-            from kamihi import bot
-                         
-            @bot.action
-            async def start(user):
-                return f"Hello, {user.name}!"
-        """).encode(),
+            "start/__init__.py": "",
+            "start/start.py": """\
+                from kamihi import bot
+                             
+                @bot.action
+                async def start(user):
+                    return f"Hello, {user.name}!"
+            """,
         }
     ],
 )
@@ -60,14 +58,14 @@ async def test_action_parameter_user(user_in_db, add_permission_for_user, chat: 
     "models_folder",
     [
         {
-            "models/user.py": dedent("""\
+            "user.py": """\
                 from kamihi import bot, BaseUser
                 from mongoengine import StringField
                  
                 @bot.user_class
                 class MyCustomUser(BaseUser):
                     name: str = StringField()
-            """).encode(),
+            """,
         }
     ],
 )

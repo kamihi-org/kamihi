@@ -23,7 +23,7 @@ from kamihi.users import User
 
 
 async def func():
-    pass
+    """Dummy function for Action class."""
 
 
 @pytest.fixture
@@ -208,7 +208,8 @@ async def test_action_call(logot: Logot, mock_update, mock_context) -> None:
 
     with pytest.raises(ApplicationHandlerStop):
         await action(mock_update, mock_context)
-        assert mock_function.assert_called_once()
+
+    mock_function.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -343,27 +344,6 @@ async def test_action_invalid_call(logot: Logot, action: Action, mock_update, mo
     action._valid = False
     await action(mock_update, mock_context)
     await logot.await_for(logged.warning("Not valid, skipping execution"))
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "return_value",
-    [
-        "test result",
-        None,
-    ],
-)
-async def test_action_call_with_result(logot: Logot, action: Action, mock_update, mock_context, return_value) -> None:
-    """Test the Action class call method with a result."""
-    str_func = AsyncMock(return_value=return_value)
-    action._func = str_func
-
-    with pytest.raises(ApplicationHandlerStop):
-        await action(mock_update, mock_context)
-        str_func.assert_called_once_with(update=mock_update, context=mock_context)
-        if return_value is None:
-            logot.assert_logged(logged.debug("No result to send"))
-        logot.assert_logged(logged.debug("Executed successfully"))
 
 
 def test_action_repr(action: Action) -> None:

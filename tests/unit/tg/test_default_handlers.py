@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from logot import Logot, logged
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import CallbackContext, ApplicationHandlerStop
 
 from kamihi.tg.default_handlers import default, error
 
@@ -40,13 +40,16 @@ def mock_context():
 async def test_default_handler(mock_update, mock_context):
     """Test that the default handler calls reply with the correct message."""
     # Patch reply to verify it's called with the right parameters
-    with patch("kamihi.tg.default_handlers.reply", new=AsyncMock()) as mock_reply:
+    with (
+        patch("kamihi.tg.default_handlers.send", new=AsyncMock()) as mock_reply,
+        pytest.raises(ApplicationHandlerStop),
+    ):
         # Call the default handler
         await default(mock_update, mock_context)
 
         # Verify reply is called with the correct text from bot_data
         mock_reply.assert_called_once_with(
-            mock_update, mock_context, mock_context.bot_data["responses"]["default_message"]
+            mock_context.bot_data["responses"]["default_message"], update=mock_update, context=mock_context
         )
 
 
@@ -54,7 +57,10 @@ async def test_default_handler(mock_update, mock_context):
 async def test_default_handler_logging(logot: Logot, mock_update, mock_context):
     """Test that the default handler logs the message correctly."""
     # Patch reply to avoid actually calling it
-    with patch("kamihi.tg.default_handlers.reply", new=AsyncMock()) as mock_reply:
+    with (
+        patch("kamihi.tg.default_handlers.send", new=AsyncMock()) as mock_reply,
+        pytest.raises(ApplicationHandlerStop),
+    ):
         # Call the default handler
         await default(mock_update, mock_context)
 
@@ -63,7 +69,7 @@ async def test_default_handler_logging(logot: Logot, mock_update, mock_context):
 
         # Verify reply is called with the correct text
         mock_reply.assert_called_once_with(
-            mock_update, mock_context, mock_context.bot_data["responses"]["default_message"]
+            mock_context.bot_data["responses"]["default_message"], update=mock_update, context=mock_context
         )
 
 
@@ -75,7 +81,10 @@ async def test_error_handler_update(logot: Logot, mock_update, mock_context):
     mock_context.error = test_error
 
     # Patch reply to verify it gets called
-    with patch("kamihi.tg.default_handlers.reply", new=AsyncMock()) as mock_reply:
+    with (
+        patch("kamihi.tg.default_handlers.send", new=AsyncMock()) as mock_reply,
+        pytest.raises(ApplicationHandlerStop),
+    ):
         # Call the error handler with a valid update
         await error(mock_update, mock_context)
 
@@ -84,7 +93,7 @@ async def test_error_handler_update(logot: Logot, mock_update, mock_context):
 
         # Verify reply is called with the error text
         mock_reply.assert_called_once_with(
-            mock_update, mock_context, mock_context.bot_data["responses"]["error_message"]
+            mock_context.bot_data["responses"]["default_message"], update=mock_update, context=mock_context
         )
 
 
@@ -96,7 +105,10 @@ async def test_error_handler_no_update(logot: Logot):
     mock_context.error = Exception("Test error")
 
     # Patch reply to verify it's NOT called when there's no update
-    with patch("kamihi.tg.default_handlers.reply", new=AsyncMock()) as mock_reply:
+    with (
+        patch("kamihi.tg.default_handlers.send", new=AsyncMock()) as mock_reply,
+        pytest.raises(ApplicationHandlerStop),
+    ):
         # Call the error handler with no update (None)
         await error(None, mock_context)
 

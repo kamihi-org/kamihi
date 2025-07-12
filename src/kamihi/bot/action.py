@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
+from typing import Any
 
 import loguru
 from loguru import logger
@@ -17,7 +18,7 @@ from telegram import Update
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
-from kamihi.tg import reply
+from kamihi.tg import send
 from kamihi.tg.handlers import AuthHandler
 from kamihi.users import get_user_from_telegram_id
 
@@ -154,11 +155,11 @@ class Action:
             return
 
         self._logger.debug("Executing")
-        parameters = inspect.signature(self._func).parameters
+
         pos_args = []
         keyword_args = {}
 
-        for name, param in parameters.items():
+        for name, param in inspect.signature(self._func).parameters.items():
             match name:
                 case "update":
                     value = update
@@ -176,13 +177,11 @@ class Action:
             else:
                 keyword_args[name] = value
 
-        result = await self._func(*pos_args, **keyword_args)
-        if result is not None:
-            await reply(update, context, result)
-        else:
-            self._logger.debug("No result to send")
+        result: Any = await self._func(*pos_args, **keyword_args)
 
-        self._logger.debug("Executed successfully")
+        await send(result, update, context)
+
+        self._logger.debug("Finished execution")
         raise ApplicationHandlerStop
 
     def __repr__(self) -> str:

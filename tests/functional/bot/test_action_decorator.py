@@ -6,8 +6,6 @@ License:
 
 """
 
-from textwrap import dedent
-
 import pytest
 from telethon.tl.custom import Conversation
 
@@ -18,14 +16,14 @@ from telethon.tl.custom import Conversation
     "actions_folder",
     [
         {
-            "actions/start/__init__.py": "".encode(),
-            "actions/start/start.py": dedent("""\
+            "start/__init__.py": "",
+            "start/start.py": """\
                 from kamihi import bot
                 
                 @bot.action
                 async def start():
                     return "test"
-            """).encode(),
+            """,
         }
     ],
 )
@@ -45,22 +43,22 @@ async def test_action_decorator_no_parentheses(user_in_db, add_permission_for_us
     "actions_folder",
     [
         {
-            "actions/start/__init__.py": "".encode(),
-            "actions/start/start.py": dedent("""\
+            "start/__init__.py": "",
+            "start/start.py": """\
                 from kamihi import bot
                 
                 @bot.action
                 async def start():
                     return "Hello! I'm your friendly bot. How can I help you today?"
-            """).encode(),
-            "actions/start2/__init__.py": "".encode(),
-            "actions/start2/start2.py": dedent("""\
+            """,
+            "start2/__init__.py": "",
+            "start2/start2.py": """\
                 from kamihi import bot
                 
                 @bot.action
                 async def start2():
                     return "Hello! I'm not your friendly bot."
-            """).encode(),
+            """,
         }
     ],
 )

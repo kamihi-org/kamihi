@@ -26,7 +26,8 @@ nav:
           - Configure the timezone: guides/config/configure-timezone.md
       - Actions:
           - Set commands: guides/actions/commands.md
-          - Send files: guides/actions/send-files.md
+          - Send multiple messages: guides/actions/send-multiple.md
+          - Send media and files: guides/actions/send-media.md
       - Users:
           - Extend the user model: guides/users/extend.md
       - Logging:

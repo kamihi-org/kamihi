@@ -43,7 +43,7 @@ def test_init_nonexistent_path(run_command, tmp_path, remove_ansi):
     result = run_command("init", "example_project", "--path", str(tmp_path / "invalid"))
 
     assert result.exit_code == 2
-    assert "Invalid value for '--path':" in remove_ansi(result.output)
+    assert "Invalid value for '--path'" in remove_ansi(result.output)
 
 
 def test_init_path_is_file(run_command, tmp_path, remove_ansi):

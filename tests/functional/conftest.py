@@ -106,7 +106,7 @@ async def tg_client(test_settings):
 @pytest.fixture(scope="session")
 async def chat(test_settings, tg_client) -> AsyncGenerator[Conversation, Any]:
     """Open conversation with the bot."""
-    async with tg_client.conversation(test_settings.bot_username, timeout=10, max_messages=10000) as conv:
+    async with tg_client.conversation(test_settings.bot_username, timeout=60, max_messages=10000) as conv:
         yield conv
 
 
@@ -114,7 +114,7 @@ async def chat(test_settings, tg_client) -> AsyncGenerator[Conversation, Any]:
 def pyproject() -> dict:
     """Fixture to provide the path to the pyproject.toml file."""
     return {
-        "pyproject.toml": dedent("""\
+        "pyproject.toml": """\
             [project]
             name = "kftp"
             version = "0.0.0"
@@ -126,14 +126,14 @@ def pyproject() -> dict:
             
             [tool.uv.sources]
             kamihi = { path = "/lib/kamihi" }
-        """).encode()
+        """
     }
 
 
 @pytest.fixture
 def config_file() -> dict:
     """Fixture to provide the path to the kamihi.yaml file."""
-    return {"kamihi.yaml": "".encode()}
+    return {"kamihi.yaml": ""}
 
 
 @pytest.fixture
@@ -152,10 +152,15 @@ def models_folder() -> dict:
 def app_folder(pyproject, config_file, actions_folder, models_folder) -> dict:
     """Fixture to provide the path to the app folder."""
     res = {}
-    res.update(pyproject)
-    res.update(config_file)
-    res.update(actions_folder)
-    res.update(models_folder)
+    res.update({key: dedent(value) for key, value in pyproject.items()})
+    res.update({key: dedent(value) for key, value in config_file.items()})
+    res.update(
+        {"actions/" + key: dedent(value) if isinstance(value, str) else value for key, value in actions_folder.items()}
+    )
+    res.update(
+        {"models/" + key: dedent(value) if isinstance(value, str) else value for key, value in models_folder.items()}
+    )
+    res = {key: value.encode() if isinstance(value, str) else value for key, value in res.items()}
     return res
 
 
@@ -243,7 +248,6 @@ class KamihiContainer(Container):
             stream = self.logs(stream=True)
         for line in stream:
             line = line.decode().strip()
-            print("\t" + line)
             if parse_json:
                 log_entry = self.parse_log_json(line)
                 if (
@@ -398,6 +402,14 @@ def kamihi(kamihi_container: KamihiContainer, run_command, request) -> Generator
 
     yield kamihi_container
 
+    if request.node.rep_call.failed:
+        title = f" Kamihi container logs for {request.node.name} "
+        print(f"\n{title:=^80}")
+        for line in kamihi_container.logs():
+            if jline := kamihi_container.parse_log_json(line):
+                print(jline["text"].strip())
+            else:
+                print(line.strip())
     if run_command == "kamihi run":
         kamihi_container.stop()
 

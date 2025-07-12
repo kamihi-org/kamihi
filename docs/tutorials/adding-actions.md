@@ -33,7 +33,7 @@ async def start() -> str: # (3)!
 
 1. To interact with Kamihi, we import the `bot` object. There is no need to initialize any class, the framework takes care of that.
 2. We register an action by decorating any `async` function with `@bot.action`.
-3. Although not strictly needed, Kamihi works better when the code is typed.
+3. Although not strictly needed for basic cases, Kamihi works better when the code is typed.
 4. The result returned from the decorated function will be sent to the user.
 
 ## Creating a new action
