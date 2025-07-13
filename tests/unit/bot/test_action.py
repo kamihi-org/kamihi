@@ -9,9 +9,11 @@ License:
 from __future__ import annotations
 
 from inspect import Signature, Parameter
+from typing import Annotated
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from jinja2 import Template
 from logot import Logot, logged
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CommandHandler
@@ -296,6 +298,119 @@ async def test_action_call_user(logot: Logot, mock_update, mock_context, kind) -
     with pytest.raises(ApplicationHandlerStop):
         await action(mock_update, mock_context)
         assert mock_function.assert_called_once_with(user=mock_user)
+
+
+@pytest.mark.asyncio
+async def test_action_call_templates(logot: Logot, mock_update, mock_context, tmp_path) -> None:
+    """Test the Action class call method with templates parameter."""
+    mock_function = AsyncMock()
+    mock_function.__signature__ = Signature([Parameter("templates", kind=Parameter.POSITIONAL_OR_KEYWORD)])
+    mock_function.__name__ = "test_function"
+    mock_function.return_value = "test result"
+
+    mock_code_file = tmp_path / "test_code.py"
+    mock_function.__code__.co_filename = mock_code_file
+    template = tmp_path / "test_template.md.jinja"
+    template.write_text("Test template content")
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ApplicationHandlerStop):
+        assert action._templates.get_template("test_template.md.jinja") is not None
+        await action(mock_update, mock_context)
+        assert mock_function.assert_called_once_with(
+            templates={"test_template.md.jinja": action._templates.get_template("test_template.md.jinja")}
+        )
+
+
+@pytest.mark.asyncio
+async def test_action_call_template(logot: Logot, mock_update, mock_context, tmp_path) -> None:
+    """Test the Action class call method with template parameter."""
+    mock_function = AsyncMock()
+    mock_function.__signature__ = Signature([Parameter("template", kind=Parameter.POSITIONAL_OR_KEYWORD)])
+    mock_function.__name__ = "test_function"
+    mock_function.return_value = "test result"
+
+    mock_code_file = tmp_path / "test_code.py"
+    mock_function.__code__.co_filename = mock_code_file
+    template = tmp_path / "test_action.md.jinja"
+    template.write_text("Test template content")
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ApplicationHandlerStop):
+        await action(mock_update, mock_context)
+        assert mock_function.assert_called_once_with(template=action._templates.get_template("test_action.md.jinja"))
+
+
+@pytest.mark.asyncio
+async def test_action_call_template_annotated(logot: Logot, mock_update, mock_context, tmp_path) -> None:
+    """Test the Action class call method with annotated template parameter."""
+    mock_function = AsyncMock()
+    mock_function.__signature__ = Signature(
+        [
+            Parameter(
+                "template",
+                kind=Parameter.POSITIONAL_OR_KEYWORD,
+                annotation=Annotated[Template, "custom_template_name.md.jinja"],
+            )
+        ]
+    )
+    mock_function.__name__ = "test_function"
+    mock_function.return_value = "test result"
+
+    mock_code_file = tmp_path / "test_code.py"
+    mock_function.__code__.co_filename = mock_code_file
+    template = tmp_path / "custom_template_name.md.jinja"
+    template.write_text("Test template content")
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ApplicationHandlerStop):
+        await action(mock_update, mock_context)
+        assert mock_function.assert_called_once_with(
+            template=action._templates.get_template("custom_template_name.md.jinja")
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "annotation",
+    [
+        Annotated[Template, 12345],
+        Annotated[str, "custom_template_name.md.jinja"],
+    ],
+)
+async def test_action_call_template_annotated_invalid(
+    logot: Logot, mock_update, mock_context, annotation, tmp_path
+) -> None:
+    """Test the Action class call method with annotated template parameter that is invalid."""
+    mock_function = AsyncMock()
+    mock_function.__signature__ = Signature(
+        [Parameter("template", kind=Parameter.POSITIONAL_OR_KEYWORD, annotation=annotation)]
+    )
+    mock_function.__name__ = "test_function"
+    mock_function.return_value = "test result"
+
+    mock_code_file = tmp_path / "test_code.py"
+    mock_function.__code__.co_filename = mock_code_file
+    template = tmp_path / "custom_template_name.md.jinja"
+    template.write_text("Test template content")
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ApplicationHandlerStop):
+        await action(mock_update, mock_context)
+        logot.assert_logged(logged.warning("Invalid Annotated arguments for parameter 'template'"))
+        assert mock_function.assert_called_once_with(template=None)
 
 
 @pytest.mark.asyncio
