@@ -1,3 +1,13 @@
+## 2.0.0 (2025-07-13)
+
+### BREAKING CHANGE
+
+- removed `autoreload_templates` configuration option
+
+### Feat
+
+- **bot**: integrated templates with actions (#97)
+
 ## 1.2.0 (2025-07-12)
 
 ### Feat
