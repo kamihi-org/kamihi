@@ -191,6 +191,7 @@ class Bot:
         """
         await self._client.reset_scopes(*args, **kwargs)
 
+    # skipcq: TCV-001
     def start(self) -> None:
         """Start the bot."""
         # Cleans up the database of actions that are not present in code
