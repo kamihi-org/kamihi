@@ -185,7 +185,7 @@ class Action:
                         if len(args) == 2 and args[0] is Template and isinstance(args[1], str):
                             value = self._templates.get_template(args[1])
                         else:
-                            logger.warning(
+                            self._logger.warning(
                                 "Invalid Annotated arguments for parameter '{name}'",
                                 name=name,
                             )
@@ -193,7 +193,7 @@ class Action:
                     else:
                         value = self._templates.get_template(f"{self.name}.md.jinja")
                 case _:
-                    logger.warning(
+                    self._logger.warning(
                         "Parameter '{name}' is not supported, it will be set to None",
                         name=name,
                     )
