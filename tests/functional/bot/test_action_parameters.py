@@ -177,11 +177,11 @@ async def test_action_parameter_user_custom(
         ),
     ],
     ids=[
-        "simple",
-        "custom_template_name",
+        "implicit",
+        "explicit",
         "custom_arg_name",
-        "custom_template_and_arg_name",
-        "custom_template_and_arg_name_multiple",
+        "explicit_custom_arg_name",
+        "explicit_multiple",
     ],
 )
 async def test_action_parameter_template(
@@ -224,3 +224,197 @@ async def test_action_parameter_templates(user_in_db, add_permission_for_user, c
     response = await chat.get_response()
 
     assert response.text == "Hello, John Doe! Bye, John Doe!"
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("kamihi")
+@pytest.mark.parametrize(
+    "actions_folder,config_file",
+    [
+        (
+            {
+                "start/__init__.py": "",
+                "start/start.py": """\
+                    from kamihi import bot
+                    
+                    @bot.action
+                    async def start(data: list[tuple]):
+                        return str(data)
+                """,
+                "start/start.dname.sql": """\
+                    SELECT * FROM users WHERE id = 1;
+                """,
+            },
+            {
+                "kamihi.yaml": """\
+                    datasources:
+                      - name: dname
+                        type: postgresql
+                        host: localhost
+                        port: 5432
+                        database: test_db
+                        user: test_user
+                        password: test_password
+                """
+            },
+        ),
+        (
+            {
+                "start/__init__.py": "",
+                "start/start.py": """\
+                    from kamihi import bot
+                    
+                    @bot.action
+                    async def start(data: Annotated[list[tuple], "request.dname.sql"]):
+                        return str(data)
+                """,
+                "start/request.dname.sql": """\
+                    SELECT * FROM users WHERE id = 1;
+                """,
+            },
+            {
+                "kamihi.yaml": """\
+                    datasources:
+                      - name: dname
+                        type: postgresql
+                        host: localhost
+                        port: 5432
+                        database: test_db
+                        user: test_user
+                        password: test_password
+                """
+            },
+        ),
+        (
+            {
+                "start/__init__.py": "",
+                "start/start.py": """\
+                    from kamihi import bot
+                    
+                    @bot.action
+                    async def start(data_in: list[tuple]):
+                        return str(data_in)
+                """,
+                "start/start.dname.sql": """\
+                    SELECT * FROM users WHERE id = 1;
+                """,
+            },
+            {
+                "kamihi.yaml": """\
+                    datasources:
+                      - name: dname
+                        type: postgresql
+                        host: localhost
+                        port: 5432
+                        database: test_db
+                        user: test_user
+                        password: test_password
+                """
+            },
+        ),
+        (
+            {
+                "start/__init__.py": "",
+                "start/start.py": """\
+                    from kamihi import bot
+                    
+                    @bot.action
+                    async def start(data_in: Annotated[list[tuple], "request.dname.sql"]):
+                        return str(data_in)
+                """,
+                "start/request.dname.sql": """\
+                    SELECT * FROM users WHERE id = 1;
+                """,
+            },
+            {
+                "kamihi.yaml": """\
+                    datasources:
+                      - name: dname
+                        type: postgresql
+                        host: localhost
+                        port: 5432
+                        database: test_db
+                        user: test_user
+                        password: test_password
+                """
+            },
+        ),
+        (
+            {
+                "start/__init__.py": "",
+                "start/start.py": """\
+                    from kamihi import bot
+                    from typing import Annotated
+                    
+                    @bot.action
+                    async def start(
+                        data_in: Annotated[list[tuple], "data_in.dname.sql"],
+                        data_out: Annotated[list[tuple], "data_out.dname.sql"]
+                    ):
+                        return str(data_in) + " | " + str(data_out)
+                """,
+                "start/data_in.dname.sql": """\
+                    SELECT * FROM users WHERE id = 1;
+                """,
+                "start/data_out.dname.sql": """\
+                    SELECT * FROM users WHERE id = 2;
+                """,
+            },
+            {
+                "kamihi.yaml": """\
+                    datasources:
+                      - name: dname
+                        type: postgresql
+                        host: localhost
+                        port: 5432
+                        database: test_db
+                        user: test_user
+                        password: test_password
+                """
+            },
+        ),
+        (
+            {
+                "start/__init__.py": "",
+                "start/start.py": """\
+                    from kamihi import bot
+                    from typing import Annotated
+                    
+                    @bot.action
+                    async def start(
+                        data_in: Annotated[list[tuple], "data_in.postgres.sql"],
+                        data_out: Annotated[list[tuple], "data_out.maria.sql"]
+                    ):
+                        return str(data_in) + " | " + str(data_out)
+                """,
+                "start/data_in.request.postgres.sql": """\
+                    SELECT * FROM users WHERE id = 1;
+                """,
+                "start/data_out.request.maria.sql": """\
+                    SELECT * FROM users WHERE id = 2;
+                """,
+            },
+            {
+                "kamihi.yaml": """\
+                    datasources:
+                      - name: postgres
+                        type: postgresql
+                        host: localhost
+                        port: 5432
+                        database: test_db
+                        user: test_user
+                        password: test_password
+                      - name: maria
+                        type: mariadb
+                        host: localhost
+                        port: 5432
+                        database: test_db
+                        user: test_user
+                        password: test_password
+                """
+            },
+        ),
+    ],
+    ids=["simple", "explicit", "custom_arg_name", "explicit_custom_arg_name", "multiple", "multiple_datasources"],
+)
+async def test_action_parameter_data(actions_folder, config_file): ...
