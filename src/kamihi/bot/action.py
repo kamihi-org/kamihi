@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Annotated, Any, get_args, get_origin
 
 import loguru
-from jinja2 import Environment, FileSystemLoader, PackageLoader, Template, select_autoescape
+from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 from loguru import logger
 from telegram import Update
 from telegram.constants import BotCommandLimit
@@ -153,6 +153,7 @@ class Action:
         """Clean up the action from the database."""
         RegisteredAction.objects(name__nin=keep).delete()
 
+    # skipcq: PY-R1000
     async def __call__(self, update: Update, context: CallbackContext) -> None:  # noqa: C901
         """Execute the action."""
         if not self.is_valid():

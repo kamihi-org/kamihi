@@ -223,4 +223,4 @@ async def test_action_parameter_templates(user_in_db, add_permission_for_user, c
     await chat.send_message("/start")
     response = await chat.get_response()
 
-    assert response.text == f"Hello, John Doe! Bye, John Doe!"
+    assert response.text == "Hello, John Doe! Bye, John Doe!"
