@@ -150,7 +150,6 @@ class KamihiSettings(BaseSettings):
 
     Attributes:
         timezone (str): The timezone for the application.
-        autoreload_templates (bool): Whether to enable template auto-reloading.
         log (LogSettings): The logging settings.
         db (DatabaseSettings): The database settings.
         token (str | None): The Telegram bot token.
@@ -162,9 +161,6 @@ class KamihiSettings(BaseSettings):
     # General settings
     testing: bool = Field(default=False)
     timezone: str = Field(default="UTC", validate_default=True)
-
-    # Template settings
-    autoreload_templates: bool = Field(default=True)
 
     # Logging settings
     log: LogSettings = Field(default_factory=LogSettings)

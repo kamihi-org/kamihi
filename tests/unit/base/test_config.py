@@ -553,7 +553,6 @@ web:
   port: 8080
 timezone: America/New_York
 testing: false
-autoreload_templates: false
         """)
         yaml_path = Path(temp_file.name)
 
@@ -597,7 +596,6 @@ autoreload_templates: false
         # Verify general settings
         assert settings.timezone == "America/New_York"
         assert settings.testing is False
-        assert settings.autoreload_templates is False
     finally:
         # Clean up
         if yaml_path.exists():
@@ -629,7 +627,6 @@ timezone: Europe/Paris
         assert settings.web.host == "localhost"  # Default WebSettings
         assert settings.web.port == 4242  # Default WebSettings
         assert settings.testing is False  # Default value
-        assert settings.autoreload_templates is True  # Default value
     finally:
         # Clean up
         if yaml_path.exists():

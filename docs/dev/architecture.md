@@ -26,7 +26,6 @@ graph TD
     B --> E[Database Layer]
     B --> F[Telegram Client]
     B --> G[Web Admin]
-    H[Template System] --> C
     I[Configuration] --> B
 ```
 
@@ -71,12 +70,6 @@ The `TelegramClient` abstraction wraps `python-telegram-bot`, providing a consis
 Starlette-based admin interface runs on a separate thread, exposing user and permission management without interfering with bot operations. This separation ensures bot availability during administrative tasks.
 
 Non-technical users can manage bot access without code changes or deployments through the web interface.
-
-### Template module (`kamihi.templates`)
-
-Jinja2 templating enables dynamic message generation with automatic template discovery. Actions organize templates by namespace, supporting complex response scenarios while separating logic from presentation.
-
-Hot-reloading in development accelerates iteration for message refinement.
 
 ### User module (`kamihi.users`)
 

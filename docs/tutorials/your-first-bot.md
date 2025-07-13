@@ -97,10 +97,6 @@ We can input our token in the configuration file we saw before (`kamihi.yml`) so
 
 token: YOUR_TOKEN_HERE # (1)!
 timezone: UTC # Timezone for the bot
-
-
-# Templates are auto-reloaded by default, uncomment to disable
-# autoreload_templates: false
 ```
 
 1. Right here, substituting `YOUR_TOKEN_HERE`
