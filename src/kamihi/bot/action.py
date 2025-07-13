@@ -11,10 +11,10 @@ from __future__ import annotations
 import inspect
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any, get_args, get_origin
 
 import loguru
-from jinja2 import Environment, FileSystemLoader, PackageLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, PackageLoader, Template, select_autoescape
 from loguru import logger
 from telegram import Update
 from telegram.constants import BotCommandLimit
@@ -179,8 +179,19 @@ class Action:
                         name: self._templates.get_template(name)
                         for name in self._templates.list_templates(extensions=".jinja")
                     }
-                case "template":
-                    value = self._templates.get_template(f"{self.name}.md.jinja")
+                case s if s.startswith("template"):
+                    if get_origin(param.annotation) is Annotated:
+                        args = get_args(param.annotation)
+                        if len(args) == 2 and args[0] is Template and isinstance(args[1], str):
+                            value = self._templates.get_template(args[1])
+                        else:
+                            logger.warning(
+                                "Invalid Annotated arguments for parameter '{name}'",
+                                name=name,
+                            )
+                            value = None
+                    else:
+                        value = self._templates.get_template(f"{self.name}.md.jinja")
                 case _:
                     logger.warning(
                         "Parameter '{name}' is not supported, it will be set to None",
