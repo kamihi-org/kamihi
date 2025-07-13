@@ -9,9 +9,11 @@ License:
 from __future__ import annotations
 
 from inspect import Signature, Parameter
+from typing import Annotated
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from jinja2 import Template
 from logot import Logot, logged
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CommandHandler
@@ -97,33 +99,6 @@ def test_action_init_sync_function(logot: Logot):
 
 
 @pytest.mark.parametrize(
-    "parameter, valid",
-    [
-        ("update", True),
-        ("context", True),
-        ("logger", True),
-        ("invalid", False),
-        ("aaaaaaaaaaaaaaaaa", False),
-        ("a123", False),
-    ],
-)
-def test_action_init_function_parameter_names(logot: Logot, parameter: str, valid: bool) -> None:
-    """Test the Action class initialization with function signature."""
-    mock_function = AsyncMock()
-    mock_function.__signature__ = Signature([Parameter(name=parameter, kind=Parameter.POSITIONAL_OR_KEYWORD)])
-
-    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
-
-    if valid:
-        logot.assert_logged(logged.debug("Successfully registered"))
-        assert action.is_valid() is True
-    else:
-        logot.assert_logged(logged.warning(f"Invalid parameter '{parameter}' in function"))
-        logot.assert_logged(logged.warning("Failed to register"))
-        assert action.is_valid() is False
-
-
-@pytest.mark.parametrize(
     "parameter, kind",
     [
         ("args", Parameter.VAR_POSITIONAL),
@@ -201,6 +176,7 @@ async def test_action_call(logot: Logot, mock_update, mock_context) -> None:
     mock_function.__signature__ = Signature([])
     mock_function.__name__ = "test_function"
     mock_function.return_value = "test result"
+    mock_function.__code__.co_filename = __file__
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
 
@@ -227,6 +203,7 @@ async def test_action_call_update(logot: Logot, mock_update, mock_context, kind)
     mock_function.__signature__ = Signature([Parameter("update", kind=kind)])
     mock_function.__name__ = "test_function"
     mock_function.return_value = "test result"
+    mock_function.__code__.co_filename = __file__
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
 
@@ -252,6 +229,7 @@ async def test_action_call_context(logot: Logot, mock_update, mock_context, kind
     mock_function.__signature__ = Signature([Parameter("context", kind=kind)])
     mock_function.__name__ = "test_function"
     mock_function.return_value = "test result"
+    mock_function.__code__.co_filename = __file__
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
 
@@ -277,6 +255,7 @@ async def test_action_call_logger(logot: Logot, mock_update, mock_context, kind)
     mock_function.__signature__ = Signature([Parameter("logger", kind=kind)])
     mock_function.__name__ = "test_function"
     mock_function.return_value = "test result"
+    mock_function.__code__.co_filename = __file__
 
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
 
@@ -302,6 +281,7 @@ async def test_action_call_user(logot: Logot, mock_update, mock_context, kind) -
     mock_function.__signature__ = Signature([Parameter("user", kind=kind)])
     mock_function.__name__ = "test_function"
     mock_function.return_value = "test result"
+    mock_function.__code__.co_filename = __file__
 
     mock_user = User(telegram_id=123456789, is_admin=True)
 
@@ -321,6 +301,119 @@ async def test_action_call_user(logot: Logot, mock_update, mock_context, kind) -
 
 
 @pytest.mark.asyncio
+async def test_action_call_templates(logot: Logot, mock_update, mock_context, tmp_path) -> None:
+    """Test the Action class call method with templates parameter."""
+    mock_function = AsyncMock()
+    mock_function.__signature__ = Signature([Parameter("templates", kind=Parameter.POSITIONAL_OR_KEYWORD)])
+    mock_function.__name__ = "test_function"
+    mock_function.return_value = "test result"
+
+    mock_code_file = tmp_path / "test_code.py"
+    mock_function.__code__.co_filename = mock_code_file
+    template = tmp_path / "test_template.md.jinja"
+    template.write_text("Test template content")
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ApplicationHandlerStop):
+        assert action._templates.get_template("test_template.md.jinja") is not None
+        await action(mock_update, mock_context)
+        assert mock_function.assert_called_once_with(
+            templates={"test_template.md.jinja": action._templates.get_template("test_template.md.jinja")}
+        )
+
+
+@pytest.mark.asyncio
+async def test_action_call_template(logot: Logot, mock_update, mock_context, tmp_path) -> None:
+    """Test the Action class call method with template parameter."""
+    mock_function = AsyncMock()
+    mock_function.__signature__ = Signature([Parameter("template", kind=Parameter.POSITIONAL_OR_KEYWORD)])
+    mock_function.__name__ = "test_function"
+    mock_function.return_value = "test result"
+
+    mock_code_file = tmp_path / "test_code.py"
+    mock_function.__code__.co_filename = mock_code_file
+    template = tmp_path / "test_action.md.jinja"
+    template.write_text("Test template content")
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ApplicationHandlerStop):
+        await action(mock_update, mock_context)
+        assert mock_function.assert_called_once_with(template=action._templates.get_template("test_action.md.jinja"))
+
+
+@pytest.mark.asyncio
+async def test_action_call_template_annotated(logot: Logot, mock_update, mock_context, tmp_path) -> None:
+    """Test the Action class call method with annotated template parameter."""
+    mock_function = AsyncMock()
+    mock_function.__signature__ = Signature(
+        [
+            Parameter(
+                "template",
+                kind=Parameter.POSITIONAL_OR_KEYWORD,
+                annotation=Annotated[Template, "custom_template_name.md.jinja"],
+            )
+        ]
+    )
+    mock_function.__name__ = "test_function"
+    mock_function.return_value = "test result"
+
+    mock_code_file = tmp_path / "test_code.py"
+    mock_function.__code__.co_filename = mock_code_file
+    template = tmp_path / "custom_template_name.md.jinja"
+    template.write_text("Test template content")
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ApplicationHandlerStop):
+        await action(mock_update, mock_context)
+        assert mock_function.assert_called_once_with(
+            template=action._templates.get_template("custom_template_name.md.jinja")
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "annotation",
+    [
+        Annotated[Template, 12345],
+        Annotated[str, "custom_template_name.md.jinja"],
+    ],
+)
+async def test_action_call_template_annotated_invalid(
+    logot: Logot, mock_update, mock_context, annotation, tmp_path
+) -> None:
+    """Test the Action class call method with annotated template parameter that is invalid."""
+    mock_function = AsyncMock()
+    mock_function.__signature__ = Signature(
+        [Parameter("template", kind=Parameter.POSITIONAL_OR_KEYWORD, annotation=annotation)]
+    )
+    mock_function.__name__ = "test_function"
+    mock_function.return_value = "test result"
+
+    mock_code_file = tmp_path / "test_code.py"
+    mock_function.__code__.co_filename = mock_code_file
+    template = tmp_path / "custom_template_name.md.jinja"
+    template.write_text("Test template content")
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ApplicationHandlerStop):
+        await action(mock_update, mock_context)
+        logot.assert_logged(logged.warning("Invalid Annotated arguments for parameter 'template'"))
+        assert mock_function.assert_called_once_with(template=None)
+
+
+@pytest.mark.asyncio
 async def test_action_call_unknown_parameter(logot: Logot, mock_update, mock_context) -> None:
     """Test the Action class call method with an unknown parameter name."""
     # Create a mock function with an unknown parameter
@@ -328,6 +421,7 @@ async def test_action_call_unknown_parameter(logot: Logot, mock_update, mock_con
     mock_function.__signature__ = Signature([Parameter("unknown", kind=Parameter.POSITIONAL_OR_KEYWORD)])
     mock_function.__name__ = "test_function"
     mock_function.return_value = "test result"
+    mock_function.__code__.co_filename = __file__
 
     # Bypass validation to create a valid action with an unknown parameter
     action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)

@@ -19,7 +19,7 @@ def random_image() -> bytes:
     # Pre-computed valid (width, height) pairs for sum=10000 and aspect ratio <=20
     # This eliminates computation overhead and ensures fast, reliable generation
     valid_pairs = [
-        (476, 9524),
+        (477, 9523),
         (500, 9500),
         (600, 9400),
         (700, 9300),
@@ -49,7 +49,7 @@ def random_image() -> bytes:
         (9300, 700),
         (9400, 600),
         (9500, 500),
-        (9524, 476),
+        (9523, 477),
     ]
 
     # Randomly select a pair

@@ -34,7 +34,6 @@ src/kamihi/
 ├── bot/                        # Bot orchestration and action registry
 ├── cli/                        # Command-line interface
 ├── db/                         # Database abstraction layer
-├── templates/                  # Templating system
 ├── tg/                         # Telegram client integration
 ├── users/                      # User management and permissions
 └── web/                        # Admin web interface
@@ -93,16 +92,6 @@ Database abstraction layer for persistent storage:
 db/
 ├── __init__.py                 # Module exports
 └── mongo.py                    # MongoDB integration and utilities
-```
-
-### Templates module (`src/kamihi/templates/`)
-
-Templating system for dynamic content generation:
-
-```
-templates/
-├── __init__.py                 # Module exports
-└── templates.py                # Template processing and rendering
 ```
 
 ### Telegram module (`src/kamihi/tg/`)

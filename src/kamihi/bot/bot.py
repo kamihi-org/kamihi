@@ -29,7 +29,6 @@ from telegram import BotCommand
 
 from kamihi.base.config import KamihiSettings
 from kamihi.db.mongo import connect, disconnect
-from kamihi.templates import Templates
 from kamihi.tg import TelegramClient
 from kamihi.tg.handlers import AuthHandler
 from kamihi.tg.media import Audio, Document, Location, Photo, Video, Voice
@@ -52,12 +51,10 @@ class Bot:
 
     Attributes:
         settings (KamihiSettings): The settings for the bot.
-        templates (Templates): The templates loaded by the bot.
 
     """
 
     settings: KamihiSettings
-    templates: Templates
 
     Document: Document = Document
     Photo: Photo = Photo
@@ -194,6 +191,7 @@ class Bot:
         """
         await self._client.reset_scopes(*args, **kwargs)
 
+    # skipcq: TCV-001
     def start(self) -> None:
         """Start the bot."""
         # Cleans up the database of actions that are not present in code
@@ -225,10 +223,6 @@ class Bot:
         )
         logger.trace("Initialized web server")
         self._web.start()
-
-        # Loads the template engine
-        self.templates = Templates(self.settings.autoreload_templates)
-        logger.trace("Initialized templating engine")
 
         # Runs the client
         self._client.run()

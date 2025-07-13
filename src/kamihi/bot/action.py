@@ -10,9 +10,11 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
-from typing import Any
+from pathlib import Path
+from typing import Annotated, Any, get_args, get_origin
 
 import loguru
+from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 from loguru import logger
 from telegram import Update
 from telegram.constants import BotCommandLimit
@@ -47,6 +49,7 @@ class Action:
     _valid: bool = True
     _logger: loguru.Logger
     _db_object: RegisteredAction | None
+    _templates: Environment
 
     def __init__(self, name: str, commands: list[str], description: str, func: Callable) -> None:
         """
@@ -69,12 +72,19 @@ class Action:
         self._validate_commands()
         self._validate_function()
 
-        if self.is_valid():
-            self._db_object = self.save_to_db()
-            self._logger.debug("Successfully registered")
-        else:
+        if not self.is_valid():
             self._db_object = None
             self._logger.warning("Failed to register")
+            return
+
+        self._db_object = self.save_to_db()
+
+        self._templates = Environment(
+            loader=FileSystemLoader(Path(self._func.__code__.co_filename).parent),
+            autoescape=select_autoescape(default_for_string=False),
+        )
+
+        self._logger.debug("Successfully registered")
 
     def _validate_commands(self) -> None:
         """Filter valid commands and log invalid ones."""
@@ -112,20 +122,15 @@ class Action:
 
         # Check if the function has valid parameters
         parameters = inspect.signature(self._func).parameters
-        for name, param in parameters.items():
-            if name not in ("update", "context", "logger", "user"):
-                self._logger.warning(
-                    "Invalid parameter '{name}' in function",
-                    name=name,
-                )
-                self._valid = False
-
-            if param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
-                self._logger.warning(
-                    "Special arguments '*args' and '**kwargs' are not supported in action"
-                    " parameters, they will be ignored. Beware that this may cause issues."
-                )
-                self._valid = False
+        if any(
+            param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+            for param in parameters.values()
+        ):
+            self._logger.warning(
+                "Special arguments '*args' and '**kwargs' are not supported in action"
+                " parameters, they will be ignored. Beware that this may cause issues."
+            )
+            self._valid = False
 
     @property
     def handler(self) -> AuthHandler:
@@ -148,7 +153,8 @@ class Action:
         """Clean up the action from the database."""
         RegisteredAction.objects(name__nin=keep).delete()
 
-    async def __call__(self, update: Update, context: CallbackContext) -> None:
+    # skipcq: PY-R1000
+    async def __call__(self, update: Update, context: CallbackContext) -> None:  # noqa: C901
         """Execute the action."""
         if not self.is_valid():
             self._logger.warning("Not valid, skipping execution")
@@ -169,7 +175,29 @@ class Action:
                     value = self._logger
                 case "user":
                     value = get_user_from_telegram_id(update.effective_user.id)
+                case "templates":
+                    value = {
+                        name: self._templates.get_template(name)
+                        for name in self._templates.list_templates(extensions=".jinja")
+                    }
+                case s if s.startswith("template"):
+                    if get_origin(param.annotation) is Annotated:
+                        args = get_args(param.annotation)
+                        if len(args) == 2 and args[0] is Template and isinstance(args[1], str):
+                            value = self._templates.get_template(args[1])
+                        else:
+                            self._logger.warning(
+                                "Invalid Annotated arguments for parameter '{name}'",
+                                name=name,
+                            )
+                            value = None
+                    else:
+                        value = self._templates.get_template(f"{self.name}.md.jinja")
                 case _:
+                    self._logger.warning(
+                        "Parameter '{name}' is not supported, it will be set to None",
+                        name=name,
+                    )
                     value = None
 
             if param.kind == inspect.Parameter.POSITIONAL_ONLY:
