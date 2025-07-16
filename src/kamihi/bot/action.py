@@ -9,6 +9,7 @@ License:
 from __future__ import annotations
 
 import inspect
+import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated, Any, get_args, get_origin
@@ -20,6 +21,7 @@ from telegram import Update
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
+from kamihi.datasources import DataSource
 from kamihi.tg import send
 from kamihi.tg.handlers import AuthHandler
 from kamihi.users import get_user_from_telegram_id
@@ -45,13 +47,18 @@ class Action:
     commands: list[str]
     description: str
 
+    _folder_path: Path
     _func: Callable
-    _valid: bool = True
     _logger: loguru.Logger
     _db_object: RegisteredAction | None
-    _templates: Environment
+    _files: Environment
+    _datasources: dict[str, DataSource]
 
-    def __init__(self, name: str, commands: list[str], description: str, func: Callable) -> None:
+    _valid: bool = True
+
+    def __init__(
+        self, name: str, commands: list[str], description: str, func: Callable, datasources: dict[str, DataSource]
+    ) -> None:
         """
         Initialize the Action class.
 
@@ -60,17 +67,25 @@ class Action:
             commands (list[str]): List of commands associated.
             description (str): Description of the action.
             func (Callable): The function to be executed when the action is called.
+            datasources (dict[str, DataSource]): Dictionary of data sources available for the action.
 
         """
         self.name = name
         self.commands = commands
         self.description = description
 
+        self._folder_path = Path(func.__code__.co_filename).parent
         self._func = func
         self._logger = logger.bind(action=self.name)
+        self._datasources = datasources
+        self._files = Environment(
+            loader=FileSystemLoader(self._folder_path),
+            autoescape=select_autoescape(default_for_string=False),
+        )
 
         self._validate_commands()
         self._validate_function()
+        self._validate_requests()
 
         if not self.is_valid():
             self._db_object = None
@@ -78,11 +93,6 @@ class Action:
             return
 
         self._db_object = self.save_to_db()
-
-        self._templates = Environment(
-            loader=FileSystemLoader(Path(self._func.__code__.co_filename).parent),
-            autoescape=select_autoescape(default_for_string=False),
-        )
 
         self._logger.debug("Successfully registered")
 
@@ -132,6 +142,21 @@ class Action:
             )
             self._valid = False
 
+    def _validate_requests(self) -> None:
+        """Validate the SQL requests associated with the action."""
+        datasource_names = set(self._datasources.keys())
+        discarded_files = []
+        for file in self._requests:
+            if not any(file.endswith(f".{ds_name}.sql") for ds_name in datasource_names):
+                self._logger.warning(
+                    "Request file does not match any datasource, it will be ignored.",
+                    file=file,
+                )
+                discarded_files.append(file)
+
+        for file in discarded_files:
+            self._requests.pop(file, None)
+
     @property
     def handler(self) -> AuthHandler:
         """Construct a CommandHandler for the action."""
@@ -152,6 +177,27 @@ class Action:
     def clean_up(cls, keep: list[str]) -> None:
         """Clean up the action from the database."""
         RegisteredAction.objects(name__nin=keep).delete()
+
+    @property
+    def _requests(self) -> dict[str, Template]:
+        """Return a list of request templates associated with the action."""
+        return {name: self._files.get_template(name) for name in self._files.list_templates(extensions=".sql")}
+
+    @property
+    def _message_templates(self) -> dict[str, Template]:
+        """Return a dictionary of message templates associated with the action."""
+        return {name: self._files.get_template(name) for name in self._files.list_templates(extensions=".md.jinja")}
+
+    def _get_message_template(self, name: str) -> Template | None:
+        """Get a specific template by name."""
+        return self._message_templates.get(name)
+
+    def _get_datasource_for_file(self, name: str) -> str | None:
+        """Get the datasource name for a specific file."""
+        match = re.search(r"\.(.*?)\.", name)
+        if match:
+            return match.group(1)
+        return None
 
     # skipcq: PY-R1000
     async def __call__(self, update: Update, context: CallbackContext) -> None:  # noqa: C901
@@ -176,15 +222,12 @@ class Action:
                 case "user":
                     value = get_user_from_telegram_id(update.effective_user.id)
                 case "templates":
-                    value = {
-                        name: self._templates.get_template(name)
-                        for name in self._templates.list_templates(extensions=".jinja")
-                    }
+                    value = self._message_templates
                 case s if s.startswith("template"):
                     if get_origin(param.annotation) is Annotated:
                         args = get_args(param.annotation)
                         if len(args) == 2 and args[0] is Template and isinstance(args[1], str):
-                            value = self._templates.get_template(args[1])
+                            value = self._get_message_template(args[1])
                         else:
                             self._logger.warning(
                                 "Invalid Annotated arguments for parameter '{name}'",
@@ -192,7 +235,40 @@ class Action:
                             )
                             value = None
                     else:
-                        value = self._templates.get_template(f"{self.name}.md.jinja")
+                        value = self._get_message_template(f"{self.name}.md.jinja")
+                case "data":
+                    if get_origin(param.annotation) is Annotated:
+                        args = get_args(param.annotation)
+                        if len(args) == 2 and args[0] is Template and isinstance(args[1], str):
+                            req = args[1]
+                        else:
+                            self._logger.warning(
+                                "Invalid Annotated arguments for parameter '{name}'",
+                                name=name,
+                            )
+                            req = None
+                    else:
+                        try:
+                            req = [name for name in self._requests if name.startswith(f"{self.name}.")][0]
+                        except IndexError:
+                            self._logger.warning(
+                                "No request found for parameter '{name}', it will be set to None",
+                                name=name,
+                            )
+                            req = None
+
+                    if req:
+                        ds_name = self._get_datasource_for_file(req)
+                        if ds_name and ds_name in self._datasources:
+                            value = await self._datasources[ds_name].fetch(self._requests[req].render())
+                        else:
+                            self._logger.warning(
+                                "No datasource found for request '{req}', it will be set to None",
+                                req=req,
+                            )
+                            value = None
+                    else:
+                        value = None
                 case _:
                     self._logger.warning(
                         "Parameter '{name}' is not supported, it will be set to None",

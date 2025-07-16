@@ -115,7 +115,7 @@ class Bot:
         commands: list[str] = args or [func.__name__]
 
         # Create and store the action
-        action = Action(func.__name__, commands, description, func)
+        action = Action(func.__name__, commands, description, func, datasources=self.datasources)
         self._actions.append(action)
 
         # The action is returned so it can be used by the user if needed

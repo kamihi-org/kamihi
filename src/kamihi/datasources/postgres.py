@@ -163,14 +163,14 @@ class PostgresDataSource(DataSource):
         except asyncpg.PostgresError as e:
             raise ConnectionError("Failed to initialize connection pool") from e
 
-    async def fetch(self, request: Path) -> list[NamedRecord]:
+    async def fetch(self, request: Path | str) -> list[NamedRecord]:
         """
         Fetch data asynchronously from the PostgreSQL database.
 
         This method executes a SQL request from a file and returns the results.
 
         Args:
-            request (Path): The path to the SQL request file.
+            request (Path | str): The path to the SQL request file or the SQL query as a string.
 
         Returns:
             list[NamedRecord]: The results obtained from the SQL request.
@@ -179,13 +179,13 @@ class PostgresDataSource(DataSource):
         if not self._pool:
             raise RuntimeError("Connection pool is not initialized. Call aconnect() first.")
 
-        with self._logger.bind(request=str(request)) as log:
+        with self._logger.contextualize(request=str(request)):
             async with self._pool.acquire() as conn:
-                log.trace("Acquired connection from pool")
+                self._logger.trace("Acquired connection from pool")
                 start_time = time.perf_counter()
-                results = await conn.fetch(request.read_text())
+                results = await conn.fetch(request.read_text() if isinstance(request, Path) else request)
                 end_time = time.perf_counter()
-                log.debug(
+                self._logger.debug(
                     "Executed command",
                     rows_returned=len(results),
                     elapsed_time=f"{(end_time - start_time) * 1000:.2f} ms",
