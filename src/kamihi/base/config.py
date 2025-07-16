@@ -12,6 +12,7 @@ License:
 import os
 from enum import StrEnum
 from pathlib import Path
+from typing import Annotated
 
 import pytz
 import yaml
@@ -23,6 +24,8 @@ from pydantic_settings import (
     YamlConfigSettingsSource,
 )
 from pytz.tzinfo import DstTzInfo
+
+from kamihi.datasources import DataSourceConfig, DataSourceConfigUnion
 
 
 class LogLevel(StrEnum):
@@ -168,6 +171,9 @@ class KamihiSettings(BaseSettings):
     # Database settings
     db: DatabaseSettings = Field(default_factory=DatabaseSettings)
 
+    # Datasources settings
+    datasources: list[Annotated[DataSourceConfigUnion, Field(discriminator="type")]] = Field(default_factory=list)
+
     # Telegram settings
     token: str | None = Field(default=None, pattern=r"^\d+:[0-9A-Za-z_-]{35}$", exclude=True)
     responses: ResponseSettings = Field(default_factory=ResponseSettings)
@@ -207,6 +213,15 @@ class KamihiSettings(BaseSettings):
 
         """
         return pytz.timezone(self.timezone)
+
+    @field_validator("datasources", mode="after")
+    @classmethod
+    def _validate_datasources(cls, value: list[DataSourceConfig]) -> list[DataSourceConfig]:
+        """Check if all datasources have unique names."""
+        names = [ds.name for ds in value]
+        if len(names) != len(set(names)):
+            raise ValueError("Datasources must have unique names.")
+        return value
 
     model_config = SettingsConfigDict(
         env_prefix="KAMIHI_",
