@@ -121,7 +121,7 @@ class DataSource:
         """
         self.settings = settings
 
-    def connect(self) -> None:
+    async def connect(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003, ARG002
         """
         Connect to the data source.
 
@@ -131,34 +131,7 @@ class DataSource:
         """
         return
 
-    async def aconnect(self) -> None:
-        """
-        Asynchronously connect to the data source.
-
-        This method can be implemented, if needed, to establish a connection
-        to the data source in an asynchronous manner. By default, it does nothing.
-
-        """
-        return
-
-    def fetch(self, *args, **kwargs) -> Any:  # noqa: ANN002, ANN003, ANN401
-        """
-        Fetch data from the data source.
-
-        This method should be implemented by subclasses to define how data is retrieved
-        from the specific data source.
-
-        Args:
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-            The fetched data.
-
-        """
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    async def afetch(self, *args, **kwargs) -> Any:  # noqa: ANN002, ANN003, ANN401
+    async def fetch(self, *args, **kwargs) -> Any:  # noqa: ANN002, ANN003, ANN401
         """
         Asynchronously fetch data from the data source.
 
@@ -175,22 +148,12 @@ class DataSource:
         """
         raise NotImplementedError("Subclasses must implement this method.")
 
-    def disconnect(self) -> None:
+    async def disconnect(self) -> None:
         """
         Disconnect from the data source.
 
         This method can be implemented, if needed, to close the connection
         to the data source. By default, it does nothing.
-
-        """
-        return
-
-    async def adisconnect(self) -> None:
-        """
-        Asynchronously disconnect from the data source.
-
-        This method can be implemented, if needed, to close the connection
-        to the data source in an asynchronous manner. By default, it does nothing.
 
         """
         return

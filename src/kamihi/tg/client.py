@@ -36,16 +36,6 @@ from kamihi.base.config import KamihiSettings
 from .default_handlers import default, error
 
 
-async def _post_init(_: Application) -> None:
-    """Log the start of the bot."""
-    logger.success("Started!")
-
-
-async def _post_shutdown(_: Application) -> None:
-    """Log the shutdown of the bot."""
-    logger.success("Stopped!")
-
-
 class TelegramClient:
     """
     Telegram client class.
@@ -59,13 +49,17 @@ class TelegramClient:
     _builder: ApplicationBuilder
     _app: Application
 
-    def __init__(self, settings: KamihiSettings, handlers: list[BaseHandler]) -> None:
+    def __init__(
+        self, settings: KamihiSettings, handlers: list[BaseHandler], _post_init: callable, _post_shutdown: callable
+    ) -> None:
         """
         Initialize the Telegram client.
 
         Args:
             settings (KamihiSettings): The settings object.
             handlers (list[BaseHandler]): List of handlers to register.
+            _post_init (callable): Function to call after the application is initialized.
+            _post_shutdown (callable): Function to call after the application is shut down.
 
         """
         self._bot_settings = settings
@@ -100,16 +94,11 @@ class TelegramClient:
             self._app.add_handler(MessageHandler(filters.TEXT, default), group=1000)
         self._app.add_error_handler(error)
 
-    async def reset_scopes(self, context: CallbackContext) -> None:  # noqa: ARG002
+    async def reset_scopes(self) -> None:  # noqa: ARG002
         """
         Reset the command scopes for the bot.
 
         This method clears all command scopes and sets the default commands.
-
-        Args:
-            context (CallbackContext): The context of the callback. Not used but required for
-                this function to be registered as a job.
-
         """
         if self._bot_settings.testing:
             logger.debug("Testing mode, skipping resetting scopes")

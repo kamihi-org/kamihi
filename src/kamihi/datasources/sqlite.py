@@ -7,7 +7,7 @@ License:
 """
 
 from pathlib import Path
-from typing import ClassVar, Literal
+from typing import Literal
 
 from .datasource import DataSource, DataSourceConfig
 

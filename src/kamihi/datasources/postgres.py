@@ -11,7 +11,7 @@ import time
 from functools import cached_property
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Never
+from typing import TYPE_CHECKING, Any, Literal
 
 from loguru import logger
 
@@ -129,19 +129,7 @@ class PostgresDataSource(DataSource):
         self.settings = settings
         self._logger = logger.bind(datasource=settings.name, type=settings.type)
 
-    async def connect(self) -> None:
-        """
-        Initialize the connection pool for the PostgreSQL database.
-
-        This method is not implemented for synchronous connections.
-
-        Raises:
-            NotImplementedError: This method is not implemented for synchronous connections.
-
-        """
-        raise NotImplementedError("Synchronous connection is not implemented. Use aconnect() instead")
-
-    async def aconnect(self) -> None:
+    async def connect(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003, ARG002
         """
         Initialize the connection pool for the PostgreSQL database.
 
@@ -171,23 +159,11 @@ class PostgresDataSource(DataSource):
                 timeout=self.settings.timeout,
                 record_class=self.NamedRecord,
             )
-            self._logger.debug("Connection pool initialized successfully")
+            self._logger.info("Connected")
         except asyncpg.PostgresError as e:
             raise ConnectionError("Failed to initialize connection pool") from e
 
-    def fetch(self) -> Never:
-        """
-        Fetch data synchronously from the PostgreSQL database.
-
-        This method will raise NotImplementedError as the only suppoerted method is async.
-
-        Raises:
-            NotImplementedError: This method is not implemented for synchronous fetching.
-
-        """
-        raise NotImplementedError("Synchronous fetch is not implemented. Use afetch() instead")
-
-    async def afetch(self, request: Path) -> list[NamedRecord]:
+    async def fetch(self, request: Path) -> list[NamedRecord]:
         """
         Fetch data asynchronously from the PostgreSQL database.
 
@@ -216,19 +192,7 @@ class PostgresDataSource(DataSource):
                 )
                 return results
 
-    def disconnect(self) -> None:
-        """
-        Disconnect from the PostgreSQL database.
-
-        This method is not implemented for synchronous connections.
-
-        Raises:
-            NotImplementedError: This method is not implemented for synchronous connections.
-
-        """
-        raise NotImplementedError("Synchronous disconnect is not implemented. Use adisconnect() instead.")
-
-    async def adisconnect(self) -> None:
+    async def disconnect(self) -> None:
         """
         Disconnect from the PostgreSQL database asynchronously.
 
@@ -238,5 +202,5 @@ class PostgresDataSource(DataSource):
         if self._pool is not None:
             self._logger.trace("Closing connection pool...")
             await self._pool.close()
-            self._logger.debug("Connection pool closed successfully.")
+            self._logger.info("Disconnected")
             self._pool = None

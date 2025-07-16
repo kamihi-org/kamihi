@@ -26,6 +26,7 @@ from functools import partial
 from loguru import logger
 from multipledispatch import dispatch
 from telegram import BotCommand
+from telegram.ext import Application
 
 from kamihi.base.config import KamihiSettings
 from kamihi.datasources import DataSource
@@ -87,7 +88,7 @@ class Bot:
             datasource_class = DataSource.get_datasource_class(datasource_config.type)
             if datasource_class:
                 self.datasources[datasource_config.name] = datasource_class(datasource_config)
-                logger.debug(f"Loaded datasource", datasource=datasource_config.name, type=datasource_config.type)
+                logger.trace(f"Initialized", datasource=datasource_config.name, type=datasource_config.type)
             else:
                 logger.error(f"Unknown data source type: {datasource_config.type}")
 
@@ -177,30 +178,49 @@ class Bot:
 
         return scopes
 
-    async def _set_scopes(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003, ARG002
-        """
-        Set the command scopes for the bot.
-
-        This method sets the command scopes for the bot based on the registered
-        actions.
-
-        Args:
-            *args: Positional arguments. Not used but required for using the method as a callback.
-            **kwargs: Keyword arguments. Not used but required for using the method as a callback.
-
-        """
+    async def _set_scopes(self) -> None:  # noqa: ANN002, ANN003, ARG002
+        """Set the command scopes for the bot."""
         await self._client.set_scopes(self._scopes)
 
-    async def _reset_scopes(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003, ARG002
-        """
-        Reset the command scopes for the bot.
+    async def _reset_scopes(self) -> None:  # noqa: ANN002, ANN003, ARG002
+        """Reset the command scopes for the bot."""
+        await self._client.reset_scopes()
 
-        Args:
-            *args: Positional arguments. Not used but required for using the method as a callback.
-            **kwargs: Keyword arguments. Not used but required for using the method as a callback.
-
+    async def _post_init(self, _: Application) -> None:
         """
-        await self._client.reset_scopes(*args, **kwargs)
+        Post-initialization callback for the bot.
+
+        This method is called after the bot application is initialized. It sets
+        the command scopes and registers the handlers.
+        """
+        # Sets the command scopes for the bot
+        await self._reset_scopes()
+        await self._set_scopes()
+        logger.trace("Set command scopes")
+
+        # Connects to the datasources
+        for datasource in self.datasources.values():
+            await datasource.connect()
+
+        # Logs successful startup
+        logger.success("Bot started")
+
+    async def _post_shutdown(self, _: Application) -> None:
+        """
+        Post-shutdown callback for the bot.
+
+        This method is called after the bot application is shut down. It cleans
+        up the database and disconnects from the datasources.
+        """
+        disconnect()
+        logger.trace("Disconnected from the database")
+
+        # Disconnects from the datasources
+        for datasource in self.datasources.values():
+            await datasource.disconnect()
+
+        # Logs successful shutdown
+        logger.success("Bot stopped")
 
     # skipcq: TCV-001
     def start(self) -> None:
@@ -214,13 +234,8 @@ class Bot:
             logger.warning("No valid actions were registered. The bot will not respond to any commands.")
 
         # Loads the Telegram client
-        self._client = TelegramClient(self.settings, self._handlers)
+        self._client = TelegramClient(self.settings, self._handlers, self._post_init, self._post_shutdown)
         logger.trace("Initialized Telegram client")
-
-        # Sets the command scopes for the bot
-        self._client.register_run_once_job(self._reset_scopes, 1)
-        self._client.register_run_once_job(self._set_scopes, 2)
-        logger.trace("Initialized command scopes jobs")
 
         # Loads the web server
         self._web = KamihiWeb(
@@ -240,3 +255,4 @@ class Bot:
 
         # When the client is stopped, stop the database connection
         disconnect()
+        logger.trace("Disconnected from the database")
