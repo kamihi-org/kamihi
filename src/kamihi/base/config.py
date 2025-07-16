@@ -25,7 +25,7 @@ from pydantic_settings import (
 )
 from pytz.tzinfo import DstTzInfo
 
-from kamihi.datasources import DataSourceConfig, DataSourceConfigUnion
+from kamihi.datasources import DataSource, DataSourceConfig
 
 
 class LogLevel(StrEnum):
@@ -172,7 +172,9 @@ class KamihiSettings(BaseSettings):
     db: DatabaseSettings = Field(default_factory=DatabaseSettings)
 
     # Datasources settings
-    datasources: list[Annotated[DataSourceConfigUnion, Field(discriminator="type")]] = Field(default_factory=list)
+    datasources: list[Annotated[DataSourceConfig.union_type(), Field(discriminator="type")]] = Field(
+        default_factory=list
+    )
 
     # Telegram settings
     token: str | None = Field(default=None, pattern=r"^\d+:[0-9A-Za-z_-]{35}$", exclude=True)

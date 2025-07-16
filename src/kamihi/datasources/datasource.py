@@ -5,7 +5,7 @@ License:
     MIT
 """
 
-from typing import Any
+from typing import Any, ClassVar, Union
 
 from pydantic import BaseModel
 
@@ -24,6 +24,44 @@ class DataSourceConfig(BaseModel):
     """
 
     name: str
+    _registry: ClassVar[dict[str, type["DataSourceConfig"]]] = {}
+
+    @classmethod
+    def _build_registry(cls) -> None:
+        """Build the registry of data source configuration classes."""
+        for subclass in cls.__subclasses__():
+            type_name = subclass.model_fields.get("type").default
+            if type_name:
+                cls._registry[type_name] = subclass
+
+    @classmethod
+    def get_datasource_config_class(cls, type_name: str) -> type["DataSourceConfig"] | None:
+        """
+        Get the data source configuration class by its type name.
+
+        Args:
+            type_name (str): The type name of the data source configuration.
+
+        Returns:
+            Type[DataSourceConfig] | None: The data source configuration class if found, otherwise None.
+
+        """
+        if not cls._registry:
+            cls._build_registry()
+        return cls._registry.get(type_name)
+
+    @classmethod
+    def union_type(cls) -> Union[type["DataSourceConfig"], ...]:  # noqa: UP007
+        """
+        Get a union type of all registered data source configuration classes.
+
+        Returns:
+            Union[type[DataSourceConfig], ...]: A union type of all registered data source configuration classes.
+
+        """
+        if not cls._registry.values():
+            cls._build_registry()
+        return Union[tuple(cls._registry.values())]  # noqa: UP007
 
 
 class DataSource:
@@ -33,6 +71,45 @@ class DataSource:
     This class serves as a template for creating specific data source implementations.
     It defines the basic structure and methods that all data sources should implement.
     """
+
+    _registry: dict[str, type["DataSource"]] = {}
+
+    @classmethod
+    def _build_registry(cls) -> None:
+        """Build the registry of data source classes."""
+        for subclass in cls.__subclasses__():
+            type_name = getattr(subclass, "type", None)
+            if type_name:
+                cls._registry[type_name] = subclass
+
+    @classmethod
+    def get_datasource_class(cls, type_name: str) -> type["DataSource"] | None:
+        """
+        Get the data source class by its type name.
+
+        Args:
+            type_name (str): The type name of the data source.
+
+        Returns:
+            type[DataSource] | None: The data source class if found, otherwise None.
+
+        """
+        if not cls._registry:
+            cls._build_registry()
+        return cls._registry.get(type_name)
+
+    @classmethod
+    def union_type(cls) -> Union[type["DataSource"], ...]:  # noqa: UP007
+        """
+        Get a union type of all registered data source classes.
+
+        Returns:
+            Union[type[DataSource], ...]: A union type of all registered data source classes.
+
+        """
+        if not cls._registry:
+            cls._build_registry()
+        return Union[tuple(cls._registry.values())]  # noqa: UP007
 
     def __init__(self, settings: DataSourceConfig) -> None:
         """

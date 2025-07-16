@@ -5,16 +5,20 @@ License:
     MIT
 """
 
+from __future__ import annotations
+
 import time
 from functools import cached_property
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Literal, Never
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Never
 
-import loguru
 from loguru import logger
 
 from .datasource import DataSource, DataSourceConfig
+
+if TYPE_CHECKING:
+    from loguru import Logger
 
 
 class PostgresDataSourceConfig(DataSourceConfig):
@@ -33,7 +37,7 @@ class PostgresDataSourceConfig(DataSourceConfig):
 
     """
 
-    type: Literal["postgresql"]
+    type: Literal["postgresql"] = "postgresql"
 
     host: str = "localhost"
     port: int = 5432
@@ -53,9 +57,11 @@ class PostgresDataSource(DataSource):
     with a PostgreSQL database.
     """
 
+    type: Literal["postgresql"] = "postgresql"
+
     settings: PostgresDataSourceConfig
 
-    _logger: loguru.Logger
+    _logger: Logger
     _pool: Any = None  # Placeholder for the connection pool type, typically asyncpg.Pool
 
     @cached_property

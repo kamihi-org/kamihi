@@ -7,7 +7,7 @@ License:
 """
 
 from pathlib import Path
-from typing import Literal
+from typing import ClassVar, Literal
 
 from .datasource import DataSource, DataSourceConfig
 
@@ -25,7 +25,7 @@ class SQLiteDataSourceConfig(DataSourceConfig):
 
     """
 
-    type: Literal["sqlite"]
+    type: Literal["sqlite"] = "sqlite"
 
     path: str | Path
 
@@ -36,7 +36,14 @@ class SQLiteDataSource(DataSource):
 
     This class implements the DataSource interface for connecting to and interacting
     with an SQLite database.
+
+    Attributes:
+        type (Literal["sqlite"]): The type of the data source, which is "sqlite".
+        settings (SQLiteDataSourceConfig): The configuration for the SQLite data source.
+
     """
+
+    type: Literal["sqlite"] = "sqlite"
 
     def __init__(self, settings: SQLiteDataSourceConfig) -> None:
         """

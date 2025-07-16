@@ -9,13 +9,12 @@ from .datasource import DataSource, DataSourceConfig
 from .postgres import PostgresDataSource, PostgresDataSourceConfig
 from .sqlite import SQLiteDataSource, SQLiteDataSourceConfig
 
-DataSourceConfigUnion = PostgresDataSourceConfig | SQLiteDataSourceConfig
-
 __all__ = [
+    "DataSource",
+    "DataSourceConfig",
     "PostgresDataSource",
     "PostgresDataSourceConfig",
     "SQLiteDataSource",
     "SQLiteDataSourceConfig",
     "DataSourceConfig",
-    "DataSourceConfigUnion",
 ]
