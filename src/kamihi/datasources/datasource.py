@@ -19,7 +19,7 @@ class DataSourceConfig(BaseModel):
     for its initialization.
 
     Attributes:
-        name (str): The name of the data source.
+        name (str): The name of the data source. Must be unique across all data sources.
 
     """
 
@@ -43,6 +43,26 @@ class DataSource:
 
         """
         self.settings = settings
+
+    def connect(self) -> None:
+        """
+        Connect to the data source.
+
+        This method can be implemented, if needed, to establish a connection
+        to the data source. By default, it does nothing.
+
+        """
+        return
+
+    async def aconnect(self) -> None:
+        """
+        Asynchronously connect to the data source.
+
+        This method can be implemented, if needed, to establish a connection
+        to the data source in an asynchronous manner. By default, it does nothing.
+
+        """
+        return
 
     def fetch(self, *args, **kwargs) -> Any:  # noqa: ANN002, ANN003, ANN401
         """
@@ -77,3 +97,23 @@ class DataSource:
 
         """
         raise NotImplementedError("Subclasses must implement this method.")
+
+    def disconnect(self) -> None:
+        """
+        Disconnect from the data source.
+
+        This method can be implemented, if needed, to close the connection
+        to the data source. By default, it does nothing.
+
+        """
+        return
+
+    async def adisconnect(self) -> None:
+        """
+        Asynchronously disconnect from the data source.
+
+        This method can be implemented, if needed, to close the connection
+        to the data source in an asynchronous manner. By default, it does nothing.
+
+        """
+        return

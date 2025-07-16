@@ -47,6 +47,11 @@ dependencies = [
     "validators>=0.35.0",
 ]
 
+[project.optional-dependencies]
+postgresql = [
+    "asyncpg>=0.30.0",
+]
+
 [project.urls]
 Documentation = "https://kamihi-dev.github.io/kamihi/"
 Repository = "https://github.com/kamihi-dev/kamihi"
