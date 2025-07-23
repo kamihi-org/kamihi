@@ -318,10 +318,10 @@ async def test_action_call_templates(logot: Logot, mock_update, mock_context, tm
     logot.assert_logged(logged.debug("Successfully registered"))
 
     with pytest.raises(ApplicationHandlerStop):
-        assert action._templates.get_template("test_template.md.jinja") is not None
+        assert action._files.get_template("test_template.md.jinja") is not None
         await action(mock_update, mock_context)
         assert mock_function.assert_called_once_with(
-            templates={"test_template.md.jinja": action._templates.get_template("test_template.md.jinja")}
+            templates={"test_template.md.jinja": action._files.get_template("test_template.md.jinja")}
         )
 
 
@@ -344,7 +344,7 @@ async def test_action_call_template(logot: Logot, mock_update, mock_context, tmp
 
     with pytest.raises(ApplicationHandlerStop):
         await action(mock_update, mock_context)
-        assert mock_function.assert_called_once_with(template=action._templates.get_template("test_action.md.jinja"))
+        assert mock_function.assert_called_once_with(template=action._files.get_template("test_action.md.jinja"))
 
 
 @pytest.mark.asyncio
@@ -375,7 +375,7 @@ async def test_action_call_template_annotated(logot: Logot, mock_update, mock_co
     with pytest.raises(ApplicationHandlerStop):
         await action(mock_update, mock_context)
         assert mock_function.assert_called_once_with(
-            template=action._templates.get_template("custom_template_name.md.jinja")
+            template=action._files.get_template("custom_template_name.md.jinja")
         )
 
 
