@@ -145,10 +145,8 @@ class PostgresDataSource(DataSource):
             self._logger.warning("Connection pool already initialized, skipping re-initialization")
             return
 
-        asyncpg = self._asyncpg
-
         try:
-            self._pool = await asyncpg.create_pool(
+            self._pool = await self._asyncpg.create_pool(
                 host=self.settings.host,
                 port=self.settings.port,
                 database=self.settings.database,
@@ -160,7 +158,7 @@ class PostgresDataSource(DataSource):
                 record_class=self.NamedRecord,
             )
             self._logger.info("Connected")
-        except asyncpg.PostgresError as e:
+        except self._asyncpg.PostgresError as e:
             raise ConnectionError("Failed to initialize connection pool") from e
 
     async def fetch(self, request: Path | str) -> list[NamedRecord]:
@@ -188,7 +186,7 @@ class PostgresDataSource(DataSource):
                 self._logger.debug(
                     "Executed command",
                     rows_returned=len(results),
-                    elapsed_time=f"{(end_time - start_time) * 1000:.2f} ms",
+                    ms=round((end_time - start_time) * 1000),
                 )
                 return results
 
