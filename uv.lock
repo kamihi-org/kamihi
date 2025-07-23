@@ -3,6 +3,18 @@ revision = 2
 requires-python = ">=3.12"
 
 [[package]]
+name = "aiosqlite"
+version = "0.21.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/13/7d/8bca2bf9a247c2c5dfeec1d7a5f40db6518f88d314b8bca9da29670d2671/aiosqlite-0.21.0.tar.gz", hash = "sha256:131bb8056daa3bc875608c631c678cda73922a2d4ba8aec373b19f18c17e7aa3", size = 13454, upload-time = "2025-02-03T07:30:16.235Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f5/10/6c25ed6de94c49f88a91fa5018cb4c0f3625f31d5be9f771ebe5cc7cd506/aiosqlite-0.21.0-py3-none-any.whl", hash = "sha256:2549cf4057f95f53dcba16f2b64e8e2791d7e1adedb13197dd8ed77bb226d7d0", size = 15792, upload-time = "2025-02-03T07:30:13.6Z" },
+]
+
+[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -570,8 +582,15 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+all = [
+    { name = "aiosqlite" },
+    { name = "asyncpg" },
+]
 postgresql = [
     { name = "asyncpg" },
+]
+sqlite = [
+    { name = "aiosqlite" },
 ]
 
 [package.dev-dependencies]
@@ -594,6 +613,7 @@ docs = [
 func = [
     { name = "playwright" },
     { name = "pytest-docker-tools" },
+    { name = "pytest-lazy-fixtures" },
     { name = "pytest-playwright-asyncio" },
     { name = "telethon" },
 ]
@@ -611,7 +631,10 @@ unit = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiosqlite", marker = "extra == 'all'", specifier = ">=0.21.0" },
+    { name = "aiosqlite", marker = "extra == 'sqlite'", specifier = ">=0.21.0" },
     { name = "apprise", specifier = ">=1.9.2" },
+    { name = "asyncpg", marker = "extra == 'all'", specifier = ">=0.30.0" },
     { name = "asyncpg", marker = "extra == 'postgresql'", specifier = ">=0.30.0" },
     { name = "copier", specifier = ">=9.7.1" },
     { name = "jinja2", specifier = ">=3.1.6" },
@@ -631,7 +654,7 @@ requires-dist = [
     { name = "uvicorn", specifier = ">=0.34.2" },
     { name = "validators", specifier = ">=0.35.0" },
 ]
-provides-extras = ["postgresql"]
+provides-extras = ["postgresql", "all", "sqlite"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -653,6 +676,7 @@ docs = [
 func = [
     { name = "playwright", specifier = ">=1.52.0" },
     { name = "pytest-docker-tools", specifier = ">=3.1.9" },
+    { name = "pytest-lazy-fixtures", specifier = ">=1.3.2" },
     { name = "pytest-playwright-asyncio", specifier = ">=0.7.0" },
     { name = "telethon", specifier = ">=1.40.0" },
 ]
@@ -1433,6 +1457,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a6/2a/4d68472c2bac257c4e7389b5ca3a6b6cd7da88bce012bed321fdd31372ae/pytest_docker_tools-3.1.9.tar.gz", hash = "sha256:1b6a0cb633c20145731313335ef15bcf5571839c06726764e60cbe495324782b", size = 42824, upload-time = "2025-03-16T13:48:23.888Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/57/79/9dae84c244dabebca6a952e098d6ac9d13719b701fc5323ba6d00abc675a/pytest_docker_tools-3.1.9-py2.py3-none-any.whl", hash = "sha256:36f8e88d56d84ea177df68a175673681243dd991d2807fbf551d90f60341bfdb", size = 29268, upload-time = "2025-03-16T13:48:22.184Z" },
+]
+
+[[package]]
+name = "pytest-lazy-fixtures"
+version = "1.3.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/95/17/ff51472404b5597c8e983ff16e61101d51e63d3e19d7d3d9ace4c404ff61/pytest_lazy_fixtures-1.3.2.tar.gz", hash = "sha256:76bac6772e97173828d49551695cc6e3927c7c86c65cd19d4cccb0c14a45f821", size = 34114, upload-time = "2025-07-17T22:44:47.086Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/63/17/24fb2218d850800dfad9c12fc31935900304f2bfefedfd060230a4a684f3/pytest_lazy_fixtures-1.3.2-py3-none-any.whl", hash = "sha256:a2a7096c6a4f71f0160eaa07fe03f93c006505dd7283df075cd26fcc2b654754", size = 8389, upload-time = "2025-07-17T22:44:46.053Z" },
 ]
 
 [[package]]
