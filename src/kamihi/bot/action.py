@@ -236,28 +236,39 @@ class Action:
                             value = None
                     else:
                         value = self._get_message_template(f"{self.name}.md.jinja")
-                case "data":
+                case s if s == "data" or s.startswith("data_"):
+                    err = ""
                     if get_origin(param.annotation) is Annotated:
                         args = get_args(param.annotation)
-                        if len(args) == 2 and args[0] is Template and isinstance(args[1], str):
+                        if len(args) == 2 and isinstance(args[1], str):
                             req = args[1]
                         else:
-                            self._logger.warning(
-                                "Invalid Annotated arguments for parameter '{name}'",
-                                name=name,
-                            )
+                            err = "Invalid Annotated arguments"
                             req = None
                     else:
-                        try:
-                            req = [name for name in self._requests if name.startswith(f"{self.name}.")][0]
-                        except IndexError:
-                            self._logger.warning(
-                                "No request found for parameter '{name}', it will be set to None",
-                                name=name,
-                            )
+                        if name == "data" and len(self._requests) == 1:
+                            req = next(iter(self._requests.keys()))
+                        elif name == "data" and len(self._requests) > 1:
+                            err = "Multiple possible requests found, please specify one using Annotated"
+                            req = None
+                        elif name.startswith("data_"):
+                            req = [r for r in self._requests if r.startswith(f"{name.replace('data_', '')}.")]
+                            if not req:
+                                err = f"No request found for '{name}'"
+                                req = None
+                            elif len(req) > 1:
+                                err = f"Multiple requests found for '{name}', please specify one using Annotated"
+                                req = None
+                            else:
+                                req = req[0]
+                        else:
+                            err = f"No request found"
                             req = None
 
-                    if req:
+                    if err:
+                        self._logger.warning(err, parameter=name)
+                        value = None
+                    else:
                         ds_name = self._get_datasource_for_file(req)
                         if ds_name and ds_name in self._datasources:
                             value = await self._datasources[ds_name].fetch(self._requests[req].render())
@@ -267,8 +278,6 @@ class Action:
                                 req=req,
                             )
                             value = None
-                    else:
-                        value = None
                 case _:
                     self._logger.warning(
                         "Parameter '{name}' is not supported, it will be set to None",
