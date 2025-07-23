@@ -7,6 +7,8 @@ License:
 """
 
 import json
+import random
+import string
 from pathlib import Path
 from textwrap import dedent
 from typing import Any, AsyncGenerator, Generator
@@ -121,7 +123,7 @@ def pyproject() -> dict:
             description = "kftp"
             requires-python = ">=3.12"
             dependencies = [
-                "kamihi",
+                "kamihi[all]",
             ]
             
             [tool.uv.sources]
@@ -152,8 +154,8 @@ def models_folder() -> dict:
 def app_folder(pyproject, config_file, actions_folder, models_folder) -> dict:
     """Fixture to provide the path to the app folder."""
     res = {}
-    res.update({key: dedent(value) for key, value in pyproject.items()})
-    res.update({key: dedent(value) for key, value in config_file.items()})
+    res.update({key: dedent(value) if isinstance(value, str) else value for key, value in pyproject.items()})
+    res.update({key: dedent(value) if isinstance(value, str) else value for key, value in config_file.items()})
     res.update(
         {"actions/" + key: dedent(value) if isinstance(value, str) else value for key, value in actions_folder.items()}
     )
@@ -298,7 +300,7 @@ class KamihiContainer(Container):
         This method overrides the default wait_until_started method to ensure that
         the Kamihi container is ready before proceeding with tests.
         """
-        self.wait_for_log("Started!", "SUCCESS")
+        self.wait_for_log("Bot started", "SUCCESS")
 
     def run(self, command: str) -> CancellableStream:
         """Run a command in the Kamihi container and return the output stream."""
@@ -350,7 +352,7 @@ class KamihiContainer(Container):
         """
         self.kill(signal="SIGINT")
         self.kill(signal="SIGINT")
-        self.wait_for_log("Stopped!", "SUCCESS")
+        self.wait_for_log("Bot stopped", "SUCCESS")
 
 
 mongo_image = fetch(repository="mongo:latest")
@@ -391,6 +393,49 @@ kamihi_container = container(
     wrapper_class=KamihiContainer,
 )
 """Fixture that provides the Kamihi container."""
+
+
+@pytest.fixture(scope="session")
+def sample_postgres_password() -> str:
+    """
+    Fixture that provides a sample PostgreSQL password.
+
+    Returns:
+        str: A randomly generated password for the sample PostgreSQL container.
+    """
+    return "".join(random.choices(string.ascii_letters + string.digits, k=32))
+
+
+sample_postgres_image = fetch(repository="postgres:latest")
+"""Fixture that fetches the sample PostgreSQL container image."""
+
+sample_postgres_volume = volume(
+    scope="session", initial_content={"lego.sql": Path("tests/functional/sample_postgres_data.sql").read_bytes()}
+)
+
+sample_postgres_container = container(
+    image="{sample_postgres_image.id}",
+    environment={
+        "POSTGRES_USER": "test_user",
+        "POSTGRES_PASSWORD": "{sample_postgres_password}",
+        "POSTGRES_DB": "test_db",
+    },
+    volumes={
+        "{sample_postgres_volume.name}": {"bind": "/docker-entrypoint-initdb.d"},
+    },
+    scope="session",
+)
+
+
+@pytest.fixture
+def sample_postgres_container_ip(sample_postgres_container: Container) -> str:
+    """
+    Fixture that provides the IP address of the sample PostgreSQL container.
+
+    Returns:
+        str: The IP address of the sample PostgreSQL container.
+    """
+    return sample_postgres_container.ips.primary
 
 
 @pytest.fixture
