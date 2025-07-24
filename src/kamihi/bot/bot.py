@@ -117,11 +117,13 @@ class Bot:
         commands: list[str] = args or [func.__name__]
 
         # Create and store the action
-        with logger.bind(action=name).catch(ValueError, level="ERROR", message="Failed to register"):
+        try:
             action = Action(name, commands, description, func, datasources=self.datasources)
+        except ValueError as e:
+            logger.bind(action=name).exception("Failed to register action")
+            return func
+        else:
             self._actions.append(action)
-
-            # The action is returned so it can be used by the user if needed
             return action
 
     @dispatch([str])
