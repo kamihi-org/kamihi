@@ -112,14 +112,17 @@ class Bot:
         # Because of the dispatch decorator, the function is passed as the last argument
         args = list(args)
         func: Callable = args.pop()
+
+        name = func.__name__
         commands: list[str] = args or [func.__name__]
 
         # Create and store the action
-        action = Action(func.__name__, commands, description, func, datasources=self.datasources)
-        self._actions.append(action)
+        with logger.bind(action=name).catch(ValueError, level="ERROR", message="Failed to register"):
+            action = Action(name, commands, description, func, datasources=self.datasources)
+            self._actions.append(action)
 
-        # The action is returned so it can be used by the user if needed
-        return action
+            # The action is returned so it can be used by the user if needed
+            return action
 
     @dispatch([str])
     def action(self, *commands: str, description: str = None) -> partial[Action]:
@@ -152,14 +155,9 @@ class Bot:
         User.set_model(cls)
 
     @property
-    def _valid_actions(self) -> list[Action]:
-        """Return the valid actions for the bot."""
-        return [action for action in self._actions if action.is_valid()]
-
-    @property
     def _handlers(self) -> list[AuthHandler]:
         """Return the handlers for the bot."""
-        return [action.handler for action in self._valid_actions]
+        return [action.handler for action in self._actions]
 
     @property
     def _scopes(self) -> dict[int, list[BotCommand]]:
@@ -167,7 +165,7 @@ class Bot:
         scopes = {}
         for user in get_users():
             scopes[user.telegram_id] = []
-            for action in self._valid_actions:
+            for action in self._actions:
                 if is_user_authorized(user, action.name):
                     scopes[user.telegram_id].extend(
                         [
@@ -230,7 +228,7 @@ class Bot:
         logger.debug("Removed actions not present in code from database")
 
         # Warns the user if there are no valid actions registered
-        if not self._valid_actions:
+        if not self._actions:
             logger.warning("No valid actions were registered. The bot will not respond to any commands.")
 
         # Loads the Telegram client
