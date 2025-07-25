@@ -7,7 +7,6 @@ License:
 
 from __future__ import annotations
 
-import time
 from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
@@ -42,7 +41,7 @@ class PostgresDataSourceConfig(DataSourceConfig):
 
     host: str = "localhost"
     port: int = 5432
-    database: str = "postgres"
+    database: str = "kamihi"
     user: str = "postgres"
     password: str
     min_pool_size: int = 5
