@@ -6,7 +6,6 @@ License:
 
 """
 
-import time
 from collections.abc import Iterable
 from pathlib import Path
 from sqlite3 import Row

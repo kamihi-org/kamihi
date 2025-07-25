@@ -115,7 +115,7 @@ async def test_postgres_source_connect_error(postgres_config, mock_asyncpg):
 
 
 @pytest.mark.asyncio
-async def test_postgres_source_fetch_string_query(postgres_config, mock_asyncpg, logot: Logot):
+async def test_postgres_source_fetch_string(postgres_config, mock_asyncpg, logot: Logot):
     _, _, mock_conn = mock_asyncpg
 
     # Mock results
@@ -137,7 +137,7 @@ async def test_postgres_source_fetch_string_query(postgres_config, mock_asyncpg,
 
 
 @pytest.mark.asyncio
-async def test_postgres_source_fetch_file_query(postgres_config, mock_asyncpg, tmp_path, logot: Logot):
+async def test_postgres_source_fetch_file(postgres_config, mock_asyncpg, tmp_path, logot: Logot):
     _, _, mock_conn = mock_asyncpg
 
     # Create a temporary SQL file
@@ -161,7 +161,7 @@ async def test_postgres_source_fetch_file_query(postgres_config, mock_asyncpg, t
 
 
 @pytest.mark.asyncio
-async def test_fetch_without_connection(postgres_config):
+async def test_postgres_source_fetch_disconnected(postgres_config):
     datasource = PostgresDataSource(postgres_config)
 
     with pytest.raises(RuntimeError, match="Connection pool is not initialized"):
