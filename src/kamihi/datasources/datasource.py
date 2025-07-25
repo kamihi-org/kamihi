@@ -5,9 +5,10 @@ License:
     MIT
 """
 
-from typing import Any, ClassVar, Union
+from types import NoneType
+from typing import Annotated, Any, ClassVar, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DataSourceConfig(BaseModel):
@@ -35,23 +36,7 @@ class DataSourceConfig(BaseModel):
                 cls._registry[type_name] = subclass
 
     @classmethod
-    def get_datasource_config_class(cls, type_name: str) -> type["DataSourceConfig"] | None:
-        """
-        Get the data source configuration class by its type name.
-
-        Args:
-            type_name (str): The type name of the data source configuration.
-
-        Returns:
-            Type[DataSourceConfig] | None: The data source configuration class if found, otherwise None.
-
-        """
-        if not cls._registry:
-            cls._build_registry()
-        return cls._registry.get(type_name)
-
-    @classmethod
-    def union_type(cls) -> Union[type["DataSourceConfig"], ...]:  # noqa: UP007
+    def union_type(cls) -> type[Annotated] | NoneType:
         """
         Get a union type of all registered data source configuration classes.
 
@@ -61,7 +46,14 @@ class DataSourceConfig(BaseModel):
         """
         if not cls._registry.values():
             cls._build_registry()
-        return Union[tuple(cls._registry.values())]  # noqa: UP007
+        return (
+            Annotated[
+                Union[tuple(cls._registry.values())],  # noqa: UP007
+                Field(discriminator="type"),
+            ]
+            if cls._registry
+            else NoneType
+        )
 
 
 class DataSource:
@@ -98,19 +90,6 @@ class DataSource:
             cls._build_registry()
         return cls._registry.get(type_name)
 
-    @classmethod
-    def union_type(cls) -> Union[type["DataSource"], ...]:  # noqa: UP007
-        """
-        Get a union type of all registered data source classes.
-
-        Returns:
-            Union[type[DataSource], ...]: A union type of all registered data source classes.
-
-        """
-        if not cls._registry:
-            cls._build_registry()
-        return Union[tuple(cls._registry.values())]  # noqa: UP007
-
     def __init__(self, settings: DataSourceConfig) -> None:
         """
         Initialize the DataSource with a name.
@@ -129,7 +108,7 @@ class DataSource:
         to the data source. By default, it does nothing.
 
         """
-        return
+        raise NotImplementedError("Subclasses must implement this method.")
 
     async def fetch(self, *args, **kwargs) -> Any:  # noqa: ANN002, ANN003, ANN401
         """
@@ -156,4 +135,4 @@ class DataSource:
         to the data source. By default, it does nothing.
 
         """
-        return
+        raise NotImplementedError("Subclasses must implement this method.")

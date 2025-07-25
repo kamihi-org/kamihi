@@ -172,9 +172,7 @@ class KamihiSettings(BaseSettings):
     db: DatabaseSettings = Field(default_factory=DatabaseSettings)
 
     # Datasources settings
-    datasources: list[Annotated[DataSourceConfig.union_type(), Field(discriminator="type")]] = Field(
-        default_factory=list
-    )
+    datasources: list[DataSourceConfig.union_type()] = Field(default_factory=list)
 
     # Telegram settings
     token: str | None = Field(default=None, pattern=r"^\d+:[0-9A-Za-z_-]{35}$", exclude=True)
