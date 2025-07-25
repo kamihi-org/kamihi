@@ -14,7 +14,7 @@ from typing import Any, Literal
 
 from loguru import logger
 
-from kamihi.base.utils import requires
+from kamihi.base.utils import requires, timer
 
 from .datasource import DataSource, DataSourceConfig
 
@@ -104,17 +104,12 @@ class SQLiteDataSource(DataSource):
         if not self._db:
             raise RuntimeError("Database connection is not established. Call connect() first.")
 
-        with self._logger.contextualize(request=str(request)):
-            start_time = time.perf_counter()
+        with self._logger.contextualize(request=str(request)), timer(self._logger, "Executed command"):
             async with self._db.execute(request if isinstance(request, str) else request.read_text()) as cursor:
+                self._logger.trace("Created cursor and executed query")
                 results = await cursor.fetchall()
-            end_time = time.perf_counter()
-            self._logger.debug(
-                "Executed command",
-                rows_returned=len(results),
-                ms=round((end_time - start_time) * 1000),
-            )
-            return results
+                self._logger.trace("Fetched {results} results from datasource", results=len(results))
+        return results
 
     async def disconnect(self) -> None:
         """

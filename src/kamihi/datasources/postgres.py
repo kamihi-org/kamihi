@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from loguru import logger
 
-from kamihi.base.utils import requires
+from kamihi.base.utils import requires, timer
 
 from .datasource import DataSource, DataSourceConfig
 
@@ -158,18 +158,12 @@ class PostgresDataSource(DataSource):
         if not self._pool:
             raise RuntimeError("Connection pool is not initialized. Call connect() first.")
 
-        with self._logger.contextualize(request=str(request)):
+        with self._logger.contextualize(request=str(request)), timer(self._logger, "Executed command"):
             async with self._pool.acquire() as conn:
                 self._logger.trace("Acquired connection from pool")
-                start_time = time.perf_counter()
                 results = await conn.fetch(request.read_text() if isinstance(request, Path) else request)
-                end_time = time.perf_counter()
-                self._logger.debug(
-                    "Executed command",
-                    rows_returned=len(results),
-                    ms=round((end_time - start_time) * 1000),
-                )
-                return results
+                self._logger.trace("Fetched {results} results from datasource", results=len(results))
+        return results
 
     async def disconnect(self) -> None:
         """

@@ -8,10 +8,15 @@ License:
 import functools
 import importlib
 import re
-from collections.abc import Callable
-from typing import Any
+import time
+from collections.abc import Callable, Generator
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any
 
 from telegram.constants import BotCommandLimit
+
+if TYPE_CHECKING:
+    from loguru import Logger
 
 COMMAND_REGEX = re.compile(rf"^[a-z0-9_]{{{BotCommandLimit.MIN_COMMAND},{BotCommandLimit.MAX_COMMAND}}}$")
 
@@ -57,3 +62,23 @@ def requires(group: str) -> Callable:
         return wrapper
 
     return decorator
+
+
+@contextmanager
+def timer(logger, message: str, level: str = "DEBUG") -> Generator[None, Any, None]:  # noqa: ANN001
+    """
+    Context manager to log the time taken for a block of code.
+
+    Args:
+        logger (Logger): The logger instance to use for logging.
+        message (str): The message to log with the elapsed time.
+        level (str): The logging level to use (default is "DEBUG").
+
+    Returns:
+        Generator[None, Any, None]: A generator that yields control to the block of code being timed.
+
+    """
+    start_time = time.perf_counter()
+    yield
+    end_time = time.perf_counter()
+    logger.bind(ms=round((end_time - start_time) * 1000)).log(level, message)
