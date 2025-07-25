@@ -22,13 +22,13 @@ from telegram import Update
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
+from kamihi.base.utils import COMMAND_REGEX
 from kamihi.datasources import DataSource
 from kamihi.tg import send
 from kamihi.tg.handlers import AuthHandler
 from kamihi.users import get_user_from_telegram_id
 
 from .models import RegisteredAction
-from .utils import COMMAND_REGEX
 
 
 class Action:

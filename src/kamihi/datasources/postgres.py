@@ -10,10 +10,11 @@ from __future__ import annotations
 import time
 from functools import cached_property
 from pathlib import Path
-from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal
 
 from loguru import logger
+
+from kamihi.base.utils import requires
 
 from .datasource import DataSource, DataSourceConfig
 
@@ -65,33 +66,10 @@ class PostgresDataSource(DataSource):
     _pool: Any = None  # Placeholder for the connection pool type, typically asyncpg.Pool
 
     @cached_property
-    def _asyncpg(self) -> ModuleType:
-        """
-        Import the asyncpg library for PostgreSQL database interaction.
-
-        This method attempts to import the asyncpg library, which is required for
-        asynchronous database operations. If the library is not installed, it raises
-        a RuntimeError with instructions on how to install it.
-
-        Raises:
-            RuntimeError: If asyncpg is not installed.
-
-        """
-        try:
-            import asyncpg
-        except ImportError as e:
-            raise RuntimeError(
-                "To use the PostgreSQL data source, "
-                "you must install kamihi with the 'postgres' extra: "
-                "`uv add kamihi[postgres]`"
-            ) from e
-
-        return asyncpg
-
-    @cached_property
+    @requires("postgresql")
     def NamedRecord(self) -> type:  # noqa: N802
         """Create a named record class for asyncpg records."""
-        asyncpg = self._asyncpg
+        import asyncpg
 
         class NamedRecord(asyncpg.Record):
             """
@@ -117,6 +95,7 @@ class PostgresDataSource(DataSource):
 
         return NamedRecord
 
+    @requires("postgresql")
     def __init__(self, settings: PostgresDataSourceConfig) -> None:
         """
         Initialize the PostgresDataSource with the provided configuration.
@@ -141,12 +120,14 @@ class PostgresDataSource(DataSource):
             ConnectionError: If the connection pool initialization fails.
 
         """
+        import asyncpg
+
         if self._pool is not None:
             self._logger.warning("Connection pool already initialized, skipping re-initialization")
             return
 
         try:
-            self._pool = await self._asyncpg.create_pool(
+            self._pool = await asyncpg.create_pool(
                 host=self.settings.host,
                 port=self.settings.port,
                 database=self.settings.database,
@@ -158,7 +139,7 @@ class PostgresDataSource(DataSource):
                 record_class=self.NamedRecord,
             )
             self._logger.info("Connected")
-        except self._asyncpg.PostgresError as e:
+        except asyncpg.PostgresError as e:
             raise ConnectionError("Failed to initialize connection pool") from e
 
     async def fetch(self, request: Path | str) -> list[NamedRecord]:
@@ -175,7 +156,7 @@ class PostgresDataSource(DataSource):
 
         """
         if not self._pool:
-            raise RuntimeError("Connection pool is not initialized. Call aconnect() first.")
+            raise RuntimeError("Connection pool is not initialized. Call connect() first.")
 
         with self._logger.contextualize(request=str(request)):
             async with self._pool.acquire() as conn:

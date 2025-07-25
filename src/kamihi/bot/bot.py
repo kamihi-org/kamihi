@@ -87,8 +87,13 @@ class Bot:
         for datasource_config in self.settings.datasources:
             datasource_class = DataSource.get_datasource_class(datasource_config.type)
             if datasource_class:
-                self.datasources[datasource_config.name] = datasource_class(datasource_config)
-                logger.trace(f"Initialized", datasource=datasource_config.name, type=datasource_config.type)
+                try:
+                    self.datasources[datasource_config.name] = datasource_class(datasource_config)
+                except ImportError as e:
+                    msg = f"Failed to initialize data source '{datasource_config.name}' of type '{datasource_config.type}' because of missing dependencies."
+                    raise ImportError(msg) from e
+                else:
+                    logger.trace(f"Initialized", datasource=datasource_config.name, type=datasource_config.type)
             else:
                 logger.error(f"Unknown data source type: {datasource_config.type}")
 

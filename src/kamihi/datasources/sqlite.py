@@ -8,13 +8,13 @@ License:
 
 import time
 from collections.abc import Iterable
-from functools import cached_property
 from pathlib import Path
 from sqlite3 import Row
-from types import ModuleType
 from typing import Any, Literal
 
 from loguru import logger
+
+from kamihi.base.utils import requires
 
 from .datasource import DataSource, DataSourceConfig
 
@@ -54,29 +54,7 @@ class SQLiteDataSource(DataSource):
 
     _db: Any = None  # Placeholder for the database connection
 
-    @cached_property
-    def _aiosqlite(self) -> ModuleType:
-        """
-        Lazy load the aiosqlite module.
-
-        This method is used to import the aiosqlite module only when it is needed,
-        which can help reduce startup time and memory usage if the module is not used.
-
-        Returns:
-            ModuleType: The aiosqlite module.
-
-        """
-        try:
-            import aiosqlite
-        except ImportError as e:
-            raise RuntimeError(
-                "To use the SQLite data source, "
-                "you must install kamihi with the 'sqlite' extra: "
-                "`uv add kamihi[sqlite]`"
-            ) from e
-
-        return aiosqlite
-
+    @requires("sqlite")
     def __init__(self, settings: SQLiteDataSourceConfig) -> None:
         """
         Initialize the SQLiteDataSource with the provided configuration.
@@ -97,14 +75,16 @@ class SQLiteDataSource(DataSource):
         settings. It uses the aiosqlite library for asynchronous database operations.
 
         """
+        import aiosqlite
+
         if self._db is not None:
             self._logger.warning("Already connected, skipping re-initialization")
             return
 
         try:
-            self._db = await self._aiosqlite.connect(self.settings.path)
+            self._db = await aiosqlite.connect(self.settings.path)
             self._logger.info("Connected")
-        except self._aiosqlite.Error as e:
+        except aiosqlite.Error as e:
             raise RuntimeError("Failed to connect") from e
 
     async def fetch(self, request: Path | str) -> Iterable[Row]:
