@@ -185,7 +185,7 @@ class Action:
             if len(args) == 2 and args[0] is Template and isinstance(args[1], str):
                 res = self._message_templates.get(args[1])
             else:
-                msg = f"Invalid Annotated arguments"
+                msg = "Invalid Annotated arguments"
                 raise ValueError(msg)
         else:
             res = self._message_templates.get(f"{self.name}.md.jinja")
@@ -193,7 +193,7 @@ class Action:
         if res:
             return res
 
-        msg = f"No template found"
+        msg = "No template found"
         raise ValueError(msg)
 
     async def _param_data(self, name: str, param: Parameter) -> list:
@@ -203,10 +203,10 @@ class Action:
             if len(args) == 2 and isinstance(args[1], str):
                 req = args[1]
                 if req not in self._requests:
-                    msg = f"Request file specified in annotation not found"
+                    msg = "Request file specified in annotation not found"
                     raise ValueError(msg)
             else:
-                msg = f"Invalid Annotated arguments"
+                msg = "Invalid Annotated arguments"
                 raise ValueError(msg)
         else:
             if name == "data" and len(self._requests) == 1:
@@ -226,7 +226,7 @@ class Action:
 
                 req = req[0]
             else:
-                msg = f"Default request not found"
+                msg = "Default request not found"
                 raise ValueError(msg)
 
         ds_name = re.search(r"\.(.*?)\.", req)
