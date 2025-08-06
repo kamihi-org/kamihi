@@ -65,7 +65,7 @@ def requires(group: str) -> Callable:
 
 
 @contextmanager
-def timer(logger, message: str, level: str = "DEBUG") -> Generator[None, Any, None]:  # noqa: ANN001
+def timer(logger: "Logger", message: str, level: str = "DEBUG") -> Generator[None, Any, None]:  # noqa: ANN001
     """
     Context manager to log the time taken for a block of code.
 
