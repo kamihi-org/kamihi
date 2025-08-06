@@ -27,7 +27,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --group unit
+          uv sync --group unit --extra all
 
       - name: Run tests
         run: |
