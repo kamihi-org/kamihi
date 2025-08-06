@@ -146,7 +146,8 @@ class Bot:
         """
         return functools.partial(self.action, *commands, description=description)
 
-    def user_class(self, cls: type[User]) -> type[User]:
+    @staticmethod
+    def user_class(cls: type[User]) -> type[User]:
         """
         Set the user model for the bot.
 
