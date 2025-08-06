@@ -89,7 +89,7 @@ async def test_postgres_source_connect(postgres_config, mock_asyncpg, logot: Log
 
 @pytest.mark.asyncio
 async def test_postgres_source_connect_already_connected(postgres_config, mock_asyncpg, logot: Logot):
-    mock_asyncpg_module, mock_pool, _ = mock_asyncpg
+    mock_asyncpg_module, _, _ = mock_asyncpg
     datasource = PostgresDataSource(postgres_config)
     await datasource.connect()
 
@@ -179,9 +179,7 @@ async def test_postgres_source_disconnect(postgres_config, mock_asyncpg, logot: 
 
 
 @pytest.mark.asyncio
-async def test_postgres_source_disconnect_already_disconnected(postgres_config, mock_asyncpg, logot: Logot):
-    _, mock_pool, _ = mock_asyncpg
-
+async def test_postgres_source_disconnect_already_disconnected(postgres_config, logot: Logot):
     datasource = PostgresDataSource(postgres_config)
     await datasource.connect()
     await datasource.disconnect()

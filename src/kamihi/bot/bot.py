@@ -121,7 +121,7 @@ class Bot:
         # Create and store the action
         try:
             action = Action(name, commands, description, func, datasources=self.datasources)
-        except ValueError as e:
+        except ValueError:
             logger.bind(action=name).exception("Failed to register action")
             return func
         else:
