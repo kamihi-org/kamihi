@@ -5,11 +5,8 @@ License:
     MIT
 """
 
-import asyncpg
 import pytest
 from unittest.mock import patch, AsyncMock
-from pathlib import Path
-import sys
 from logot import Logot, logged
 
 from kamihi.datasources.postgres import PostgresDataSourceConfig, PostgresDataSource
