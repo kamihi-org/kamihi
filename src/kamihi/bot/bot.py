@@ -124,9 +124,9 @@ class Bot:
         except ValueError:
             logger.bind(action=name).exception("Failed to register action")
             return func
-        else:
-            self._actions.append(action)
-            return action
+
+        self._actions.append(action)
+        return action
 
     @dispatch([str])
     def action(self, *commands: str, description: str = None) -> partial[Action]:
