@@ -16,5 +16,4 @@ __all__ = [
     "PostgresDataSourceConfig",
     "SQLiteDataSource",
     "SQLiteDataSourceConfig",
-    "DataSourceConfig",
 ]
