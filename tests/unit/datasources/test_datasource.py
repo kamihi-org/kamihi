@@ -15,24 +15,28 @@ import pytest
 from kamihi.datasources import DataSource, DataSourceConfig
 
 
+# skipcq: PYL-W0223
 class MockDataSourceConfig(DataSourceConfig):
     """Mock DataSourceConfig for testing."""
 
     type: str = "mock"
 
 
+# skipcq: PYL-W0223
 class MockDataSource(DataSource):
     """Mock DataSource for testing."""
 
     type = "mock"
 
 
+# skipcq: PYL-W0223
 class AnotherMockDataSourceConfig(DataSourceConfig):
     """Another mock DataSourceConfig for testing."""
 
     type: str = "another_mock"
 
 
+# skipcq: PYL-W0223
 class AnotherMockDataSource(DataSource):
     """Another mock DataSource for testing."""
 
