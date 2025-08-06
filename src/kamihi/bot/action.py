@@ -124,7 +124,7 @@ class Action:
         """Validate the function passed."""
         # Check if the function is a coroutine
         if not inspect.iscoroutinefunction(self._func):
-            msg = "Function should be a coroutine, define it with 'async def {name}()' instead of 'def {name}()'."
+            msg = f"Function should be a coroutine, define it with 'async def {self.name}()' instead of 'def {self.name}()'."
             raise ValueError(msg)
 
         # Check if the function has valid parameters

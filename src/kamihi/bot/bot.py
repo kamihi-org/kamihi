@@ -86,16 +86,13 @@ class Bot:
         # Loads the datasources
         for datasource_config in self.settings.datasources:
             datasource_class = DataSource.get_datasource_class(datasource_config.type)
-            if datasource_class:
-                try:
-                    self.datasources[datasource_config.name] = datasource_class(datasource_config)
-                except ImportError as e:
-                    msg = f"Failed to initialize data source '{datasource_config.name}' of type '{datasource_config.type}' because of missing dependencies."
-                    raise ImportError(msg) from e
-                else:
-                    logger.trace(f"Initialized", datasource=datasource_config.name, type=datasource_config.type)
+            try:
+                self.datasources[datasource_config.name] = datasource_class(datasource_config)
+            except ImportError as e:
+                msg = f"Failed to initialize data source '{datasource_config.name}' of type '{datasource_config.type}' because of missing dependencies."
+                raise ImportError(msg) from e
             else:
-                logger.error(f"Unknown data source type: {datasource_config.type}")
+                logger.trace(f"Initialized", datasource=datasource_config.name, type=datasource_config.type)
 
     @dispatch([(str, Callable)])
     def action(self, *args: str | Callable, description: str = None) -> Action | Callable:
@@ -149,7 +146,7 @@ class Bot:
         """
         return functools.partial(self.action, *commands, description=description)
 
-    def user_class(self, cls: type[User]) -> None:  # skipcq: PYL-R0201
+    def user_class(self, cls: type[User]) -> type[User]:
         """
         Set the user model for the bot.
 
@@ -160,6 +157,7 @@ class Bot:
 
         """
         User.set_model(cls)
+        return cls
 
     @property
     def _handlers(self) -> list[AuthHandler]:
@@ -183,11 +181,11 @@ class Bot:
 
         return scopes
 
-    async def _set_scopes(self) -> None:  # noqa: ANN002, ANN003, ARG002
+    async def _set_scopes(self) -> None:
         """Set the command scopes for the bot."""
         await self._client.set_scopes(self._scopes)
 
-    async def _reset_scopes(self) -> None:  # noqa: ANN002, ANN003, ARG002
+    async def _reset_scopes(self) -> None:
         """Reset the command scopes for the bot."""
         await self._client.reset_scopes()
 
