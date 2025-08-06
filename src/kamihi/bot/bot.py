@@ -89,7 +89,10 @@ class Bot:
             try:
                 self.datasources[datasource_config.name] = datasource_class(datasource_config)
             except ImportError as e:
-                msg = f"Failed to initialize data source '{datasource_config.name}' of type '{datasource_config.type}' because of missing dependencies."
+                msg = (
+                    f"Failed to initialize data source '{datasource_config.name}' "
+                    f"of type '{datasource_config.type}' because of missing dependencies."
+                )
                 raise ImportError(msg) from e
             else:
                 logger.trace("Initialized", datasource=datasource_config.name, type=datasource_config.type)
