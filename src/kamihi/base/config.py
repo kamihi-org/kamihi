@@ -12,7 +12,6 @@ License:
 import os
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated
 
 import pytz
 import yaml
@@ -25,7 +24,7 @@ from pydantic_settings import (
 )
 from pytz.tzinfo import DstTzInfo
 
-from kamihi.datasources import DataSource, DataSourceConfig
+from kamihi.datasources import DataSourceConfig
 
 
 class LogLevel(StrEnum):

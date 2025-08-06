@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from inspect import Signature, Parameter
 from typing import Annotated
-from unittest.mock import AsyncMock, patch, Mock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from jinja2 import Template, Environment, DictLoader
