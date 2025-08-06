@@ -150,7 +150,7 @@ def test_action_init_function_varargs(logot: Logot, parameter, kind) -> None:
     mock_function.__signature__ = Signature([Parameter(name=parameter, kind=kind)])
     mock_function.__code__.co_filename = __file__
 
-    with pytest.raises(ValueError, match="Function parameters '\*args' and '\*\*kwargs' are not supported"):
+    with pytest.raises(ValueError, match=r"Function parameters '\*args' and '\*\*kwargs' are not supported"):
         Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
 
 
