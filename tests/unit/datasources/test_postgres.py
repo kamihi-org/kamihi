@@ -71,6 +71,16 @@ def test_postgres_config_custom():
     assert config.name == "custom_db"
 
 
+def test_postgres_source_named_record(postgres_config, mock_asyncpg):
+    mock_asyncpg_module, _, _ = mock_asyncpg
+
+    datasource = PostgresDataSource(postgres_config)
+    named_record_class = datasource.NamedRecord
+
+    # Verify that the NamedRecord class is created correctly
+    assert issubclass(named_record_class, mock_asyncpg_module.Record)
+
+
 @pytest.mark.asyncio
 async def test_postgres_source_connect(postgres_config, mock_asyncpg, logot: Logot):
     mock_asyncpg_module, _, _ = mock_asyncpg

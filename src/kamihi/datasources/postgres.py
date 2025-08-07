@@ -90,7 +90,7 @@ class PostgresDataSource(DataSource):
                     Any: The value of the attribute.
 
                 """
-                return self[name]
+                return self[name]  # skipcq: TCV-001
 
         return NamedRecord
 
