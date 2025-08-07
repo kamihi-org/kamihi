@@ -309,6 +309,42 @@ def test_timezone_obj_property():
     assert settings.timezone_obj == pytz.timezone("UTC")
 
 
+def test_validate_datasources():
+    """Test that the datasources validation checks for unique names."""
+    # Create a settings object with unique datasource names
+    settings = KamihiSettings(
+        datasources=[
+            {"name": "db1", "type": "sqlite", "path": "db1.sqlite"},
+            {"name": "db2", "type": "sqlite", "path": "db1.sqlite"},
+        ]
+    )
+    assert len(settings.datasources) == 2  # Should pass validation
+
+
+def test_validate_datasources_duplicate():
+    """Test that the datasources validation raises an error for duplicate names."""
+    # Create a settings object with duplicate datasource names
+    with pytest.raises(ValidationError):
+        KamihiSettings(
+            datasources=[
+                {"name": "sqlite", "type": "sqlite", "path": "db1.sqlite"},
+                {"name": "sqlite", "type": "sqlite", "path": "db1.sqlite"},  # Duplicate name
+            ]
+        )
+
+
+def test_validate_datasources_duplicate_different_types():
+    """Test that the datasources validation still raises an error for duplicate names even with different types."""
+    # Create a settings object with duplicate datasource names but different types
+    with pytest.raises(ValidationError):
+        KamihiSettings(
+            datasources=[
+                {"name": "db1", "type": "sqlite", "path": "db1.sqlite"},
+                {"name": "db1", "type": "postgresql", "password": "1234567890"},
+            ]
+        )
+
+
 @pytest.mark.parametrize(
     "host",
     [
