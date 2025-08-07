@@ -168,6 +168,41 @@ class Bot:
         """Return the handlers for the bot."""
         return [action.handler for action in self._actions]
 
+    # skipcq: TCV-001
+    def start(self) -> None:
+        """Start the bot."""
+        # Cleans up the database of actions that are not present in code
+        Action.clean_up([action.name for action in self._actions])
+        logger.debug("Removed actions not present in code from database")
+
+        # Warns the user if there are no valid actions registered
+        if not self._actions:
+            logger.warning("No valid actions were registered. The bot will not respond to any commands.")
+
+        # Loads the Telegram client
+        self._client = TelegramClient(self.settings, self._handlers, self._post_init, self._post_shutdown)
+        logger.trace("Initialized Telegram client")
+
+        # Loads the web server
+        self._web = KamihiWeb(
+            self.settings.web,
+            self.settings.db,
+            {
+                "after_create": [self._set_scopes],
+                "after_edit": [self._set_scopes],
+                "after_delete": [self._set_scopes],
+            },
+        )
+        logger.trace("Initialized web server")
+        self._web.start()
+
+        # Runs the client
+        self._client.run()
+
+        # When the client is stopped, stop the database connection
+        disconnect()
+        logger.trace("Disconnected from the database")
+
     @property
     def _scopes(self) -> dict[int, list[BotCommand]]:
         """Return the current scopes for the bot."""
@@ -228,38 +263,3 @@ class Bot:
 
         # Logs successful shutdown
         logger.success("Bot stopped")
-
-    # skipcq: TCV-001
-    def start(self) -> None:
-        """Start the bot."""
-        # Cleans up the database of actions that are not present in code
-        Action.clean_up([action.name for action in self._actions])
-        logger.debug("Removed actions not present in code from database")
-
-        # Warns the user if there are no valid actions registered
-        if not self._actions:
-            logger.warning("No valid actions were registered. The bot will not respond to any commands.")
-
-        # Loads the Telegram client
-        self._client = TelegramClient(self.settings, self._handlers, self._post_init, self._post_shutdown)
-        logger.trace("Initialized Telegram client")
-
-        # Loads the web server
-        self._web = KamihiWeb(
-            self.settings.web,
-            self.settings.db,
-            {
-                "after_create": [self._set_scopes],
-                "after_edit": [self._set_scopes],
-                "after_delete": [self._set_scopes],
-            },
-        )
-        logger.trace("Initialized web server")
-        self._web.start()
-
-        # Runs the client
-        self._client.run()
-
-        # When the client is stopped, stop the database connection
-        disconnect()
-        logger.trace("Disconnected from the database")

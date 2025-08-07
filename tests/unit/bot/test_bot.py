@@ -18,9 +18,9 @@ from kamihi.bot.bot import Bot
 
 from logot import Logot, logged
 
-from kamihi.datasources import SQLiteDataSourceConfig, SQLiteDataSource, DataSourceConfig
+from kamihi.datasources import SQLiteDataSourceConfig, SQLiteDataSource
 from kamihi.tg.handlers import AuthHandler
-from kamihi.users import User, Permission
+from kamihi.users.models import User, Permission
 
 
 @pytest.fixture
