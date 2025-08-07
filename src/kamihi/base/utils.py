@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any
 from telegram.constants import BotCommandLimit
 
 if TYPE_CHECKING:
-    from loguru import Logger
+    from loguru import Logger  # skipcq: TCV-001
 
 COMMAND_REGEX = re.compile(rf"^[a-z0-9_]{{{BotCommandLimit.MIN_COMMAND},{BotCommandLimit.MAX_COMMAND}}}$")
 

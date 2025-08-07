@@ -18,7 +18,7 @@ from kamihi.base.utils import requires, timer
 from .datasource import DataSource, DataSourceConfig
 
 if TYPE_CHECKING:
-    from loguru import Logger
+    from loguru import Logger  # skipcq: TCV-001
 
 
 class PostgresDataSourceConfig(DataSourceConfig):
