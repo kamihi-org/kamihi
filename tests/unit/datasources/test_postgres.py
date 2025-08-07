@@ -179,6 +179,7 @@ async def test_postgres_source_disconnect(postgres_config, mock_asyncpg, logot: 
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_asyncpg")
 async def test_postgres_source_disconnect_already_disconnected(postgres_config, logot: Logot):
     datasource = PostgresDataSource(postgres_config)
     await datasource.connect()
