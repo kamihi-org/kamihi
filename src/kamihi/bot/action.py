@@ -261,7 +261,7 @@ class Action:
                     case s if s == "data" or s.startswith("data_"):
                         value = await self._param_data(name, param)
                     case _:
-                        msg = f"Parameter is not supported"
+                        msg = "Parameter is not supported"
                         raise ValueError(msg)
 
             if param.kind == inspect.Parameter.POSITIONAL_ONLY:
