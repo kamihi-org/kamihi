@@ -24,11 +24,13 @@ nav:
           - Load configuration from environment variables: guides/config/load-environment.md
           - Set configuration values programmatically: guides/config/load-prog.md
           - Configure the timezone: guides/config/configure-timezone.md
+          - Configure datasources: guides/config/configure-datasources.md
       - Actions:
           - Set commands: guides/actions/commands.md
-          - Use templates: guides/actions/use-templates.md
           - Send multiple messages: guides/actions/send-multiple.md
           - Send media and files: guides/actions/send-media.md
+          - Use templates: guides/actions/use-templates.md
+          - Use datasources: guides/actions/use-datasources.md
       - Users:
           - Extend the user model: guides/users/extend.md
       - Logging:
@@ -43,11 +45,14 @@ nav:
   - API reference
   - Developers:
       - dev/index.md
-      - Architecture: dev/architecture.md
-      - Directories: dev/directories.md
-      - Development setup: dev/setup.md
-      - Testing: dev/testing.md
-      - Documentation: dev/documentation.md
+      - General guides:
+          - Architecture: dev/architecture.md
+          - Directories: dev/directories.md
+          - Development setup: dev/setup.md
+          - Testing: dev/testing.md
+          - Documentation: dev/documentation.md
+      - Specific guides:
+          - Create a new datasource type: dev/guides/create-datasource.md
   - About:
       - Changelog: changelog.md
       - Special thanks: thanks.md
