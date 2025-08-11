@@ -14,6 +14,7 @@ from kamihi.datasources.postgres import PostgresDataSourceConfig, PostgresDataSo
 
 @pytest.fixture
 def postgres_config():
+    """Fixture to provide a PostgresDataSourceConfig instance."""
     return PostgresDataSourceConfig(
         name="test_db", host="test.host", database="test_db", user="test_user", password="test_password"
     )
@@ -21,6 +22,7 @@ def postgres_config():
 
 @pytest.fixture
 def mock_asyncpg():
+    """Fixture to mock the asyncpg module and its connection behavior."""
     # Create the mock module
     import asyncpg
 
@@ -41,6 +43,7 @@ def mock_asyncpg():
 
 
 def test_postgres_config_defaults():
+    """Test the default configuration for PostgresDataSourceConfig."""
     config = PostgresDataSourceConfig(name="test", password="password123")
     assert config.type == "postgresql"
     assert config.host == "localhost"
@@ -54,6 +57,7 @@ def test_postgres_config_defaults():
 
 
 def test_postgres_config_custom():
+    """Test custom configuration for PostgresDataSourceConfig."""
     config = PostgresDataSourceConfig(
         name="custom_db",
         host="db.example.com",
@@ -72,6 +76,7 @@ def test_postgres_config_custom():
 
 
 def test_postgres_source_named_record(postgres_config, mock_asyncpg):
+    """Test that the NamedRecord class is created correctly."""
     mock_asyncpg_module, _, _ = mock_asyncpg
 
     datasource = PostgresDataSource(postgres_config)
@@ -83,6 +88,7 @@ def test_postgres_source_named_record(postgres_config, mock_asyncpg):
 
 @pytest.mark.asyncio
 async def test_postgres_source_connect(postgres_config, mock_asyncpg, logot: Logot):
+    """Test connecting to the Postgres database."""
     mock_asyncpg_module, _, _ = mock_asyncpg
 
     datasource = PostgresDataSource(postgres_config)
@@ -99,6 +105,7 @@ async def test_postgres_source_connect(postgres_config, mock_asyncpg, logot: Log
 
 @pytest.mark.asyncio
 async def test_postgres_source_connect_already_connected(postgres_config, mock_asyncpg, logot: Logot):
+    """Test connecting to the Postgres database when already connected."""
     mock_asyncpg_module, _, _ = mock_asyncpg
     datasource = PostgresDataSource(postgres_config)
     await datasource.connect()
@@ -113,6 +120,7 @@ async def test_postgres_source_connect_already_connected(postgres_config, mock_a
 
 @pytest.mark.asyncio
 async def test_postgres_source_connect_error(postgres_config, mock_asyncpg):
+    """Test connecting to the Postgres database when an error occurs."""
     mock_asyncpg_module, _, _ = mock_asyncpg
     mock_asyncpg_module.create_pool.side_effect = mock_asyncpg_module.PostgresError("Connection failed")
 
@@ -123,6 +131,7 @@ async def test_postgres_source_connect_error(postgres_config, mock_asyncpg):
 
 @pytest.mark.asyncio
 async def test_postgres_source_fetch_string(postgres_config, mock_asyncpg, logot: Logot):
+    """Test fetching data from Postgres using a string query."""
     _, _, mock_conn = mock_asyncpg
 
     # Mock results
@@ -145,6 +154,7 @@ async def test_postgres_source_fetch_string(postgres_config, mock_asyncpg, logot
 
 @pytest.mark.asyncio
 async def test_postgres_source_fetch_file(postgres_config, mock_asyncpg, tmp_path, logot: Logot):
+    """Test fetching data from Postgres using a SQL file."""
     _, _, mock_conn = mock_asyncpg
 
     # Create a temporary SQL file
@@ -169,6 +179,7 @@ async def test_postgres_source_fetch_file(postgres_config, mock_asyncpg, tmp_pat
 
 @pytest.mark.asyncio
 async def test_postgres_source_fetch_disconnected(postgres_config):
+    """Test fetching data from Postgres when not connected."""
     datasource = PostgresDataSource(postgres_config)
 
     with pytest.raises(RuntimeError, match="Connection pool is not initialized"):
@@ -177,6 +188,7 @@ async def test_postgres_source_fetch_disconnected(postgres_config):
 
 @pytest.mark.asyncio
 async def test_postgres_source_disconnect(postgres_config, mock_asyncpg, logot: Logot):
+    """Test disconnecting from the Postgres database."""
     _, mock_pool, _ = mock_asyncpg
 
     datasource = PostgresDataSource(postgres_config)
@@ -191,6 +203,7 @@ async def test_postgres_source_disconnect(postgres_config, mock_asyncpg, logot: 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_asyncpg")
 async def test_postgres_source_disconnect_already_disconnected(postgres_config, logot: Logot):
+    """Test disconnecting from Postgres when already disconnected."""
     datasource = PostgresDataSource(postgres_config)
     await datasource.connect()
     await datasource.disconnect()
