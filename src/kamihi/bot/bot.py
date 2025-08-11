@@ -94,8 +94,8 @@ class Bot:
                     f"of type '{datasource_config.type}' because of missing dependencies."
                 )
                 raise ImportError(msg) from e
-            else:
-                logger.trace("Initialized", datasource=datasource_config.name, type=datasource_config.type)
+
+            logger.trace("Initialized", datasource=datasource_config.name, type=datasource_config.type)
 
     @dispatch([(str, Callable)])
     def action(self, *args: str | Callable, description: str = None) -> Action | Callable:
