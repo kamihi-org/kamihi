@@ -185,6 +185,8 @@ logot_capturer = "logot.loguru.LoguruCapturer"
 log_cli = true
 timeout = 60
 timeout_func_only = true
+retries = 3
+retry_delay = 60
 
 [tool.coverage.run]
 omit = [
