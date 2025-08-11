@@ -11,13 +11,11 @@ from __future__ import annotations
 import inspect
 
 import pytest
+from logot import Logot, logged
 
 from kamihi.base.config import KamihiSettings
 from kamihi.bot.action import Action
 from kamihi.bot.bot import Bot
-
-from logot import Logot, logged
-
 from kamihi.datasources import SQLiteDataSourceConfig, SQLiteDataSource
 from kamihi.tg.handlers import AuthHandler
 from kamihi.users.models import User, Permission
@@ -252,7 +250,7 @@ def test_bot_handlers(mock_bot: Bot) -> None:
     async def test_action() -> None:
         pass
 
-    assert type(mock_bot._handlers[-1]) == AuthHandler
+    assert type(mock_bot._handlers[-1]) is AuthHandler
     assert mock_bot._handlers[-1].name == "test_action"
 
 
