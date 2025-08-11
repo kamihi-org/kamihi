@@ -5,6 +5,7 @@ License:
     MIT
 """
 
+from pathlib import Path
 from types import NoneType
 from typing import Annotated, Any, ClassVar, Union
 
@@ -100,7 +101,7 @@ class DataSource:
         """
         self.settings = settings
 
-    async def connect(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003, ARG002
+    async def connect(self) -> None:  # noqa: ANN002, ANN003, ARG002
         """
         Connect to the data source.
 
@@ -110,7 +111,7 @@ class DataSource:
         """
         raise NotImplementedError("Subclasses must implement this method.")
 
-    async def fetch(self, *args, **kwargs) -> Any:  # noqa: ANN002, ANN003, ANN401
+    async def fetch(self, request: Path | str) -> Any:  # noqa: ANN002, ANN003, ANN401
         """
         Asynchronously fetch data from the data source.
 
@@ -118,8 +119,8 @@ class DataSource:
         from the specific data source in an asynchronous manner.
 
         Args:
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
+            request (Path | str): The request to fetch data from the data source.
+                This could be a file path, URL, or any identifier for the data.
 
         Returns:
             The fetched data.
