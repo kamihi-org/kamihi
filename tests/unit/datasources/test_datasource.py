@@ -161,7 +161,7 @@ async def test_datasource_fetch():
     datasource = DataSource(config)
 
     with pytest.raises(NotImplementedError, match="Subclasses must implement this method"):
-        await datasource.fetch()
+        await datasource.fetch("SELECT * FROM test_table")
 
 
 @pytest.mark.asyncio
