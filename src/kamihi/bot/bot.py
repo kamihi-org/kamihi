@@ -150,18 +150,18 @@ class Bot:
         return functools.partial(self.action, *commands, description=description)
 
     @staticmethod
-    def user_class(cls: type[User]) -> type[User]:
+    def user_class(user_class: type[User]) -> type[User]:
         """
         Set the user model for the bot.
 
         This method is used as a decorator to set the user model for the bot.
 
         Args:
-            cls: The user class to set.
+            user_class: The user class to set.
 
         """
-        User.set_model(cls)
-        return cls
+        User.set_model(user_class)
+        return user_class
 
     @property
     def _handlers(self) -> list[AuthHandler]:
