@@ -22,6 +22,7 @@ Examples:
 import functools
 from collections.abc import Callable
 from functools import partial
+from typing import Any
 
 from loguru import logger
 from multipledispatch import dispatch
@@ -168,6 +169,31 @@ class Bot:
         """Return the handlers for the bot."""
         return [action.handler for action in self._actions]
 
+    @property
+    def _scopes(self) -> dict[int, list[BotCommand]]:
+        """Return the current scopes for the bot."""
+        scopes = {}
+        for user in get_users():
+            scopes[user.telegram_id] = []
+            for action in self._actions:
+                if is_user_authorized(user, action.name):
+                    scopes[user.telegram_id].extend(
+                        [
+                            BotCommand(command=command, description=action.description or f"Action {action.name}")
+                            for command in action.commands
+                        ]
+                    )
+
+        return scopes
+
+    async def _set_scopes(self, *_args: Any) -> None:  # noqa: ANN401
+        """Set the command scopes for the bot."""
+        await self._client.set_scopes(self._scopes)
+
+    async def _reset_scopes(self, *_args: Any) -> None:  # noqa: ANN401
+        """Reset the command scopes for the bot."""
+        await self._client.reset_scopes()
+
     # skipcq: TCV-001
     def start(self) -> None:
         """Start the bot."""
@@ -202,31 +228,6 @@ class Bot:
         # When the client is stopped, stop the database connection
         disconnect()
         logger.trace("Disconnected from the database")
-
-    @property
-    def _scopes(self) -> dict[int, list[BotCommand]]:
-        """Return the current scopes for the bot."""
-        scopes = {}
-        for user in get_users():
-            scopes[user.telegram_id] = []
-            for action in self._actions:
-                if is_user_authorized(user, action.name):
-                    scopes[user.telegram_id].extend(
-                        [
-                            BotCommand(command=command, description=action.description or f"Action {action.name}")
-                            for command in action.commands
-                        ]
-                    )
-
-        return scopes
-
-    async def _set_scopes(self) -> None:
-        """Set the command scopes for the bot."""
-        await self._client.set_scopes(self._scopes)
-
-    async def _reset_scopes(self) -> None:
-        """Reset the command scopes for the bot."""
-        await self._client.reset_scopes()
 
     async def _post_init(self, _: Application) -> None:
         """
