@@ -10,16 +10,17 @@ from __future__ import annotations
 
 from inspect import Signature, Parameter
 from typing import Annotated
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock
 
 import pytest
-from jinja2 import Template
+from jinja2 import Template, Environment, DictLoader
 from logot import Logot, logged
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CommandHandler
 
 from kamihi.bot.models import RegisteredAction
 from kamihi.bot.action import Action
+from kamihi.datasources import DataSource, DataSourceConfig
 from kamihi.tg.handlers import AuthHandler
 from kamihi.users import User
 
@@ -29,9 +30,61 @@ async def func():
 
 
 @pytest.fixture
-def action() -> Action:
+def mock_action_files() -> dict[str, str]:
+    """Fixture for mock action files."""
+    return {
+        "test_action.md.jinja": "Test template content",
+        "test_action.test.sql": "SELECT * FROM start",
+    }
+
+
+@pytest.fixture
+def mock_jinja_env(mock_action_files):
+    """Fixture for Jinja environment."""
+    return Environment(loader=DictLoader(mock_action_files), autoescape=True)
+
+
+@pytest.fixture
+def mock_datasource():
+    """Fixture for mock datasource."""
+
+    def _mock_datasource(name: str = "test") -> DataSource:
+        """Create a mock datasource."""
+        ds = DataSource(DataSourceConfig(name=name))
+        ds.fetch = AsyncMock()
+        ds.fetch.return_value = [("test", "data")]
+        return ds
+
+    return _mock_datasource
+
+
+@pytest.fixture
+def action(monkeypatch, mock_jinja_env, mock_datasource) -> Action:
     """Fixture for Action class."""
-    return Action(name="test_action", commands=["test"], description="Test action", func=func)
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=func,
+        datasources={"test": mock_datasource()},
+    )
+    return action
+
+
+@pytest.fixture
+def mock_function():
+    """Fixture to construct a mock function."""
+
+    def _mock_function(signature: Signature = Signature([])):
+        """Create a mock function with a given signature."""
+        mock_func = AsyncMock()
+        mock_func.__signature__ = signature
+        mock_func.__name__ = "mock_function"
+        mock_func.__code__.co_filename = __file__
+        return mock_func
+
+    return _mock_function
 
 
 def test_action_init(logot: Logot, action: Action) -> None:
@@ -49,22 +102,17 @@ def test_action_init(logot: Logot, action: Action) -> None:
     [
         "/test",
         "invalid command",
-        "",
+        " ",
         "a" * (BotCommandLimit.MAX_COMMAND + 1),
         "TEST",
     ],
 )
 def test_action_init_invalid_commands(logot: Logot, command: str) -> None:
     """Test the Action class initialization with invalid commands."""
-    action = Action(name="test_action", commands=[command], description="Test action", func=func)
+    with pytest.raises(ValueError, match="No valid commands were given"):
+        Action(name="test_action", commands=[command], description="Test action", func=func)
 
-    logot.assert_logged(logged.warning(f"Command '/{command}' was discarded%s"))
-    logot.assert_logged(logged.warning("No valid commands were given"))
-    logot.assert_logged(logged.warning("Failed to register"))
-
-    assert action.name == "test_action"
-    assert action.commands == []
-    assert action.is_valid() is False
+    logot.assert_logged(logged.warning(f"Command '{command}' was discarded%s"))
 
 
 def test_action_init_duplicate_commands(logot: Logot) -> None:
@@ -77,7 +125,6 @@ def test_action_init_duplicate_commands(logot: Logot) -> None:
     assert action.commands == ["test"]
     assert action.description == "Test action"
     assert action._func is func
-    assert action.is_valid() is True
 
 
 def test_action_init_sync_function(logot: Logot):
@@ -86,16 +133,8 @@ def test_action_init_sync_function(logot: Logot):
     def test_func():
         raise NotImplementedError()
 
-    action = Action(name="test_action", commands=["test"], description="Test action", func=test_func)
-
-    logot.assert_logged(logged.warning("Function should be a coroutine%s"))
-    logot.assert_logged(logged.warning("Failed to register"))
-
-    assert action.name == "test_action"
-    assert action.commands == ["test"]
-    assert action.description == "Test action"
-    assert action._func is test_func
-    assert action.is_valid() is False
+    with pytest.raises(ValueError, match="Function should be a coroutine"):
+        Action(name="test_action", commands=["test"], description="Test action", func=test_func)
 
 
 @pytest.mark.parametrize(
@@ -109,13 +148,24 @@ def test_action_init_function_varargs(logot: Logot, parameter, kind) -> None:
     """Test the Action class initialization with function signature."""
     mock_function = AsyncMock()
     mock_function.__signature__ = Signature([Parameter(name=parameter, kind=kind)])
+    mock_function.__code__.co_filename = __file__
 
-    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
+    with pytest.raises(ValueError, match=r"Function parameters '\*args' and '\*\*kwargs' are not supported"):
+        Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
 
-    logot.assert_logged(logged.warning("Special arguments '*args' and '**kwargs' are not supported%s"))
-    logot.assert_logged(logged.warning("Failed to register"))
 
-    assert action.is_valid() is False
+@pytest.mark.parametrize(
+    "mock_action_files",
+    [
+        {
+            "start.md.jinja": "Test template content",
+            "start.not_test.sql": "SELECT * FROM test",
+        },
+    ],
+)
+def test_action_init_invalid_requests(logot: Logot, mock_action_files, action: Action) -> None:
+    """Test the Action class initialization with invalid request files."""
+    logot.assert_logged(logged.warning("Request file does not match any datasource, it will be ignored."))
 
 
 def test_action_handler():
@@ -128,14 +178,6 @@ def test_action_handler():
     assert action.handler.name == "test_action"
     assert action.handler.handler.callback == action.__call__
     assert list(action.handler.handler.commands) == ["test"]
-
-
-def test_action_handler_invalid():
-    """Test the Action class handler property when invalid."""
-    action = Action(name="test_action", commands=["test"], description="Test action", func=func)
-    action._valid = False
-
-    assert action.handler is None
 
 
 def test_action_save_to_db():
@@ -169,6 +211,734 @@ def test_action_clean_up():
     assert RegisteredAction.objects(name="test_action_2").first() is None
 
 
+def test_action_param_template(
+    logot: Logot, monkeypatch, mock_update, mock_context, mock_function, mock_jinja_env, mock_datasource
+) -> None:
+    """Test the Action class fill_parameters method with template parameter."""
+    name = "template"
+    param = Parameter(name, kind=Parameter.POSITIONAL_OR_KEYWORD)
+    f = mock_function(Signature([param]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource()},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    template = action._param_template(name, param)
+    assert template.render() == "Test template content"
+
+
+@pytest.mark.parametrize("mock_action_files", [{}])
+def test_action_param_template_not_found(
+    logot: Logot,
+    monkeypatch,
+    mock_update,
+    mock_context,
+    mock_function,
+    mock_jinja_env,
+    mock_datasource,
+    mock_action_files,
+) -> None:
+    """Test the Action class _param_template method when template file is not found."""
+    name = "template"
+    param = Parameter(name, kind=Parameter.POSITIONAL_OR_KEYWORD)
+    f = mock_function(Signature([param]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource()},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ValueError, match="No template found"):
+        action._param_template(name, param)
+
+
+def test_action_param_template_annotated(
+    logot: Logot, monkeypatch, mock_update, mock_context, mock_function, mock_jinja_env, mock_datasource
+) -> None:
+    """Test the Action class fill_parameters method with annotated template parameter."""
+    name = "template"
+    param = Parameter(
+        name, kind=Parameter.POSITIONAL_OR_KEYWORD, annotation=Annotated[Template, "test_action.md.jinja"]
+    )
+    f = mock_function(Signature([param]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource()},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    template = action._param_template(name, param)
+    assert template.render() == "Test template content"
+
+
+def test_action_param_template_annotated_not_found(
+    logot: Logot, monkeypatch, mock_update, mock_context, mock_function, mock_jinja_env, mock_datasource
+) -> None:
+    """Test the Action class _param_template method with annotated template parameter not found."""
+    name = "template"
+    param = Parameter(name, kind=Parameter.POSITIONAL_OR_KEYWORD, annotation=Annotated[Template, "not_found.md.jinja"])
+    f = mock_function(Signature([param]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource()},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ValueError, match="No template found"):
+        action._param_template(name, param)
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    [
+        Annotated[Template, "invalid", "extra"],
+        Annotated[Template, 123],
+        Annotated["test_action.md.jinja", Template],
+    ],
+    ids=["extra_args", "invalid_type", "wrong_order"],
+)
+def test_action_param_template_annotated_invalid(
+    logot: Logot, monkeypatch, mock_update, mock_context, mock_function, mock_jinja_env, mock_datasource, annotation
+) -> None:
+    """Test the Action class _param_template method with invalid annotated template parameter."""
+    name = "template"
+    param = Parameter(name, kind=Parameter.POSITIONAL_OR_KEYWORD, annotation=annotation)
+    f = mock_function(Signature([param]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource()},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ValueError, match="Invalid Annotated arguments"):
+        action._param_template(name, param)
+
+
+@pytest.mark.asyncio
+async def test_action_param_data(
+    logot: Logot, monkeypatch, mock_update, mock_context, mock_function, mock_jinja_env, mock_datasource
+) -> None:
+    """Test the Action class fill_parameters method with data parameter."""
+    name = "data"
+    param = Parameter(name, kind=Parameter.POSITIONAL_OR_KEYWORD)
+    f = mock_function(Signature([param]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource()},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    data = await action._param_data(name, param)
+    assert data == [("test", "data")]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "mock_action_files",
+    [
+        {
+            "test_action.md.jinja": "Test template content",
+            "test_action.test.sql": "SELECT * FROM start",
+            "test_action.test2.sql": "SELECT * FROM start",
+        },
+    ],
+)
+async def test_action_param_data_multiple_found(
+    logot: Logot,
+    monkeypatch,
+    mock_update,
+    mock_context,
+    mock_function,
+    mock_jinja_env,
+    mock_datasource,
+    mock_action_files,
+) -> None:
+    """Test the Action class _param_data method when multiple data sources are found."""
+    name = "data"
+    param = Parameter(name, kind=Parameter.POSITIONAL_OR_KEYWORD)
+    f = mock_function(Signature([param]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource(), "test2": mock_datasource("test2")},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ValueError, match="Multiple requests found, specify one using annotated pattern"):
+        await action._param_data(name, param)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "mock_action_files",
+    [
+        {
+            "test_action.md.jinja": "Test template content",
+        },
+    ],
+)
+async def test_action_param_data_not_found(
+    logot: Logot,
+    monkeypatch,
+    mock_update,
+    mock_context,
+    mock_function,
+    mock_jinja_env,
+    mock_datasource,
+    mock_action_files,
+) -> None:
+    """Test the Action class _param_data method when no data sources are found."""
+    name = "data"
+    param = Parameter(name, kind=Parameter.POSITIONAL_OR_KEYWORD)
+    f = mock_function(Signature([param]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource()},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ValueError, match="Default request not found"):
+        await action._param_data(name, param)
+
+
+@pytest.mark.asyncio
+async def test_action_param_data_annotated(
+    logot: Logot, monkeypatch, mock_update, mock_context, mock_function, mock_jinja_env, mock_datasource
+) -> None:
+    """Test the Action class fill_parameters method with annotated data parameter."""
+    name = "data"
+    param = Parameter(name, kind=Parameter.POSITIONAL_OR_KEYWORD, annotation=Annotated[list, "test_action.test.sql"])
+    f = mock_function(Signature([param]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource()},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    data = await action._param_data(name, param)
+    assert data == [("test", "data")]
+
+
+@pytest.mark.asyncio
+async def test_action_param_data_annotated_not_found(
+    logot: Logot, monkeypatch, mock_update, mock_context, mock_function, mock_jinja_env, mock_datasource
+) -> None:
+    """Test the Action class _param_data method with annotated data parameter not found."""
+    name = "data"
+    param = Parameter(name, kind=Parameter.POSITIONAL_OR_KEYWORD, annotation=Annotated[list, "not_found.test.sql"])
+    f = mock_function(Signature([param]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource()},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ValueError, match="Request file specified in annotation not found"):
+        await action._param_data(name, param)
+
+
+@pytest.mark.asyncio
+async def test_action_param_data_annotated_custom_arg_name(
+    logot: Logot, monkeypatch, mock_update, mock_context, mock_function, mock_jinja_env, mock_datasource
+) -> None:
+    """Test the Action class _param_data method with annotated data parameter with custom argument name."""
+    name = "data_in"
+    param = Parameter(name, kind=Parameter.POSITIONAL_OR_KEYWORD, annotation=Annotated[list, "test_action.test.sql"])
+    f = mock_function(Signature([param]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource()},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    data = await action._param_data(name, param)
+    assert data == [("test", "data")]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "annotation",
+    [
+        Annotated[list, "invalid", "extra"],
+        Annotated[list, 123],
+        Annotated["test_action.test.sql", list],
+    ],
+    ids=["extra_args", "invalid_type", "wrong_order"],
+)
+async def test_action_param_data_annotated_invalid(
+    logot: Logot, monkeypatch, mock_update, mock_context, mock_function, mock_jinja_env, mock_datasource, annotation
+) -> None:
+    """Test the Action class _param_data method with invalid annotated data parameter."""
+    name = "data"
+    param = Parameter(name, kind=Parameter.POSITIONAL_OR_KEYWORD, annotation=annotation)
+    f = mock_function(Signature([param]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource()},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ValueError, match="Invalid Annotated arguments"):
+        await action._param_data(name, param)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "mock_action_files",
+    [
+        {
+            "test_action.md.jinja": "Test template content",
+            "in.test.sql": "SELECT * FROM start",
+        }
+    ],
+)
+async def test_action_param_data_custom_arg_name(
+    logot: Logot,
+    monkeypatch,
+    mock_update,
+    mock_context,
+    mock_function,
+    mock_jinja_env,
+    mock_datasource,
+    mock_action_files,
+) -> None:
+    """Test the Action class _param_data method with custom argument name."""
+    name = "data_in"
+    param = Parameter(name, kind=Parameter.POSITIONAL_OR_KEYWORD)
+    f = mock_function(Signature([param]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource()},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    data = await action._param_data(name, param)
+    assert data == [("test", "data")]
+
+
+@pytest.mark.asyncio
+async def test_action_param_data_custom_arg_name_not_found(
+    logot: Logot, monkeypatch, mock_update, mock_context, mock_function, mock_jinja_env, mock_datasource
+) -> None:
+    """Test the Action class _param_data method with custom argument name not found."""
+    name = "data_in"
+    param = Parameter(name, kind=Parameter.POSITIONAL_OR_KEYWORD)
+    f = mock_function(Signature([param]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource()},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ValueError, match="No request found matching 'in'"):
+        await action._param_data(name, param)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "mock_action_files",
+    [
+        {
+            "test_action.md.jinja": "Test template content",
+            "in.test.sql": "SELECT * FROM start",
+            "in.test2.sql": "SELECT * FROM start",
+        },
+    ],
+)
+async def test_action_param_data_custom_arg_name_multiple_found(
+    logot: Logot,
+    monkeypatch,
+    mock_update,
+    mock_context,
+    mock_function,
+    mock_jinja_env,
+    mock_datasource,
+    mock_action_files,
+) -> None:
+    """Test the Action class _param_data method with custom argument name when multiple data sources are found."""
+    name = "data_in"
+    param = Parameter(name, kind=Parameter.POSITIONAL_OR_KEYWORD)
+    f = mock_function(Signature([param]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource(), "test2": mock_datasource("test2")},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    with pytest.raises(ValueError, match="Multiple requests matching 'in' found, specify one using annotated pattern"):
+        await action._param_data(name, param)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "kind",
+    [
+        Parameter.POSITIONAL_OR_KEYWORD,
+        Parameter.POSITIONAL_ONLY,
+        Parameter.KEYWORD_ONLY,
+    ],
+)
+async def test_action_fill_parameters_update(logot: Logot, mock_update, mock_context, kind, mock_function) -> None:
+    """Test the Action class fill_parameters method with update parameter."""
+    f = mock_function(Signature([Parameter("update", kind=kind)]))
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=f)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    pos_args, keyword_args = await action._fill_parameters(mock_update, mock_context)
+
+    if kind == Parameter.POSITIONAL_ONLY:
+        assert pos_args == [mock_update]
+        assert keyword_args == {}
+    else:
+        assert pos_args == []
+        assert keyword_args == {"update": mock_update}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "kind",
+    [
+        Parameter.POSITIONAL_OR_KEYWORD,
+        Parameter.POSITIONAL_ONLY,
+        Parameter.KEYWORD_ONLY,
+    ],
+)
+async def test_action_fill_parameters_context(logot: Logot, mock_update, mock_context, kind, mock_function) -> None:
+    """Test the Action class fill_parameters method with context parameter."""
+    f = mock_function(Signature([Parameter("context", kind=kind)]))
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=f)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    pos_args, keyword_args = await action._fill_parameters(mock_update, mock_context)
+
+    if kind == Parameter.POSITIONAL_ONLY:
+        assert pos_args == [mock_context]
+        assert keyword_args == {}
+    else:
+        assert pos_args == []
+        assert keyword_args == {"context": mock_context}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "kind",
+    [
+        Parameter.POSITIONAL_OR_KEYWORD,
+        Parameter.POSITIONAL_ONLY,
+        Parameter.KEYWORD_ONLY,
+    ],
+)
+async def test_action_fill_parameters_logger(logot: Logot, mock_update, mock_context, kind, mock_function) -> None:
+    """Test the Action class fill_parameters method with logger parameter."""
+    f = mock_function(Signature([Parameter("logger", kind=kind)]))
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=f)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    pos_args, keyword_args = await action._fill_parameters(mock_update, mock_context)
+
+    if kind == Parameter.POSITIONAL_ONLY:
+        assert pos_args == [action._logger]
+        assert keyword_args == {}
+    else:
+        assert pos_args == []
+        assert keyword_args == {"logger": action._logger}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "kind",
+    [
+        Parameter.POSITIONAL_OR_KEYWORD,
+        Parameter.POSITIONAL_ONLY,
+        Parameter.KEYWORD_ONLY,
+    ],
+)
+async def test_action_fill_parameters_user(
+    logot: Logot, monkeypatch, mock_update, mock_context, kind, mock_function
+) -> None:
+    """Test the Action class fill_parameters method with user parameter."""
+    f = mock_function(Signature([Parameter("user", kind=kind)]))
+
+    mock_user = User(telegram_id=123456789, is_admin=True)
+
+    mock_get_user = Mock()
+    mock_get_user.return_value = mock_user
+    monkeypatch.setattr("kamihi.bot.action.get_user_from_telegram_id", mock_get_user)
+
+    mock_update.effective_user.id = 123456789
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=f)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    pos_args, keyword_args = await action._fill_parameters(mock_update, mock_context)
+
+    if kind == Parameter.POSITIONAL_ONLY:
+        assert pos_args == [mock_user]
+        assert keyword_args == {}
+    else:
+        assert pos_args == []
+        assert keyword_args == {"user": mock_user}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "kind",
+    [
+        Parameter.POSITIONAL_OR_KEYWORD,
+        Parameter.POSITIONAL_ONLY,
+        Parameter.KEYWORD_ONLY,
+    ],
+)
+async def test_action_fill_parameters_templates(
+    logot: Logot, mock_update, mock_context, kind, mock_function, tmp_path
+) -> None:
+    """Test the Action class fill_parameters method with templates parameter."""
+    f = mock_function(Signature([Parameter("templates", kind=kind)]))
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=f)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    pos_args, keyword_args = await action._fill_parameters(mock_update, mock_context)
+
+    if kind == Parameter.POSITIONAL_ONLY:
+        assert pos_args == [action._message_templates]
+        assert keyword_args == {}
+    else:
+        assert pos_args == []
+        assert keyword_args == {"templates": action._message_templates}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "kind",
+    [
+        Parameter.POSITIONAL_OR_KEYWORD,
+        Parameter.POSITIONAL_ONLY,
+        Parameter.KEYWORD_ONLY,
+    ],
+)
+async def test_action_fill_parameters_template(
+    logot: Logot, monkeypatch, mock_update, mock_context, kind, mock_function, tmp_path, mock_jinja_env
+) -> None:
+    """Test the Action class fill_parameters method with template parameter."""
+    f = mock_function(Signature([Parameter("template", kind=kind)]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(name="test_action", commands=["test"], description="Test action", func=f)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    pos_args, keyword_args = await action._fill_parameters(mock_update, mock_context)
+
+    if kind == Parameter.POSITIONAL_ONLY:
+        assert pos_args == [mock_jinja_env.get_template("test_action.md.jinja")]
+        assert keyword_args == {}
+    else:
+        assert pos_args == []
+        assert keyword_args == {"template": mock_jinja_env.get_template("test_action.md.jinja")}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "kind",
+    [
+        Parameter.POSITIONAL_OR_KEYWORD,
+        Parameter.POSITIONAL_ONLY,
+        Parameter.KEYWORD_ONLY,
+    ],
+)
+async def test_action_fill_parameters_data(
+    logot: Logot, monkeypatch, mock_update, mock_context, kind, mock_function, mock_jinja_env, mock_datasource
+) -> None:
+    """Test the Action class fill_parameters method with data parameter."""
+    f = mock_function(Signature([Parameter("data", kind=kind)]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource()},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    pos_args, keyword_args = await action._fill_parameters(mock_update, mock_context)
+
+    if kind == Parameter.POSITIONAL_ONLY:
+        assert pos_args == [[("test", "data")]]
+        assert keyword_args == {}
+    else:
+        assert pos_args == []
+        assert keyword_args == {"data": [("test", "data")]}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "kind",
+    [
+        Parameter.POSITIONAL_OR_KEYWORD,
+        Parameter.POSITIONAL_ONLY,
+        Parameter.KEYWORD_ONLY,
+    ],
+)
+@pytest.mark.parametrize(
+    "mock_action_files",
+    [
+        {
+            "test_action.md.jinja": "Test template content",
+            "in.test.sql": "SELECT * FROM start",
+        }
+    ],
+)
+async def test_action_fill_parameters_data_custom_arg_name(
+    logot: Logot,
+    monkeypatch,
+    mock_update,
+    mock_context,
+    kind,
+    mock_function,
+    mock_jinja_env,
+    mock_datasource,
+    mock_action_files,
+) -> None:
+    """Test the Action class fill_parameters method with data parameter with custom argument name."""
+    f = mock_function(Signature([Parameter("data_in", kind=kind)]))
+
+    monkeypatch.setattr("kamihi.bot.action.Environment", lambda *a, **k: mock_jinja_env)
+    action = Action(
+        name="test_action",
+        commands=["test"],
+        description="Test action",
+        func=f,
+        datasources={"test": mock_datasource()},
+    )
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    pos_args, keyword_args = await action._fill_parameters(mock_update, mock_context)
+
+    if kind == Parameter.POSITIONAL_ONLY:
+        assert pos_args == [[("test", "data")]]
+        assert keyword_args == {}
+    else:
+        assert pos_args == []
+        assert keyword_args == {"data_in": [("test", "data")]}
+
+
+@pytest.mark.asyncio
+async def test_action_fill_parameters_invalid_parameter(logot: Logot, mock_update, mock_context, mock_function) -> None:
+    """Test the Action class fill_parameters method with invalid parameter."""
+    f = mock_function(Signature([Parameter("invalid", kind=Parameter.POSITIONAL_OR_KEYWORD)]))
+
+    action = Action(name="test_action", commands=["test"], description="Test action", func=f)
+
+    logot.assert_logged(logged.debug("Successfully registered"))
+
+    await action._fill_parameters(mock_update, mock_context)
+
+    logot.assert_logged(logged.warning("Failed to fill parameter, it will be set to None"))
+
+
 @pytest.mark.asyncio
 async def test_action_call(logot: Logot, mock_update, mock_context) -> None:
     """Test the Action class call method."""
@@ -186,258 +956,6 @@ async def test_action_call(logot: Logot, mock_update, mock_context) -> None:
         await action(mock_update, mock_context)
 
     mock_function.assert_called_once()
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "kind",
-    [
-        Parameter.POSITIONAL_OR_KEYWORD,
-        Parameter.POSITIONAL_ONLY,
-        Parameter.KEYWORD_ONLY,
-    ],
-)
-async def test_action_call_update(logot: Logot, mock_update, mock_context, kind) -> None:
-    """Test the Action class call method with update parameter."""
-    mock_function = AsyncMock()
-    mock_function.__signature__ = Signature([Parameter("update", kind=kind)])
-    mock_function.__name__ = "test_function"
-    mock_function.return_value = "test result"
-    mock_function.__code__.co_filename = __file__
-
-    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
-
-    logot.assert_logged(logged.debug("Successfully registered"))
-
-    with pytest.raises(ApplicationHandlerStop):
-        await action(mock_update, mock_context)
-        assert mock_function.assert_called_once_with(update=mock_update)
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "kind",
-    [
-        Parameter.POSITIONAL_OR_KEYWORD,
-        Parameter.POSITIONAL_ONLY,
-        Parameter.KEYWORD_ONLY,
-    ],
-)
-async def test_action_call_context(logot: Logot, mock_update, mock_context, kind) -> None:
-    """Test the Action class call method with context parameter."""
-    mock_function = AsyncMock()
-    mock_function.__signature__ = Signature([Parameter("context", kind=kind)])
-    mock_function.__name__ = "test_function"
-    mock_function.return_value = "test result"
-    mock_function.__code__.co_filename = __file__
-
-    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
-
-    logot.assert_logged(logged.debug("Successfully registered"))
-
-    with pytest.raises(ApplicationHandlerStop):
-        await action(mock_update, mock_context)
-        assert mock_function.assert_called_once_with(context=mock_context)
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "kind",
-    [
-        Parameter.POSITIONAL_OR_KEYWORD,
-        Parameter.POSITIONAL_ONLY,
-        Parameter.KEYWORD_ONLY,
-    ],
-)
-async def test_action_call_logger(logot: Logot, mock_update, mock_context, kind) -> None:
-    """Test the Action class call method with logger parameter."""
-    mock_function = AsyncMock()
-    mock_function.__signature__ = Signature([Parameter("logger", kind=kind)])
-    mock_function.__name__ = "test_function"
-    mock_function.return_value = "test result"
-    mock_function.__code__.co_filename = __file__
-
-    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
-
-    logot.assert_logged(logged.debug("Successfully registered"))
-
-    with pytest.raises(ApplicationHandlerStop):
-        await action(mock_update, mock_context)
-        assert mock_function.assert_called_once_with(logger=action._logger)
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "kind",
-    [
-        Parameter.POSITIONAL_OR_KEYWORD,
-        Parameter.POSITIONAL_ONLY,
-        Parameter.KEYWORD_ONLY,
-    ],
-)
-async def test_action_call_user(logot: Logot, mock_update, mock_context, kind) -> None:
-    """Test the Action class call method with user parameter."""
-    mock_function = AsyncMock()
-    mock_function.__signature__ = Signature([Parameter("user", kind=kind)])
-    mock_function.__name__ = "test_function"
-    mock_function.return_value = "test result"
-    mock_function.__code__.co_filename = __file__
-
-    mock_user = User(telegram_id=123456789, is_admin=True)
-
-    mock_get_user = AsyncMock()
-    mock_get_user.return_value = mock_user
-    patch("kamihi.bot.action.get_user_from_telegram_id", mock_get_user)
-
-    mock_update.effective_user.id = 123456789
-
-    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
-
-    logot.assert_logged(logged.debug("Successfully registered"))
-
-    with pytest.raises(ApplicationHandlerStop):
-        await action(mock_update, mock_context)
-        assert mock_function.assert_called_once_with(user=mock_user)
-
-
-@pytest.mark.asyncio
-async def test_action_call_templates(logot: Logot, mock_update, mock_context, tmp_path) -> None:
-    """Test the Action class call method with templates parameter."""
-    mock_function = AsyncMock()
-    mock_function.__signature__ = Signature([Parameter("templates", kind=Parameter.POSITIONAL_OR_KEYWORD)])
-    mock_function.__name__ = "test_function"
-    mock_function.return_value = "test result"
-
-    mock_code_file = tmp_path / "test_code.py"
-    mock_function.__code__.co_filename = mock_code_file
-    template = tmp_path / "test_template.md.jinja"
-    template.write_text("Test template content")
-
-    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
-
-    logot.assert_logged(logged.debug("Successfully registered"))
-
-    with pytest.raises(ApplicationHandlerStop):
-        assert action._templates.get_template("test_template.md.jinja") is not None
-        await action(mock_update, mock_context)
-        assert mock_function.assert_called_once_with(
-            templates={"test_template.md.jinja": action._templates.get_template("test_template.md.jinja")}
-        )
-
-
-@pytest.mark.asyncio
-async def test_action_call_template(logot: Logot, mock_update, mock_context, tmp_path) -> None:
-    """Test the Action class call method with template parameter."""
-    mock_function = AsyncMock()
-    mock_function.__signature__ = Signature([Parameter("template", kind=Parameter.POSITIONAL_OR_KEYWORD)])
-    mock_function.__name__ = "test_function"
-    mock_function.return_value = "test result"
-
-    mock_code_file = tmp_path / "test_code.py"
-    mock_function.__code__.co_filename = mock_code_file
-    template = tmp_path / "test_action.md.jinja"
-    template.write_text("Test template content")
-
-    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
-
-    logot.assert_logged(logged.debug("Successfully registered"))
-
-    with pytest.raises(ApplicationHandlerStop):
-        await action(mock_update, mock_context)
-        assert mock_function.assert_called_once_with(template=action._templates.get_template("test_action.md.jinja"))
-
-
-@pytest.mark.asyncio
-async def test_action_call_template_annotated(logot: Logot, mock_update, mock_context, tmp_path) -> None:
-    """Test the Action class call method with annotated template parameter."""
-    mock_function = AsyncMock()
-    mock_function.__signature__ = Signature(
-        [
-            Parameter(
-                "template",
-                kind=Parameter.POSITIONAL_OR_KEYWORD,
-                annotation=Annotated[Template, "custom_template_name.md.jinja"],
-            )
-        ]
-    )
-    mock_function.__name__ = "test_function"
-    mock_function.return_value = "test result"
-
-    mock_code_file = tmp_path / "test_code.py"
-    mock_function.__code__.co_filename = mock_code_file
-    template = tmp_path / "custom_template_name.md.jinja"
-    template.write_text("Test template content")
-
-    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
-
-    logot.assert_logged(logged.debug("Successfully registered"))
-
-    with pytest.raises(ApplicationHandlerStop):
-        await action(mock_update, mock_context)
-        assert mock_function.assert_called_once_with(
-            template=action._templates.get_template("custom_template_name.md.jinja")
-        )
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "annotation",
-    [
-        Annotated[Template, 12345],
-        Annotated[str, "custom_template_name.md.jinja"],
-    ],
-)
-async def test_action_call_template_annotated_invalid(
-    logot: Logot, mock_update, mock_context, annotation, tmp_path
-) -> None:
-    """Test the Action class call method with annotated template parameter that is invalid."""
-    mock_function = AsyncMock()
-    mock_function.__signature__ = Signature(
-        [Parameter("template", kind=Parameter.POSITIONAL_OR_KEYWORD, annotation=annotation)]
-    )
-    mock_function.__name__ = "test_function"
-    mock_function.return_value = "test result"
-
-    mock_code_file = tmp_path / "test_code.py"
-    mock_function.__code__.co_filename = mock_code_file
-    template = tmp_path / "custom_template_name.md.jinja"
-    template.write_text("Test template content")
-
-    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
-
-    logot.assert_logged(logged.debug("Successfully registered"))
-
-    with pytest.raises(ApplicationHandlerStop):
-        await action(mock_update, mock_context)
-        logot.assert_logged(logged.warning("Invalid Annotated arguments for parameter 'template'"))
-        assert mock_function.assert_called_once_with(template=None)
-
-
-@pytest.mark.asyncio
-async def test_action_call_unknown_parameter(logot: Logot, mock_update, mock_context) -> None:
-    """Test the Action class call method with an unknown parameter name."""
-    # Create a mock function with an unknown parameter
-    mock_function = AsyncMock()
-    mock_function.__signature__ = Signature([Parameter("unknown", kind=Parameter.POSITIONAL_OR_KEYWORD)])
-    mock_function.__name__ = "test_function"
-    mock_function.return_value = "test result"
-    mock_function.__code__.co_filename = __file__
-
-    # Bypass validation to create a valid action with an unknown parameter
-    action = Action(name="test_action", commands=["test"], description="Test action", func=mock_function)
-    action._valid = True  # Force action to be valid despite invalid parameter
-
-    with pytest.raises(ApplicationHandlerStop):
-        await action(mock_update, mock_context)
-        mock_function.assert_called_once_with(unknown=None)  # Value should be None
-
-
-@pytest.mark.asyncio
-async def test_action_invalid_call(logot: Logot, action: Action, mock_update, mock_context) -> None:
-    """Test the Action class call method when invalid."""
-    action._valid = False
-    await action(mock_update, mock_context)
-    await logot.await_for(logged.warning("Not valid, skipping execution"))
 
 
 def test_action_repr(action: Action) -> None:

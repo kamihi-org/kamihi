@@ -40,7 +40,7 @@ def mock_context():
     return context
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="function", autouse=True)
 def mock_mongodb():
     """Fixture to provide a mock MongoDB instance."""
     connect("kamihi_test", host="mongodb://localhost", alias="default", mongo_client_class=mongomock.MongoClient)

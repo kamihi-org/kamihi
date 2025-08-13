@@ -25,7 +25,7 @@ def test_run(kamihi: KamihiContainer):
     """Test the run command."""
     kamihi.run_and_wait_for_log(
         "kamihi run --host=localhost --port=4242",
-        "Started!",
+        "Bot started",
         "SUCCESS",
     )
 
@@ -35,7 +35,7 @@ def test_run_log_level(kamihi: KamihiContainer, level: str):
     """Test the run command with all possible log levels."""
     kamihi.run_and_wait_for_log(
         f"kamihi run --log-level={level}",
-        "Started!",
+        "Bot started",
         "SUCCESS",
     )
 

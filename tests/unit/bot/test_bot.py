@@ -11,10 +11,14 @@ from __future__ import annotations
 import inspect
 
 import pytest
+from logot import Logot, logged
 
 from kamihi.base.config import KamihiSettings
 from kamihi.bot.action import Action
 from kamihi.bot.bot import Bot
+from kamihi.datasources import SQLiteDataSourceConfig, SQLiteDataSource
+from kamihi.tg.handlers import AuthHandler
+from kamihi.users.models import User, Permission
 
 
 @pytest.fixture
@@ -48,7 +52,7 @@ def mock_bot(mock_settings: KamihiSettings) -> Bot:
     return Bot(mock_settings)
 
 
-def test_bot_init(mock_settings: KamihiSettings) -> None:
+def test_bot_init(mock_settings: KamihiSettings, mock_bot: Bot) -> None:
     """
     Test the initialization of the Bot class.
 
@@ -56,11 +60,27 @@ def test_bot_init(mock_settings: KamihiSettings) -> None:
     settings and that the templates are loaded properly.
 
     """
+    assert mock_bot.settings == mock_settings
+    assert mock_bot._actions == []
+    assert mock_bot.datasources == {}
+
+
+def test_bot_init_with_datasource(mock_settings: KamihiSettings) -> None:
+    """
+    Test the initialization of the Bot class with a datasource.
+
+    This test checks that the Bot class can be initialized with a datasource and that
+    the datasource is correctly added to the bot's datasources.
+
+    Args:
+        mock_settings (KamihiSettings): The settings for the bot.
+
+    """
+    mock_settings.datasources.append(SQLiteDataSourceConfig(type="sqlite", name="mock", path="mock.db"))
     bot = Bot(mock_settings)
 
-    assert bot.settings == mock_settings
-    assert bot._actions == []
-    assert getattr(bot, "templates", None) is None
+    assert "mock" in bot.datasources
+    assert isinstance(bot.datasources["mock"], SQLiteDataSource)
 
 
 def test_bot_action_decorator_empty(mock_bot: Bot) -> None:
@@ -178,3 +198,82 @@ def test_bot_action_function(mock_bot: Bot) -> None:
     assert action.description == "This is a test action"
     assert "update" in inspect.signature(action).parameters
     assert "context" in inspect.signature(action).parameters
+
+
+def test_bot_action_decorator_error(mock_bot: Bot, logot: Logot) -> None:
+    """
+    Test the bot action decorator with an error.
+
+    This test checks that the bot action decorator raises a ValueError if the
+    action cannot be created.
+
+    """
+
+    @mock_bot.action
+    def invalid_action() -> None:
+        pass
+
+    logot.assert_logged(logged.error("Failed to register action"))
+    assert callable(invalid_action)
+
+
+def test_bot_user_class(mock_bot: Bot) -> None:
+    """
+    Test the user_class method of the Bot class.
+
+    This test checks that the user_class method sets the user model correctly.
+
+    Args:
+        mock_bot (Bot): The mock instance of the Bot class.
+
+    """
+
+    @mock_bot.user_class
+    class MockUser(User):
+        pass
+
+    assert User.get_model() == MockUser
+
+
+def test_bot_handlers(mock_bot: Bot) -> None:
+    """
+    Test the _handlers property of the Bot class.
+
+    This test checks that the _handlers property returns the correct list of handlers.
+
+    Args:
+        mock_bot (Bot): The mock instance of the Bot class.
+
+    """
+
+    @mock_bot.action
+    async def test_action() -> None:
+        pass
+
+    assert type(mock_bot._handlers[-1]) is AuthHandler
+    assert mock_bot._handlers[-1].name == "test_action"
+
+
+def test_bot_scopes(mock_bot: Bot) -> None:
+    """
+    Test the _scopes property of the Bot class.
+
+    This test checks that the _scopes property returns the correct scopes for users.
+
+    Args:
+        mock_bot (Bot): The mock instance of the Bot class.
+
+    """
+
+    @mock_bot.action
+    async def test_action() -> None:
+        pass
+
+    user = User(telegram_id=123456789)
+    user = user.save()
+    permission = Permission(action=mock_bot._actions[-1]._db_object, users=[user])
+    permission.save()
+
+    scopes = mock_bot._scopes
+    assert 123456789 in scopes
+    assert scopes[123456789][0].command == "test_action"
