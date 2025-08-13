@@ -84,7 +84,7 @@ jobs:
             DEEPSOURCE_DSN: "${DEEPSOURCE_DSN}"
 
   functional-tests:
-  executor: python-browsers
+    executor: python-browsers
     environment:
       # Retries are handled by pytest flag like in GHA
       PYTEST_ADDOPTS: -q
