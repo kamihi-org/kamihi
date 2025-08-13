@@ -456,7 +456,16 @@ def kamihi(kamihi_container: KamihiContainer, run_command, request) -> Generator
             else:
                 print(line.strip())
     if run_command == "kamihi run":
-        kamihi_container.stop()
+        try:
+            kamihi_container.stop()
+        except:
+            title = f" Kamihi container logs for {request.node.name} "
+            print(f"\n{title:=^80}")
+            for line in kamihi_container.logs():
+                if jline := kamihi_container.parse_log_json(line):
+                    print(jline["text"].strip())
+                else:
+                    print(line.strip())
 
 
 @pytest.fixture
