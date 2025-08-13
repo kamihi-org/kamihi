@@ -1,0 +1,25 @@
+
+version: 2.1
+
+executors:
+  python:
+    docker:
+      - image: cimg/python:3.12
+  python-browsers:
+    docker:
+      - image: cimg/python:3.12-browsers
+
+jobs:
+  ruff:
+    executor: python
+    steps:
+      - checkout
+      - run:
+          name: Run ruff
+          command: |
+            uvx ruff check
+
+workflows:
+  check:
+    jobs:
+      - ruff
