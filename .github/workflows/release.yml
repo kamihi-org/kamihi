@@ -8,7 +8,7 @@ on:
 jobs:
   bump-version:
     if: "!startsWith(github.event.head_commit.message, 'bump')"
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     name: "Bump version"
     outputs:
       REVISION: ${{ env.REVISION }}
@@ -33,7 +33,7 @@ jobs:
           path: body.md
 
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     name: "Build project"
     needs: bump-version
     if: "!startsWith(github.event.head_commit.message, 'docs') && !startsWith(github.event.head_commit.message, 'chore:') && !startsWith(github.event.head_commit.message, 'test') && !startsWith(github.event.head_commit.message, 'Revert')"
@@ -61,7 +61,7 @@ jobs:
           path: dist/
 
   publish:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     name: "Publish to PyPI"
     needs: build
     environment:
@@ -83,7 +83,7 @@ jobs:
           skip-existing: true
 
   create-release:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     name: "Create release"
     needs:
       - bump-version
@@ -117,7 +117,7 @@ jobs:
             dist/kamihi-${{ needs.bump-version.outputs.REVISION }}-py3-none-any.whl
 
   docs:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: bump-version
     name: "Build and deploy documentation"
 

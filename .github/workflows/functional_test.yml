@@ -14,7 +14,7 @@ concurrency:
 jobs:
   test:
     name: "Run tests"
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     environment: testing
 
     steps:
