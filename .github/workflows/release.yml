@@ -1,0 +1,154 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  bump-version:
+    name: Bump version
+    runs-on: self-hosted
+    if: "!startsWith(github.event.head_commit.message, 'bump')"
+    outputs:
+      REVISION: ${{ env.REVISION }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          token: "${{ secrets.PAT }}"
+          fetch-depth: 0
+
+      - name: Create bump and changelog
+        uses: commitizen-tools/commitizen-action@5b0848cd060263e24602d1eba03710e056ef7711 # 0.24.0
+        with:
+          github_token: ${{ secrets.PAT }}
+          changelog_increment_filename: body.md
+
+      - name: Upload incremental changelog
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: changelog
+          path: body.md
+
+  build:
+    name: Build project
+    runs-on: self-hosted
+    needs: bump-version
+    if: "!startsWith(github.event.head_commit.message, 'docs') && !startsWith(github.event.head_commit.message, 'chore:') && !startsWith(github.event.head_commit.message, 'test') && !startsWith(github.event.head_commit.message, 'Revert')"
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: ${{ github.ref }}
+          token: "${{ secrets.PAT }}"
+          fetch-depth: 0
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@7edac99f961f18b581bbd960d59d049f04c0002f # v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Build project
+        run: |
+          uv sync --dev
+          uv build
+          
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  publish:
+    name: Publish to PyPI
+    runs-on: self-hosted
+    needs: build
+    environment:
+      name: pypi
+      url: https://pypi.org/p/kamihi
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+
+  create-release:
+    name: Create release
+    runs-on: self-hosted
+    needs:
+      - bump-version
+      - build
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Download changelog
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: changelog
+
+      - name: Download all the dists
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Release
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+        with:
+          body_path: body.md
+          tag_name: ${{ needs.bump-version.outputs.REVISION }}
+          files: |
+            dist/kamihi-${{ needs.bump-version.outputs.REVISION }}-py3-none-any.whl
+
+  docs:
+    name: Deploy documentation
+    runs-on: self-hosted
+    needs: bump-version
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: ${{ github.ref }}
+          token: "${{ secrets.PAT }}"
+          fetch-depth: 0
+
+      - name: Configure Git Credentials
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@7edac99f961f18b581bbd960d59d049f04c0002f # v6
+
+      - name: Install dependencies
+        run: uv sync --group docs
+
+      - name: Build site and deploy
+        run: uv run mike deploy --push --update-aliases ${{ needs.bump-version.outputs.REVISION }} latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+
+      - name: Set latest
+        run: uv run mike set-default --push latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
