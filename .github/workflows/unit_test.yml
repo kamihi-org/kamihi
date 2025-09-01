@@ -1,0 +1,44 @@
+name: Unit tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Unit tests
+    runs-on: self-hosted
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@7edac99f961f18b581bbd960d59d049f04c0002f # v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: |
+          uv sync --group unit
+
+      - name: Run tests
+        run: |
+          uv run pytest tests/unit
+
+      - name: Install Deepsource CLI
+        run: |
+          curl https://deepsource.io/cli | sh
+
+      - name: Send coverage report to Deepsource
+        env:
+          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
+        run: |
+          ./bin/deepsource report --analyzer test-coverage --key python --value-file ./coverage.xml
