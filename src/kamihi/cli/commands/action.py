@@ -20,7 +20,7 @@ def new(
 ) -> None:
     """Create a new action."""
     run_copy(
-        "gh:kamihi-dev/kamihi-action-template",
+        "gh:kamihi-org/kamihi-action-template",
         str(ctx.obj.project),
         data={
             "action_name": name,

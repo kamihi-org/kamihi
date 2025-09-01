@@ -1,10 +1,10 @@
 site_name: Kamihi documentation
-site_url: https://kamihi-dev.github.io/kamihi/
+site_url: https://kamihi-org.github.io/kamihi/
 site_description: |
   Documentation for Kamihi, a Python framework for rapid Telegram bot development and management
 site_author: kiinami
-repo_url: https://github.com/kamihi-dev/kamihi
-repo_name: kamihi-dev/kamihi
+repo_url: https://github.com/kamihi-org/kamihi
+repo_name: kamihi-org/kamihi
 watch:
   - mkdocs.yml
   - CHANGELOG.md

@@ -13,7 +13,7 @@ You should have the following installed:
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/kamihi-dev/kamihi.git
+    git clone https://github.com/kamihi-org/kamihi.git
     cd kamihi
     ```
 2. Create the virtual environment and install dependencies:

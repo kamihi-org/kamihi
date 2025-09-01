@@ -39,7 +39,7 @@ def init(
 ) -> None:
     """Initialize a new Kamihi project."""
     run_copy(
-        "gh:kamihi-dev/kamihi-project-template",
+        "gh:kamihi-org/kamihi-project-template",
         str((path or ctx.obj.project) / name),
         data={
             "project_name": name,
