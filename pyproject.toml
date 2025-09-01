@@ -48,10 +48,10 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://kamihi-dev.github.io/kamihi/"
-Repository = "https://github.com/kamihi-dev/kamihi"
-Issues = "https://github.com/kamihi-dev/kamihi/issues"
-Changelog = "https://github.com/kamihi-dev/kamihi/blob/master/CHANGELOG.md"
+Documentation = "https://kamihi-org.github.io/kamihi/"
+Repository = "https://github.com/kamihi-org/kamihi"
+Issues = "https://github.com/kamihi-org/kamihi/issues"
+Changelog = "https://github.com/kamihi-org/kamihi/blob/master/CHANGELOG.md"
 
 [dependency-groups]
 dev = [
