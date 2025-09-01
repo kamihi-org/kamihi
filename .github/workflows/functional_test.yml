@@ -1,0 +1,48 @@
+name: Functional tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  test:
+    name: Functional tests
+    runs-on: self-hosted
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@7edac99f961f18b581bbd960d59d049f04c0002f # v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: |
+          uv sync --group unit --group func
+          uv run playwright install
+
+      - name: Run tests
+        run: |
+          uv run pytest tests/functional -x --retries 3
+        env:
+          KAMIHI_TESTING__BOT_TOKEN: ${{ secrets.TOKEN }}
+          KAMIHI_TESTING__BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
+          KAMIHI_TESTING__USER_ID: ${{ secrets.USER_ID }}
+          KAMIHI_TESTING__TG_PHONE_NUMBER: ${{ secrets.TG_PHONE_NUMBER }}
+          KAMIHI_TESTING__TG_API_ID: ${{ secrets.TG_API_ID }}
+          KAMIHI_TESTING__TG_API_HASH: ${{ secrets.TG_API_HASH }}
+          KAMIHI_TESTING__TG_SESSION: ${{ secrets.TG_SESSION }}
+          KAMIHI_TESTING__TG_DC_ID: ${{ secrets.TG_DC_ID }}
+          KAMIHI_TESTING__TG_DC_IP: ${{ secrets.TG_DC_IP }}
