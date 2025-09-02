@@ -1,3 +1,9 @@
+## 3.0.0 (2025-09-02)
+
+### Feat
+
+- migrated to new organization
+
 ## 2.0.0 (2025-07-13)
 
 ### BREAKING CHANGE
