@@ -364,7 +364,9 @@ mongo_volume = volume()
 """Fixture that creates a volume for the mongodb container."""
 
 
-mongo_container = container(image="{mongo_image.id}", volumes={"{mongo_volume.name}": {"bind": "/data/db"}}, network="{test_network.name}")
+mongo_container = container(
+    image="{mongo_image.id}", volumes={"{mongo_volume.name}": {"bind": "/data/db"}}, network="{test_network.name}"
+)
 """Fixture that provides the mongodb container."""
 
 
