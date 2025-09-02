@@ -20,7 +20,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pymongo import MongoClient
 from pytest_docker_tools.wrappers import Container
-from pytest_docker_tools import build, container, fetch, volume, fxtr
+from pytest_docker_tools import build, container, fetch, volume, fxtr, network
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.tl.custom import Conversation
@@ -353,6 +353,9 @@ class KamihiContainer(Container):
         self.wait_for_log("Stopped!", "SUCCESS")
 
 
+test_network = network()
+
+
 mongo_image = fetch(repository="mongo:latest")
 """Fixture that fetches the mongodb container image."""
 
@@ -361,7 +364,7 @@ mongo_volume = volume()
 """Fixture that creates a volume for the mongodb container."""
 
 
-mongo_container = container(image="{mongo_image.id}", volumes={"{mongo_volume.name}": {"bind": "/data/db"}})
+mongo_container = container(image="{mongo_image.id}", volumes={"{mongo_volume.name}": {"bind": "/data/db"}}, network="{test_network.name}")
 """Fixture that provides the mongodb container."""
 
 
@@ -387,6 +390,7 @@ kamihi_container = container(
         "{kamihi_volume.name}": {"bind": "/app"},
         str(Path("~/.cache/uv").expanduser()): {"bind": "/root/.cache/uv"},
     },
+    network="{test_network.name}",
     command="{sync_and_run_command}",
     wrapper_class=KamihiContainer,
 )
