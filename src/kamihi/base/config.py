@@ -132,16 +132,11 @@ class DatabaseSettings(BaseModel):
     Defines the database settings schema.
 
     Attributes:
-        host (str): The URL of the database.
-        name (str): The name of the database.
+        url (str): The database connection URL.
 
     """
 
-    host: str = Field(
-        default="mongodb://localhost:27017",
-        pattern=r"^mongodb(\+srv)?://([a-zA-Z0-9_.-]+(:[a-zA-Z0-9_.-]+)?@)?[a-zA-Z0-9_.-]+(:[0-9]{1,5})?$",
-    )
-    name: str = Field(default="kamihi")
+    url: str = Field(default="sqlite:///kamihi.db", pattern=r"^\w+://")
 
 
 class KamihiSettings(BaseSettings):
