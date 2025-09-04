@@ -5,15 +5,14 @@ License:
     MIT
 
 """
+from typing import Sequence
 
-from mongoengine import Q
+from sqlmodel import Session, select
 
-from kamihi.bot.models import RegisteredAction
-
-from .models import Permission, Role, User
+from kamihi.db import Permission, RegisteredAction, User, get_engine
 
 
-def get_users() -> list[User]:
+def get_users() -> Sequence[User]:
     """
     Get all users from the database.
 
@@ -21,7 +20,9 @@ def get_users() -> list[User]:
         list[User]: A list of all users in the database.
 
     """
-    return list(User.objects)
+    with Session(get_engine()) as session:
+        sta = select(User)
+        return session.exec(sta).all()
 
 
 def get_user_from_telegram_id(telegram_id: int) -> User | None:
@@ -35,26 +36,38 @@ def get_user_from_telegram_id(telegram_id: int) -> User | None:
         User | None: The user object if found, otherwise None.
 
     """
-    return User.objects(telegram_id=telegram_id).first()
+    with Session(get_engine()) as session:
+        sta = select(User).where(User.telegram_id == telegram_id)
+        return session.exec(sta).first()
 
 
-def is_user_authorized(user: User, action: str) -> bool:
+def is_user_authorized(user: User, action_name: str) -> bool:
     """
     Check if a user is authorized to use a specific action.
 
     Args:
         user (User): The user object to check.
-        action (str): The action to check authorization for.
+        action_name (str): The action to check authorization for.
 
     Returns:
         bool: True if the user is authorized, False otherwise.
 
     """
-    if user.is_admin:
-        return True
+    with Session(get_engine()) as session:
+        user = session.get(User, user.id)
 
-    action = RegisteredAction.objects(name=action).first()
-    role = Role.objects(users=user).first()
-    permissions = Permission.objects(Q(action=action) & (Q(users=user) | Q(roles=role))).first()
+        if user.is_admin:
+            return True
 
-    return bool(permissions)
+        sta = select(RegisteredAction).where(RegisteredAction.name == action_name)
+        action = session.exec(sta).first()
+        if action is None:
+            raise ValueError(f"Action '{action_name}' is not registered in the database.")
+
+        sta = select(Permission).where(Permission.action == action)
+        permissions = session.exec(sta).all()
+
+        if not permissions:
+            return False
+
+        return any([permission.is_user_allowed(user) for permission in permissions])

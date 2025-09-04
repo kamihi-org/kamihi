@@ -136,6 +136,7 @@ class TelegramClient:
             with lg.catch(
                 exception=TelegramError,
                 message="Failed to set scopes for user {user_id}",
+                reraise=True
             ):
                 await self._app.bot.set_my_commands(
                     commands=commands,

@@ -12,10 +12,12 @@ from typing import Annotated
 import typer
 from loguru import logger
 from mongoengine import FieldDoesNotExist, ValidationError
+from sqlmodel import Session, select
 
-from kamihi import KamihiSettings, _init_bot
+from kamihi.base.config import KamihiSettings
+from kamihi.base.logging import configure_logging
 from kamihi.cli.commands.run import import_models
-from kamihi.users.models import User
+from kamihi.db import User, get_engine
 
 app = typer.Typer()
 
@@ -79,39 +81,28 @@ def add(
     ctx: typer.Context,
     telegram_id: Annotated[int, typer.Argument(..., help="Telegram ID of the user", callback=telegram_id_callback)],
     is_admin: Annotated[bool, typer.Option("--admin", "-a", help="Is the user an admin?")] = False,  # noqa: FBT002
-    data: Annotated[
-        str | None,
-        typer.Option(
-            "--data",
-            "-d",
-            help="Additional data for the user in JSON format. For use with custom user classes.",
-            show_default=False,
-            callback=data_callback,
-        ),
-    ] = None,
 ) -> None:
     """Add a new user."""
     settings = KamihiSettings.from_yaml(ctx.obj.config) if ctx.obj.config else KamihiSettings()
     settings.log.file_enable = False
     settings.log.notification_enable = False
-    _init_bot(settings)
+    configure_logging(logger, settings.log)
 
-    user_data = data or {}
-    user_data["telegram_id"] = telegram_id
-    user_data["is_admin"] = is_admin
+    user_data: dict = {"telegram_id": telegram_id, "is_admin": is_admin}
 
     lg = logger.bind(**user_data)
 
     import_models(ctx.obj.cwd / "models")
 
-    if User.get_model() == User and data:
-        lg.warning("No custom user model found, ignoring extra data provided.")
-        user_data = {"telegram_id": telegram_id, "is_admin": is_admin}
-
-    with lg.catch(FieldDoesNotExist, message="Custom user model does not have the field provided.", onerror=onerror):
-        user = User.get_model()(**user_data)
     with lg.catch(ValidationError, message="User inputted is not valid.", onerror=onerror):
-        user.validate()
-        user.save()
+        with Session(get_engine()) as session:
+            statement = select(User).where(User.telegram_id == telegram_id)
+            existing_user = session.exec(statement).first()
+            if existing_user:
+                lg.error("User with Telegram ID {telegram_id} already exists.", telegram_id=telegram_id)
+                raise typer.Exit(1)
+            user = User(**user_data)
+            session.add(user)
+            session.commit()
 
     lg.success("User added.")

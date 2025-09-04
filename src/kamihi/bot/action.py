@@ -16,15 +16,16 @@ from typing import Annotated, Any, get_args, get_origin
 import loguru
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 from loguru import logger
+from sqlmodel import Session, select, col
 from telegram import Update
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
 
+from kamihi.db import RegisteredAction, get_engine
 from kamihi.tg import send
 from kamihi.tg.handlers import AuthHandler
 from kamihi.users import get_user_from_telegram_id
 
-from .models import RegisteredAction
 from .utils import COMMAND_REGEX
 
 
@@ -48,7 +49,6 @@ class Action:
     _func: Callable
     _valid: bool = True
     _logger: loguru.Logger
-    _db_object: RegisteredAction | None
     _templates: Environment
 
     def __init__(self, name: str, commands: list[str], description: str, func: Callable) -> None:
@@ -73,11 +73,10 @@ class Action:
         self._validate_function()
 
         if not self.is_valid():
-            self._db_object = None
             self._logger.warning("Failed to register")
             return
 
-        self._db_object = self.save_to_db()
+        self.save_to_db()
 
         self._templates = Environment(
             loader=FileSystemLoader(Path(self._func.__code__.co_filename).parent),
@@ -141,17 +140,29 @@ class Action:
         """Check if the action is valid."""
         return self._valid
 
-    def save_to_db(self) -> RegisteredAction:
+    def save_to_db(self):
         """Save the action to the database."""
-        return RegisteredAction.objects(name=self.name).upsert_one(
-            name=self.name,
-            description=self.description,
-        )
+        with Session(get_engine()) as session:
+            sta = select(RegisteredAction).where(RegisteredAction.name == self.name)
+            existing_action = session.exec(sta).first()
+            if existing_action:
+                existing_action.description = self.description
+                session.add(existing_action)
+                self._logger.trace("Updated action in database")
+            else:
+                session.add(RegisteredAction(name=self.name, description=self.description))
+                self._logger.trace("Added action to database")
+            session.commit()
 
     @classmethod
     def clean_up(cls, keep: list[str]) -> None:
         """Clean up the action from the database."""
-        RegisteredAction.objects(name__nin=keep).delete()
+        with Session(get_engine()) as session:
+            statement = select(RegisteredAction).where(col(RegisteredAction.name).not_in(keep))
+            actions = session.exec(statement).all()
+            for action in actions:
+                session.delete(action)
+            session.commit()
 
     # skipcq: PY-R1000
     async def __call__(self, update: Update, context: CallbackContext) -> None:  # noqa: C901
