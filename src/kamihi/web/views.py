@@ -9,7 +9,7 @@ License:
 from typing import Any, Literal
 
 from starlette.requests import Request
-from starlette_admin.contrib.sqlmodel import ModelView
+from starlette_admin.contrib.sqla import ModelView
 
 
 class HooksView(ModelView):

@@ -151,9 +151,10 @@ def run(
         settings.log.file_level = log_level
         settings.log.notification_level = log_level
 
+    import_models(ctx.obj.cwd / "models")
+
     bot = _init_bot(settings)
 
     import_actions(ctx.obj.cwd / "actions")
-    import_models(ctx.obj.cwd / "models")
 
     bot.start()

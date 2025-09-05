@@ -11,13 +11,14 @@ from typing import Annotated
 
 import typer
 from loguru import logger
-from mongoengine import FieldDoesNotExist, ValidationError
-from sqlmodel import Session, select
+from mongoengine import ValidationError
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from kamihi.base.config import KamihiSettings
 from kamihi.base.logging import configure_logging
 from kamihi.cli.commands.run import import_models
-from kamihi.db import User, get_engine
+from kamihi.db import BaseUser, get_engine
 
 app = typer.Typer()
 
@@ -96,12 +97,12 @@ def add(
 
     with lg.catch(ValidationError, message="User inputted is not valid.", onerror=onerror):
         with Session(get_engine()) as session:
-            statement = select(User).where(User.telegram_id == telegram_id)
-            existing_user = session.exec(statement).first()
+            statement = select(BaseUser).where(BaseUser.telegram_id == telegram_id)
+            existing_user = session.execute(statement).scalars().first()
             if existing_user:
                 lg.error("User with Telegram ID {telegram_id} already exists.", telegram_id=telegram_id)
                 raise typer.Exit(1)
-            user = User(**user_data)
+            user = BaseUser.cls()(**user_data)
             session.add(user)
             session.commit()
 

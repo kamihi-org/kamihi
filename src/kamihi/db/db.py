@@ -8,10 +8,11 @@ License:
 import time
 
 from loguru import logger
-from sqlalchemy import Engine, event
-from sqlmodel import SQLModel, create_engine
+from sqlalchemy import Engine, event, create_engine
 
 from kamihi.base.config import DatabaseSettings
+
+from .models import Base
 
 
 _engine: Engine | None = None
@@ -28,7 +29,7 @@ def init_engine(db_settings: DatabaseSettings) -> None:
     global _engine
     if _engine is None:
         _engine = create_engine(db_settings.url)
-        SQLModel.metadata.create_all(_engine)
+        Base.metadata.create_all(_engine)
 
 
 def get_engine() -> Engine:

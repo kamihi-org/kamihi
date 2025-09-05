@@ -28,7 +28,7 @@ from multipledispatch import dispatch
 from telegram import BotCommand
 
 from kamihi.base.config import KamihiSettings
-from kamihi.db import init_engine, User
+from kamihi.db import init_engine
 from kamihi.tg import TelegramClient
 from kamihi.tg.handlers import AuthHandler
 from kamihi.tg.media import Audio, Document, Location, Photo, Video, Voice
@@ -125,18 +125,6 @@ class Bot:
 
         """
         return functools.partial(self.action, *commands, description=description)
-
-    def user_class(self, cls: type[User]) -> None:  # skipcq: PYL-R0201
-        """
-        Set the user model for the bot.
-
-        This method is used as a decorator to set the user model for the bot.
-
-        Args:
-            cls: The user class to set.
-
-        """
-        User.set_model(cls)
 
     @property
     def _valid_actions(self) -> list[Action]:

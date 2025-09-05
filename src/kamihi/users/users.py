@@ -7,12 +7,13 @@ License:
 """
 from typing import Sequence
 
-from sqlmodel import Session, select
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from kamihi.db import Permission, RegisteredAction, User, get_engine
+from kamihi.db import Permission, RegisteredAction, BaseUser, get_engine
 
 
-def get_users() -> Sequence[User]:
+def get_users() -> Sequence[BaseUser]:
     """
     Get all users from the database.
 
@@ -21,11 +22,11 @@ def get_users() -> Sequence[User]:
 
     """
     with Session(get_engine()) as session:
-        sta = select(User)
-        return session.exec(sta).all()
+        sta = select(BaseUser.cls())
+        return session.execute(sta).scalars().all()
 
 
-def get_user_from_telegram_id(telegram_id: int) -> User | None:
+def get_user_from_telegram_id(telegram_id: int) -> BaseUser | None:
     """
     Get a user from the database using their Telegram ID.
 
@@ -37,11 +38,11 @@ def get_user_from_telegram_id(telegram_id: int) -> User | None:
 
     """
     with Session(get_engine()) as session:
-        sta = select(User).where(User.telegram_id == telegram_id)
-        return session.exec(sta).first()
+        sta = select(BaseUser.cls()).where(BaseUser.cls().telegram_id == telegram_id)
+        return session.execute(sta).scalars().first()
 
 
-def is_user_authorized(user: User, action_name: str) -> bool:
+def is_user_authorized(user: BaseUser, action_name: str) -> bool:
     """
     Check if a user is authorized to use a specific action.
 
@@ -54,18 +55,21 @@ def is_user_authorized(user: User, action_name: str) -> bool:
 
     """
     with Session(get_engine()) as session:
-        user = session.get(User, user.id)
+        user = session.get(BaseUser.cls(), user.id)
+
+        if not user:
+            return False
 
         if user.is_admin:
             return True
 
         sta = select(RegisteredAction).where(RegisteredAction.name == action_name)
-        action = session.exec(sta).first()
+        action = session.execute(sta).scalars().first()
         if action is None:
             raise ValueError(f"Action '{action_name}' is not registered in the database.")
 
         sta = select(Permission).where(Permission.action == action)
-        permissions = session.exec(sta).all()
+        permissions = session.execute(sta).scalars().all()
 
         if not permissions:
             return False

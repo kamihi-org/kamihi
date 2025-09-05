@@ -17,7 +17,7 @@ from loguru import logger
 from .base.config import KamihiSettings
 from .base.logging import configure_logging
 from .bot import Bot
-from .db import User as BaseUser
+from .db import BaseUser
 
 __version__ = "3.0.0"
 

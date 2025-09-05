@@ -3,144 +3,142 @@ Internal models for Kamihi.
 
 License:
     MIT
-
 """
+from __future__ import annotations
 
-from sqlmodel import Field, SQLModel, Relationship
+from typing import List, ClassVar, Optional, Type
 
+from sqlalchemy import ForeignKey, Boolean, Integer, String
+from sqlalchemy.orm import declarative_base, relationship, Mapped, mapped_column, declared_attr
 
-class RegisteredAction(SQLModel, table=True):
-    """
-    RegisteredAction model.
-
-    This model represents an action that is registered in the system.
-    It is used to manage user actions and their associated data.
-
-    Attributes:
-        name (str): The name of the action.
-        description (str): A description of the action.
-
-    """
-
-    id : int | None = Field(default=None, primary_key=True)
-    name: str = Field(index=True, unique=True, nullable=False)
-    description: str | None = None
-    permissions: list["Permission"] = Relationship(back_populates="action", cascade_delete=True)
+Base = declarative_base()
 
 
-class UserRoleLink(SQLModel, table=True):
-    """
-    Association table for many-to-many relationship between User and Role.
+class RegisteredAction(Base):
+    __tablename__ = "registeredaction"
 
-    Attributes:
-        user_id (int): The ID of the user.
-        role_id (int): The ID of the role.
-    """
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String, index=True, unique=True, nullable=False)
+    description: Mapped[str | None] = mapped_column(String, nullable=True)
 
-    user_id: int | None = Field(default=None, foreign_key="user.id", primary_key=True)
-    role_id: int | None = Field(default=None, foreign_key="role.id", primary_key=True)
-
-
-class PermissionUserLink(SQLModel, table=True):
-    """
-    Association table for many-to-many relationship between Permission and User.
-
-    Attributes:
-        permission_id (int): The ID of the permission.
-        user_id (int): The ID of the user.
-    """
-
-    permission_id: int | None = Field(default=None, foreign_key="permission.id", primary_key=True)
-    user_id: int | None = Field(default=None, foreign_key="user.id", primary_key=True)
+    # cascade_delete=True equivalent: delete-orphan + FK ondelete
+    permissions: Mapped[List["Permission"]] = relationship(
+        "Permission",
+        back_populates="action",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
 
-class PermissionRoleLink(SQLModel, table=True):
-    """
-    Association table for many-to-many relationship between Permission and Role.
+class UserRoleLink(Base):
+    __tablename__ = "userrolelink"
 
-    Attributes:
-        permission_id (int): The ID of the permission.
-        role_id (int): The ID of the role.
-    """
-
-    permission_id: int | None = Field(default=None, foreign_key="permission.id", primary_key=True)
-    role_id: int | None = Field(default=None, foreign_key="role.id", primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), primary_key=True)
+    role_id: Mapped[int] = mapped_column(ForeignKey("role.id"), primary_key=True)
 
 
-class User(SQLModel, table=True):
-    """
-    User model.
+class PermissionUserLink(Base):
+    __tablename__ = "permissionuserlink"
 
-    This model represents a user in the system.
-    It is used to manage user information and their associated data.
+    permission_id: Mapped[int] = mapped_column(ForeignKey("permission.id"), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), primary_key=True)
 
-    Attributes:
-        telegram_id (int): The Telegram ID of the user.
-        is_admin (bool): Whether the user has admin privileges.
 
-    """
+class PermissionRoleLink(Base):
+    __tablename__ = "permissionrolelink"
 
-    id : int | None = Field(default=None, primary_key=True)
-    telegram_id: int = Field(index=True, unique=True)
-    is_admin: bool = False
-    roles: list["Role"] = Relationship(back_populates="users", link_model=UserRoleLink)
-    permissions: list["Permission"] = Relationship(back_populates="users", link_model=PermissionUserLink)
+    permission_id: Mapped[int] = mapped_column(ForeignKey("permission.id"), primary_key=True)
+    role_id: Mapped[int] = mapped_column(ForeignKey("role.id"), primary_key=True)
+
+
+class BaseUser(Base):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    telegram_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=False)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    roles: Mapped[List["Role"]] = relationship(
+        "Role",
+        secondary="userrolelink",
+        back_populates="users",
+    )
+    permissions: Mapped[List["Permission"]] = relationship(
+        "Permission",
+        secondary="permissionuserlink",
+        back_populates="users",
+    )
+
+    _active_class: ClassVar[Optional[Type["BaseUser"]]] = None
+
+    @declared_attr
+    def __tablename__(cls):
+        return "user"
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        # Find the real base dynamically
+        base = next((b for b in cls.__mro__ if b.__name__ == "BaseUser"), None)
+        if base is None or cls.__name__ == "BaseUser":
+            return  # don't register the base itself
+
+        if base._active_class is not None:
+            raise RuntimeError("A custom User model is already registered")
+
+        # Disable the default User model if it exists
+        if "User" in globals():
+            globals()["User"].__table__ = None
+            globals()["User"].__mapper__ = None
+
+        base._active_class = cls
+
 
     @classmethod
-    def get_model(cls) -> type["User"]:
-        """
-        Get the model class for the User.
-
-        Returns:
-            type: The model class for the User.
-
-        """
-        return cls
-
-    @classmethod
-    def set_model(cls, model: type["User"]) -> None:
-        """
-        Set the model class for the User.
-
-        Args:
-            model (type): The model class to set.
-
-        """
-        pass
+    def cls(cls):
+        return cls._active_class or globals()["User"]
 
 
-class Role(SQLModel, table=True):
-    """
-    Role model.
+class Role(Base):
+    __tablename__ = "role"
 
-    This model represents a role in the system. It is used to manage
-    user permissions and access levels.
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String, index=True, unique=True)
 
-    Attributes:
-        name (str): The name of the role.
-    """
+    users: Mapped[List["User"]] = relationship(
+        "User",
+        secondary="userrolelink",
+        back_populates="roles",
+    )
+    permissions: Mapped[List["Permission"]] = relationship(
+        "Permission",
+        secondary="permissionrolelink",
+        back_populates="roles",
+    )
 
-    id : int | None = Field(default=None, primary_key=True)
-    name: str = Field(index=True, unique=True)
-    users: list[User] = Relationship(back_populates="roles", link_model=UserRoleLink)
-    permissions: list["Permission"] = Relationship(back_populates="roles", link_model=PermissionRoleLink)
 
+class Permission(Base):
+    __tablename__ = "permission"
 
-class Permission(SQLModel, table=True):
-    """
-    Permission model for actions.
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    action_id: Mapped[int | None] = mapped_column(
+        ForeignKey("registeredaction.id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,
+    )
 
-    Attributes:
-        action_id (int): The ID of the registered action.
-        users (list[User]): List of users with this permission.
-        roles (list[Role]): List of roles with this permission.
-    """
-
-    id : int | None = Field(default=None, primary_key=True)
-    action_id: int | None = Field(default=None, foreign_key="registeredaction.id", index=True, ondelete="CASCADE")
-    action: RegisteredAction = Relationship(back_populates="permissions")
-    users: list[User] = Relationship(back_populates="permissions", link_model=PermissionUserLink)
-    roles: list[Role] = Relationship(back_populates="permissions", link_model=PermissionRoleLink)
+    action: Mapped["RegisteredAction"] = relationship(
+        "RegisteredAction",
+        back_populates="permissions",
+    )
+    users: Mapped[List["User"]] = relationship(
+        "User",
+        secondary="permissionuserlink",
+        back_populates="permissions",
+    )
+    roles: Mapped[List["Role"]] = relationship(
+        "Role",
+        secondary="permissionrolelink",
+        back_populates="permissions",
+    )
 
     def is_user_allowed(self, user: User) -> bool:
         """

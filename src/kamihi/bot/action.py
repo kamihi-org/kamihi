@@ -16,7 +16,8 @@ from typing import Annotated, Any, get_args, get_origin
 import loguru
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 from loguru import logger
-from sqlmodel import Session, select, col
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 from telegram import Update
 from telegram.constants import BotCommandLimit
 from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
@@ -144,7 +145,7 @@ class Action:
         """Save the action to the database."""
         with Session(get_engine()) as session:
             sta = select(RegisteredAction).where(RegisteredAction.name == self.name)
-            existing_action = session.exec(sta).first()
+            existing_action = session.execute(sta).scalars().first()
             if existing_action:
                 existing_action.description = self.description
                 session.add(existing_action)
@@ -158,8 +159,8 @@ class Action:
     def clean_up(cls, keep: list[str]) -> None:
         """Clean up the action from the database."""
         with Session(get_engine()) as session:
-            statement = select(RegisteredAction).where(col(RegisteredAction.name).not_in(keep))
-            actions = session.exec(statement).all()
+            statement = select(RegisteredAction).where(RegisteredAction.name.not_in(keep))
+            actions = session.execute(statement).scalars().all()
             for action in actions:
                 session.delete(action)
             session.commit()

@@ -16,10 +16,10 @@ import uvicorn
 from loguru import logger
 from starlette.applications import Starlette
 from starlette_admin import CustomView
-from starlette_admin.contrib.sqlmodel import Admin
+from starlette_admin.contrib.sqla import Admin
 
 from kamihi.base.config import DatabaseSettings, WebSettings
-from kamihi.db import get_engine, Permission, RegisteredAction, Role, User
+from kamihi.db import get_engine, Permission, RegisteredAction, Role, BaseUser
 
 from .views import HooksView, ReadOnlyView
 
@@ -117,7 +117,7 @@ class KamihiWeb(Thread):
             favicon_url="/statics/images/favicon.ico",
         )
 
-        admin.add_view(HooksView(User.get_model(), icon="fas fa-user", hooks=self.hooks))
+        admin.add_view(HooksView(BaseUser.cls(), label="Users", icon="fas fa-user", hooks=self.hooks))
         admin.add_view(HooksView(Role, icon="fas fa-tags", hooks=self.hooks))
         admin.add_view(ReadOnlyView(RegisteredAction, name="Actions", icon="fas fa-circle-play", hooks=self.hooks))
         admin.add_view(HooksView(Permission, icon="fas fa-check", hooks=self.hooks))

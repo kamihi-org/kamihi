@@ -19,7 +19,6 @@ Examples:
 from __future__ import annotations
 
 import sys
-import logging
 
 import loguru
 
