@@ -21,13 +21,15 @@ class RegisteredAction(Base):
     name: Mapped[str] = mapped_column(String, index=True, unique=True, nullable=False)
     description: Mapped[str | None] = mapped_column(String, nullable=True)
 
-    # cascade_delete=True equivalent: delete-orphan + FK ondelete
     permissions: Mapped[List["Permission"]] = relationship(
         "Permission",
         back_populates="action",
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
+
+    async def __admin_repr__(self, *args, **kwargs) -> str:
+        return "/" + self.name
 
 
 class UserRoleLink(Base):
@@ -120,6 +122,9 @@ class Role(Base):
         back_populates="roles",
     )
 
+    async def __admin_repr__(self, *args, **kwargs) -> str:
+        return self.name
+
 
 class Permission(Base):
     __tablename__ = "permission"
@@ -146,7 +151,10 @@ class Permission(Base):
         back_populates="permissions",
     )
 
-    def is_user_allowed(self, user: User) -> bool:
+    async def __admin_repr__(self, *args, **kwargs) -> str:
+        return f"Permission for /{self.action.name if self.action else 'No Action'}"
+
+    def is_user_allowed(self, user: BaseUser) -> bool:
         """
         Check if a user has this permission.
 

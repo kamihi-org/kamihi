@@ -12,7 +12,16 @@ from starlette.requests import Request
 from starlette_admin.contrib.sqla import ModelView
 
 
-class HooksView(ModelView):
+class ExcludeIDModelView(ModelView):
+    """ExcludeIDModelView is a custom view that excludes the ID field from forms."""
+
+    exclude_fields_from_list = ["id"]
+    exclude_fields_from_detail = ["id"]
+    exclude_fields_from_create = ["id"]
+    exclude_fields_from_edit = ["id"]
+
+
+class HooksView(ExcludeIDModelView):
     """HooksView is a custom view that accepts a dictionary of hooks on different events."""
 
     hooks: dict[
