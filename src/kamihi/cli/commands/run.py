@@ -8,6 +8,7 @@ License:
 
 import importlib
 import sys
+import types
 from pathlib import Path
 from typing import Annotated
 
@@ -19,6 +20,22 @@ from kamihi import KamihiSettings, _init_bot
 from kamihi.base.config import LogLevel
 
 app = typer.Typer()
+
+
+def _ensure_namespace(pkg_name: str, path: Path, *aliases: str) -> None:
+    """
+    Ensure a namespace-like package exists in sys.modules pointing at `path`,
+    and optionally create aliases that reference the same package module.
+    """
+    if pkg_name not in sys.modules:
+        pkg = types.ModuleType(pkg_name)
+        # Make it behave like a package searched at `path`
+        pkg.__path__ = [str(path)]
+        pkg.__package__ = pkg_name
+        sys.modules[pkg_name] = pkg
+    for alias in aliases:
+        sys.modules[alias] = sys.modules[pkg_name]
+
 
 
 def import_file(path: Path, name: str) -> None:
@@ -46,14 +63,12 @@ def import_file(path: Path, name: str) -> None:
 def import_actions(actions_dir: Path) -> None:
     """
     Import all Python files from a specified directory.
-
-    Args:
-        actions_dir (str): The path to the directory containing Python files.
-
     """
     if not actions_dir.is_dir():
         logger.warning("No actions directory found.")
         return
+
+    _ensure_namespace("kamihi.actions", actions_dir, "actions")
 
     logger.trace(f"Scanning for actions in {actions_dir}")
 
@@ -68,6 +83,8 @@ def import_actions(actions_dir: Path) -> None:
             if action_file.exists() and action_file.is_file():
                 lg.debug(f"Importing action from {action_file}")
                 import_file(action_file, f"kamihi.actions.{action_name}")
+
+                sys.modules.setdefault(f"actions.{action_name}", sys.modules[f"kamihi.actions.{action_name}"])
             else:
                 lg.error(f"Action directory found, but no '{action_name}.py' file exists.")
         elif action_dir.is_dir():
@@ -77,17 +94,12 @@ def import_actions(actions_dir: Path) -> None:
 def import_models(models_dir: Path) -> None:
     """
     Import all Python files from a specified directory.
-
-    Args:
-        models_dir (str): The path to the directory containing Python files.
-
-    Returns:
-        bool: True if models were imported successfully, False otherwise.
-
     """
     if not models_dir.is_dir():
         logger.debug("No models directory found.")
         return
+
+    _ensure_namespace("kamihi.models", models_dir, "models")
 
     logger.trace(f"Scanning for models in {models_dir}")
 
@@ -99,6 +111,8 @@ def import_models(models_dir: Path) -> None:
         if model_file.is_file() and model_file.suffix == ".py":
             lg.trace(f"Importing model from {model_file}")
             import_file(model_file, f"kamihi.models.{model_name}")
+
+            sys.modules.setdefault(f"models.{model_name}", sys.modules[f"kamihi.models.{model_name}"])
 
 
 def host_callback(

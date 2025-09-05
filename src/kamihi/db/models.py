@@ -96,6 +96,12 @@ class BaseUser(Base):
     def cls(cls):
         return cls._active_class or globals()["User"]
 
+    def admin_repr(self) -> str:
+        return str(self.telegram_id)
+
+    async def __admin_repr__(self, *args, **kwargs) -> str:
+        return self.admin_repr()
+
 
 class Role(Base):
     __tablename__ = "role"
