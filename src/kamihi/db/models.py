@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import List, ClassVar, Optional, Type
 
-from sqlalchemy import ForeignKey, Boolean, Integer, String
+from sqlalchemy import ForeignKey, Boolean, Integer, String, BigInteger
 from sqlalchemy.orm import declarative_base, relationship, Mapped, mapped_column, declared_attr
 
 Base = declarative_base()
@@ -55,7 +55,7 @@ class PermissionRoleLink(Base):
 
 class BaseUser(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    telegram_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=False)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
 
     roles: Mapped[List["Role"]] = relationship(
