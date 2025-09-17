@@ -18,6 +18,8 @@ Examples:
 
 from __future__ import annotations
 
+import inspect
+import logging
 import sys
 
 import loguru
@@ -109,3 +111,36 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
             filter={"apprise": False},
             enqueue=True,
         )
+
+    class InterceptHandler(logging.Handler):
+        def __init__(self, include: list[str] | None = None, exclude: list[str] | None = None):
+            super().__init__()
+            self.include = include or []
+            self.exclude = exclude or []
+
+        def emit(self, record: logging.LogRecord) -> None:
+            logger_name = record.name
+
+            if any(logger_name.startswith(mod) for mod in self.exclude):
+                return
+
+            if self.include and not any(logger_name.startswith(mod) for mod in self.include):
+                return
+
+            try:
+                level = logger.level(record.levelname).name
+            except ValueError:
+                level = record.levelno
+
+            frame, depth = inspect.currentframe(), 0
+            while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
+                frame = frame.f_back
+                depth += 1
+
+            logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+
+    logging.basicConfig(
+        handlers=[InterceptHandler(include=["alembic"])],
+        level=0,
+        force=True,
+    )
