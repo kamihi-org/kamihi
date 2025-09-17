@@ -63,7 +63,7 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
 
     if settings.stdout_enable:
         logger.add(
-            sys.stdout,
+            sys.__stdout__,
             level=settings.stdout_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
@@ -75,7 +75,7 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
 
     if settings.stderr_enable:
         logger.add(
-            sys.stderr,
+            sys.__stderr__,
             level=settings.stderr_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
@@ -144,3 +144,16 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
         level=0,
         force=True,
     )
+
+
+class StreamToLogger:
+    def __init__(self, logger: loguru.Logger, level="INFO"):
+        self.logger = logger
+        self._level = level
+
+    def write(self, buffer):
+        for line in buffer.rstrip().splitlines():
+            self.logger.opt(depth=1).log(self._level, line.strip())
+
+    def flush(self):
+        pass

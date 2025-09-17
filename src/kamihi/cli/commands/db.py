@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+import contextlib
 from typing import Annotated
 
 from alembic import command
@@ -14,6 +15,7 @@ from alembic.script import ScriptDirectory
 from loguru import logger
 
 from kamihi import KamihiSettings, configure_logging
+from kamihi.base.logging import StreamToLogger
 from kamihi.cli.utils import import_models
 
 app = typer.Typer()
@@ -65,7 +67,8 @@ def main(ctx: typer.Context) -> None:
 @app.command("migrate")
 def migrate(ctx: typer.Context) -> None:
     """Run database migrations."""
-    res = command.revision(ctx.obj.alembic_cfg, autogenerate=True, message="auto migration")
+    with contextlib.redirect_stdout(StreamToLogger(logger, "DEBUG")):
+        res = command.revision(ctx.obj.alembic_cfg, autogenerate=True, message="auto migration")
     logger.bind(revision=res.revision).success("Migrated")
 
 
