@@ -117,9 +117,9 @@ class KamihiWeb(Thread):
             favicon_url="/statics/images/favicon.ico",
         )
 
+        admin.add_view(ReadOnlyView(RegisteredAction, label="Actions", icon="fas fa-circle-play", hooks=self.hooks))
         admin.add_view(HooksView(BaseUser.cls(), label="Users", icon="fas fa-user", hooks=self.hooks))
         admin.add_view(HooksView(Role, icon="fas fa-tags", hooks=self.hooks))
-        admin.add_view(ReadOnlyView(RegisteredAction, name="Actions", icon="fas fa-circle-play", hooks=self.hooks))
         admin.add_view(HooksView(Permission, icon="fas fa-check", hooks=self.hooks))
 
         admin.mount_to(self.app)
