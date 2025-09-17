@@ -136,7 +136,7 @@ class DatabaseSettings(BaseModel):
 
     """
 
-    url: str = Field(default="sqlite:///kamihi.db", pattern=r"^\w+://")
+    url: str = Field(default="sqlite:///kamihi.db")
 
 
 class KamihiSettings(BaseSettings):
