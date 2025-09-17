@@ -11,7 +11,7 @@ from typing import Annotated
 
 import typer
 
-from .commands import action_app, init_app, run_app, user_app, version_app
+from .commands import action_app, init_app, run_app, user_app, version_app, db_app
 
 app = typer.Typer()
 app.add_typer(version_app)
@@ -19,6 +19,7 @@ app.add_typer(init_app)
 app.add_typer(action_app, name="action")
 app.add_typer(run_app)
 app.add_typer(user_app, name="user")
+app.add_typer(db_app, name="db")
 
 
 class Context:

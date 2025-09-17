@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 from kamihi.base.config import KamihiSettings
 from kamihi.base.logging import configure_logging
-from kamihi.cli.commands.run import import_models
+from kamihi.cli.utils import import_models
 from kamihi.db import BaseUser, get_engine
 
 app = typer.Typer()
