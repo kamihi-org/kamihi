@@ -11,14 +11,13 @@ from typing import Annotated
 
 import typer
 from loguru import logger
-from mongoengine import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from kamihi.base.config import KamihiSettings
 from kamihi.base.logging import configure_logging
 from kamihi.cli.utils import import_models
-from kamihi.db import BaseUser, get_engine
+from kamihi.db import BaseUser, get_engine, init_engine
 
 app = typer.Typer()
 
@@ -82,6 +81,16 @@ def add(
     ctx: typer.Context,
     telegram_id: Annotated[int, typer.Argument(..., help="Telegram ID of the user", callback=telegram_id_callback)],
     is_admin: Annotated[bool, typer.Option("--admin", "-a", help="Is the user an admin?")] = False,  # noqa: FBT002
+    data: Annotated[
+        str | None,
+        typer.Option(
+            "--data",
+            "-d",
+            help="Additional data for the user in JSON format. For use with custom user classes.",
+            show_default=False,
+            callback=data_callback,
+        ),
+    ] = None,
 ) -> None:
     """Add a new user."""
     settings = KamihiSettings.from_yaml(ctx.obj.config) if ctx.obj.config else KamihiSettings()
@@ -89,21 +98,24 @@ def add(
     settings.log.notification_enable = False
     configure_logging(logger, settings.log)
 
-    user_data: dict = {"telegram_id": telegram_id, "is_admin": is_admin}
+    user_data = data or {}
+    user_data["telegram_id"] = telegram_id
+    user_data["is_admin"] = is_admin
 
     lg = logger.bind(**user_data)
 
     import_models(ctx.obj.cwd / "models")
+    init_engine(settings.db)
 
-    with lg.catch(ValidationError, message="User inputted is not valid.", onerror=onerror):
+    with lg.catch(TypeError, message="User inputted is not valid", onerror=onerror):
         with Session(get_engine()) as session:
-            statement = select(BaseUser).where(BaseUser.telegram_id == telegram_id)
+            statement = select(BaseUser.cls()).where(BaseUser.cls().telegram_id == telegram_id)
             existing_user = session.execute(statement).scalars().first()
             if existing_user:
-                lg.error("User with Telegram ID {telegram_id} already exists.", telegram_id=telegram_id)
+                lg.error("User already exists")
                 raise typer.Exit(1)
             user = BaseUser.cls()(**user_data)
             session.add(user)
             session.commit()
 
-    lg.success("User added.")
+    lg.success("User added")
