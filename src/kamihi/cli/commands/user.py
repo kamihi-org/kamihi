@@ -16,30 +16,10 @@ from sqlalchemy.orm import Session
 
 from kamihi.base.config import KamihiSettings
 from kamihi.base.logging import configure_logging
-from kamihi.cli.utils import import_models
+from kamihi.cli.utils import import_models, telegram_id_callback
 from kamihi.db import BaseUser, get_engine, init_engine
 
 app = typer.Typer()
-
-
-def telegram_id_callback(value: int) -> int:
-    """
-    Validate the Telegram ID.
-
-    Args:
-        value (int): The Telegram ID to validate.
-
-    Returns:
-        int: The validated Telegram ID.
-
-    Raises:
-        typer.BadParameter: If the Telegram ID is invalid.
-
-    """
-    if not isinstance(value, int) or value <= 0 or len(str(value)) > 16:
-        msg = "Must be a positive integer with up to 16 digits."
-        raise typer.BadParameter(msg)
-    return value
 
 
 def data_callback(data: str) -> dict:

@@ -11,6 +11,7 @@ import sys
 import types
 from pathlib import Path
 
+import typer
 from loguru import logger
 
 
@@ -104,3 +105,27 @@ def import_models(models_dir: Path) -> None:
             import_file(model_file, f"kamihi.models.{model_name}")
 
             sys.modules.setdefault(f"models.{model_name}", sys.modules[f"kamihi.models.{model_name}"])
+
+
+def telegram_id_callback(value: int | list[int]) -> int:
+    """
+    Validate the Telegram ID.
+
+    Args:
+        value (int): The Telegram ID to validate.
+
+    Returns:
+        int: The validated Telegram ID.
+
+    Raises:
+        typer.BadParameter: If the Telegram ID is invalid.
+
+    """
+    lvalue = [value] if not isinstance(value, list) else value
+
+    for v in lvalue:
+        if not isinstance(v, int) or v <= 0 or len(str(v)) > 16:
+            msg = "Must be a positive integer with up to 16 digits"
+            raise typer.BadParameter(msg)
+
+    return value
