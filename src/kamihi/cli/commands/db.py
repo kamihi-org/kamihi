@@ -5,18 +5,38 @@ License:
     MIT
 
 """
-from pathlib import Path
 from typing import Annotated
 
 from alembic import command
 from alembic.config import Config
 import typer
+from alembic.script import ScriptDirectory
 from loguru import logger
 
 from kamihi import KamihiSettings, configure_logging
 from kamihi.cli.utils import import_models
 
 app = typer.Typer()
+
+
+def revision_callback(ctx: typer.Context, value: str) -> str:
+    """
+    Ensure the revision value is valid.
+
+    Args:
+        value (str): The revision value.
+
+    Returns:
+        str: The validated revision value.
+
+    """
+    if not value or not isinstance(value, str):
+        raise typer.BadParameter("Invalid revision value")
+    script = ScriptDirectory.from_config(ctx.obj.alembic_cfg)
+    value = script.as_revision_number(value)
+    if value is None:
+        raise typer.BadParameter("Revision not found")
+    return value
 
 
 @app.callback()
@@ -45,8 +65,8 @@ def main(ctx: typer.Context) -> None:
 @app.command("migrate")
 def migrate(ctx: typer.Context) -> None:
     """Run database migrations."""
-    command.revision(ctx.obj.alembic_cfg, autogenerate=True, message="auto migration")
-    logger.info("Migration created.")
+    res = command.revision(ctx.obj.alembic_cfg, autogenerate=True, message="auto migration")
+    logger.bind(revision=res.revision).success("Migrated")
 
 
 @app.command("upgrade")
@@ -55,13 +75,13 @@ def upgrade(
         revision: Annotated[
             str,
             typer.Option(
-                "--revision", "-r", help="The revision to upgrade to.", show_default="head"
+                "--revision", "-r", help="The revision to upgrade to.", show_default="head", callback=revision_callback
             )
         ] = "head"
 ) -> None:
     """Upgrade the database to a later version."""
     command.upgrade(ctx.obj.alembic_cfg, revision)
-    logger.info(f"Database upgraded to revision {revision}.")
+    logger.bind(revision=revision).success(f"Upgraded")
 
 
 @app.command("downgrade")
@@ -70,10 +90,10 @@ def downgrade(
         revision: Annotated[
             str,
             typer.Option(
-                "--revision", "-r", help="The revision to downgrade to.", show_default="-1"
+                "--revision", "-r", help="The revision to downgrade to.", show_default="-1", callback=revision_callback
             )
         ] = "-1"
 ) -> None:
     """Downgrade the database to an earlier version."""
     command.downgrade(ctx.obj.alembic_cfg, revision)
-    logger.info(f"Database downgraded to revision {revision}.")
+    logger.bind(revision=revision).success(f"Downgraded")
