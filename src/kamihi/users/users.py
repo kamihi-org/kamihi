@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 from typing import Sequence
 
 from sqlalchemy import select

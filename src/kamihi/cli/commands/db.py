@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 import contextlib
 from typing import Annotated
 
@@ -74,13 +75,13 @@ def migrate(ctx: typer.Context) -> None:
 
 @app.command("upgrade")
 def upgrade(
-        ctx: typer.Context,
-        revision: Annotated[
-            str,
-            typer.Option(
-                "--revision", "-r", help="The revision to upgrade to.", show_default="head", callback=revision_callback
-            )
-        ] = "head"
+    ctx: typer.Context,
+    revision: Annotated[
+        str,
+        typer.Option(
+            "--revision", "-r", help="The revision to upgrade to.", show_default="head", callback=revision_callback
+        ),
+    ] = "head",
 ) -> None:
     """Upgrade the database to a later version."""
     command.upgrade(ctx.obj.alembic_cfg, revision)
@@ -89,13 +90,13 @@ def upgrade(
 
 @app.command("downgrade")
 def downgrade(
-        ctx: typer.Context,
-        revision: Annotated[
-            str,
-            typer.Option(
-                "--revision", "-r", help="The revision to downgrade to.", show_default="-1", callback=revision_callback
-            )
-        ] = "-1"
+    ctx: typer.Context,
+    revision: Annotated[
+        str,
+        typer.Option(
+            "--revision", "-r", help="The revision to downgrade to.", show_default="-1", callback=revision_callback
+        ),
+    ] = "-1",
 ) -> None:
     """Downgrade the database to an earlier version."""
     command.downgrade(ctx.obj.alembic_cfg, revision)

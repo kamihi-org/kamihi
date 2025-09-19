@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 import time
 
 from loguru import logger
@@ -56,12 +57,12 @@ def _set_sqlite_pragma(dbapi_connection, connection_record):
 
 @event.listens_for(Engine, "before_cursor_execute")
 def _before_cursor_execute(
-        conn,
-        cursor,
-        statement,
-        parameters,
-        context,
-        executemany,
+    conn,
+    cursor,
+    statement,
+    parameters,
+    context,
+    executemany,
 ):
     """Event listener to save the start time of a query before execution."""
     context.query_start_time = time.time()
@@ -69,12 +70,12 @@ def _before_cursor_execute(
 
 @event.listens_for(Engine, "after_cursor_execute")
 def after_cursor_execute(
-        conn,
-        cursor,
-        statement,
-        parameters,
-        context,
-        executemany,
+    conn,
+    cursor,
+    statement,
+    parameters,
+    context,
+    executemany,
 ):
     """Events after execution"""
     total = time.time() - context.query_start_time

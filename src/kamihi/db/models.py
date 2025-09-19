@@ -4,6 +4,7 @@ Internal models for Kamihi.
 License:
     MIT
 """
+
 from __future__ import annotations
 
 from typing import List, ClassVar, Optional, Type
@@ -92,7 +93,6 @@ class BaseUser(Base):
             globals()["User"].__mapper__ = None
 
         base._active_class = cls
-
 
     @classmethod
     def cls(cls):

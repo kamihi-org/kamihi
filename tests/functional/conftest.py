@@ -125,18 +125,12 @@ def pyproject(pyproject_extra_dependencies: list[str]) -> dict:
             "version": "0.0.0",
             "description": "kftp",
             "requires-python": ">=3.12",
-            "dependencies": ["kamihi"] + pyproject_extra_dependencies
+            "dependencies": ["kamihi"] + pyproject_extra_dependencies,
         },
         "tool": {
-            "uv": {
-                "sources": {
-                    "kamihi": {"path": "/lib/kamihi"}
-                }
-            },
-            "alembic": {
-                "script_location": "%(here)s/migrations"
-            }
-        }
+            "uv": {"sources": {"kamihi": {"path": "/lib/kamihi"}}},
+            "alembic": {"script_location": "%(here)s/migrations"},
+        },
     }
     return {"pyproject.toml": toml.dumps(data)}
 

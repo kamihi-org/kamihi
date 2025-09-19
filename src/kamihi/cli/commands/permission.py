@@ -63,9 +63,7 @@ def add(
         raise typer.Exit(1)
 
     with Session(get_engine()) as session:
-        action_obj = session.execute(
-            select(RegisteredAction).where(RegisteredAction.name == action)
-        ).scalars().first()
+        action_obj = session.execute(select(RegisteredAction).where(RegisteredAction.name == action)).scalars().first()
         if not action_obj:
             logger.bind(name=action).error(f"Action not found")
             raise typer.Exit(1)
@@ -73,9 +71,11 @@ def add(
         users_objs = []
         if users:
             for user_id in users:
-                user = session.execute(
-                    select(BaseUser.cls()).where(BaseUser.cls().telegram_id == user_id)
-                ).scalars().first()
+                user = (
+                    session.execute(select(BaseUser.cls()).where(BaseUser.cls().telegram_id == user_id))
+                    .scalars()
+                    .first()
+                )
                 if not user:
                     logger.bind(telegram_id=user_id).error(f"User not found")
                     raise typer.Exit(1)
@@ -84,9 +84,7 @@ def add(
         roles_objs = []
         if roles:
             for role_name in roles:
-                role = session.execute(
-                    select(Role).where(Role.name == role_name)
-                ).scalars().first()
+                role = session.execute(select(Role).where(Role.name == role_name)).scalars().first()
                 if not role:
                     logger.bind(name=role_name).error(f"Role not found")
                     raise typer.Exit(1)
