@@ -18,7 +18,7 @@ async def test_user_add(kamihi: KamihiContainer, admin_page: Page):
     """Test adding a user with valid parameters."""
     kamihi.run_and_wait_for_log(
         "kamihi user add 123456789",
-        "User added.",
+        "User added",
         "SUCCESS",
         {"telegram_id": 123456789, "is_admin": False},
     )
@@ -31,7 +31,7 @@ async def test_user_add(kamihi: KamihiContainer, admin_page: Page):
 async def test_user_add_admin(kamihi: KamihiContainer, admin_page: Page):
     """Test adding a user with admin permissions."""
     kamihi.run_and_wait_for_log(
-        "kamihi user add 123456789 --admin", "User added.", "SUCCESS", {"telegram_id": 123456789, "is_admin": True}
+        "kamihi user add 123456789 --admin", "User added", "SUCCESS", {"telegram_id": 123456789, "is_admin": True}
     )
     await admin_page.get_by_role("link", name=" Users").click()
     await expect(admin_page.locator("#dt_info")).to_contain_text("Showing 1 to 1 of 1 entries")
@@ -45,7 +45,7 @@ async def test_user_add_admin(kamihi: KamihiContainer, admin_page: Page):
     [
         "invalid_id",
         "123abc456",
-        "1234567890123456789012345678901234567890",  # Too long
+        "1234567890123456789012345678901234567890",
     ],
 )
 async def test_user_add_invalid_telegram_id(kamihi: KamihiContainer, admin_page: Page, telegram_id: str):
@@ -66,12 +66,12 @@ async def test_user_add_invalid_telegram_id(kamihi: KamihiContainer, admin_page:
     [
         {
             "user.py": """\
-                from kamihi import bot, BaseUser
-                from mongoengine import StringField
-                 
-                @bot.user_class
-                class MyCustomUser(BaseUser):
-                    name: str = StringField()
+                from kamihi import BaseUser
+                from sqlalchemy import Column, String
+                
+                class User(BaseUser):
+                    __table_args__ = {'extend_existing': True}
+                    name = Column(String, nullable=True)
             """,
         }
     ],
@@ -84,7 +84,7 @@ async def test_user_add_custom_data(kamihi: KamihiContainer, admin_page: Page, m
         "SUCCESS",
         {"telegram_id": 123456789, "is_admin": False, "name": "John Doe"},
     )
-    await admin_page.get_by_role("link", name=" My Custom Users").click()
+    await admin_page.get_by_role("link", name=" Users").click()
     await expect(admin_page.locator("#dt_info")).to_contain_text("Showing 1 to 1 of 1 entries")
     await expect(admin_page.locator("tbody")).to_contain_text("123456789")
     await expect(admin_page.locator("tbody")).to_contain_text("John Doe")
@@ -96,12 +96,12 @@ async def test_user_add_custom_data(kamihi: KamihiContainer, admin_page: Page, m
     [
         {
             "user.py": """\
-                from kamihi import bot, BaseUser
-                from mongoengine import StringField
-
-                @bot.user_class
-                class MyCustomUser(BaseUser):
-                    name: str = StringField()
+                from kamihi import BaseUser
+                from sqlalchemy import Column, String
+                
+                class User(BaseUser):
+                    __table_args__ = {'extend_existing': True}
+                    name = Column(String, nullable=True)
             """,
         }
     ],
@@ -129,12 +129,12 @@ async def test_user_add_custom_data_invalid_json_format(
     [
         {
             "user.py": """\
-                from kamihi import bot, BaseUser
-                from mongoengine import StringField
-
-                @bot.user_class
-                class MyCustomUser(BaseUser):
-                    name: str = StringField(required=True)
+                from kamihi import BaseUser
+                from sqlalchemy import Column, String
+                
+                class User(BaseUser):
+                    __table_args__ = {'extend_existing': True}
+                    name = Column(String, nullable=False)
             """,
         }
     ],
@@ -150,12 +150,12 @@ async def test_user_add_custom_data_missing_required_field(kamihi: KamihiContain
     [
         {
             "user.py": """\
-                from kamihi import bot, BaseUser
-                from mongoengine import StringField
-
-                @bot.user_class
-                class MyCustomUser(BaseUser):
-                    name: str = StringField(required=True)
+                from kamihi import BaseUser
+                from sqlalchemy import Column, String
+                
+                class User(BaseUser):
+                    __table_args__ = {'extend_existing': True}
+                    name = Column(String, nullable=False)
             """,
         }
     ],
@@ -175,12 +175,12 @@ async def test_user_add_custom_data_field_not_defined(kamihi: KamihiContainer, a
     [
         {
             "user.py": """\
-                from kamihi import bot, BaseUser
-                from mongoengine import StringField
-
-                @bot.user_class
-                class MyCustomUser(BaseUser):
-                    name: str = StringField(required=True)
+                from kamihi import BaseUser
+                from sqlalchemy import Column, String
+                
+                class User(BaseUser):
+                    __table_args__ = {'extend_existing': True}
+                    name = Column(String, nullable=False)
             """,
         }
     ],
