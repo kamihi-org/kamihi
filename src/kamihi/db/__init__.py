@@ -6,8 +6,8 @@ License:
 
 """
 
-from .db import init_engine, get_engine, Base
-from .models import RegisteredAction, BaseUser, Role, Permission
+from .db import init_engine, get_engine
+from .models import RegisteredAction, BaseUser, Role, Permission, Base
 
 
 __all__ = [

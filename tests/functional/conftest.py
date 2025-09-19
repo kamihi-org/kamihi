@@ -13,14 +13,14 @@ from typing import Any, AsyncGenerator, Generator
 
 import docker.models.containers
 import pytest
+import toml
 from docker.types import CancellableStream
 from dotenv import load_dotenv
 from playwright.async_api import Page
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pymongo import MongoClient
 from pytest_docker_tools.wrappers import Container
-from pytest_docker_tools import build, container, fetch, volume, fxtr
+from pytest_docker_tools import build, container, volume, fxtr
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.tl.custom import Conversation
@@ -111,23 +111,34 @@ async def chat(test_settings, tg_client) -> AsyncGenerator[Conversation, Any]:
 
 
 @pytest.fixture
-def pyproject() -> dict:
+def pyproject_extra_dependencies() -> list[str]:
+    """Fixture to provide the dependencies for the pyproject.toml file."""
+    return []
+
+
+@pytest.fixture
+def pyproject(pyproject_extra_dependencies: list[str]) -> dict:
     """Fixture to provide the path to the pyproject.toml file."""
-    return {
-        "pyproject.toml": """\
-            [project]
-            name = "kftp"
-            version = "0.0.0"
-            description = "kftp"
-            requires-python = ">=3.12"
-            dependencies = [
-                "kamihi",
-            ]
-            
-            [tool.uv.sources]
-            kamihi = { path = "/lib/kamihi" }
-        """
+    data = {
+        "project": {
+            "name": "kftp",
+            "version": "0.0.0",
+            "description": "kftp",
+            "requires-python": ">=3.12",
+            "dependencies": ["kamihi"] + pyproject_extra_dependencies
+        },
+        "tool": {
+            "uv": {
+                "sources": {
+                    "kamihi": {"path": "/lib/kamihi"}
+                }
+            },
+            "alembic": {
+                "script_location": "%(here)s/migrations"
+            }
+        }
     }
+    return {"pyproject.toml": toml.dumps(data)}
 
 
 @pytest.fixture
@@ -145,11 +156,29 @@ def actions_folder() -> dict:
 @pytest.fixture
 def models_folder() -> dict:
     """Fixture to provide the path to the models folder."""
-    return {}
+    return {
+        "user.py": """\
+            from kamihi import BaseUser
+            
+            class User(BaseUser):
+                __table_args__ = {'extend_existing': True}
+        """
+    }
 
 
 @pytest.fixture
-def app_folder(pyproject, config_file, actions_folder, models_folder) -> dict:
+def migrations_folder() -> dict:
+    """Fixture to provide the path to the migrations folder."""
+    return {
+        "versions/__init__.py": "",
+        "__init__.py": "",
+        "env.py": Path("tests/functional/utils/migrations/env.py").read_text(),
+        "script.py.mako": Path("tests/functional/utils/migrations/script.py.mako").read_text(),
+    }
+
+
+@pytest.fixture
+def app_folder(pyproject, config_file, actions_folder, models_folder, migrations_folder) -> dict:
     """Fixture to provide the path to the app folder."""
     res = {}
     res.update({key: dedent(value) for key, value in pyproject.items()})
@@ -159,6 +188,12 @@ def app_folder(pyproject, config_file, actions_folder, models_folder) -> dict:
     )
     res.update(
         {"models/" + key: dedent(value) if isinstance(value, str) else value for key, value in models_folder.items()}
+    )
+    res.update(
+        {
+            "migrations/" + key: dedent(value) if isinstance(value, str) else value
+            for key, value in migrations_folder.items()
+        }
     )
     res = {key: value.encode() if isinstance(value, str) else value for key, value in res.items()}
     return res
@@ -173,7 +208,7 @@ def run_command():
 @pytest.fixture
 def sync_and_run_command(run_command):
     """Fixture to provide the command for the bot."""
-    return f"uv run {run_command}"
+    return f'/bin/bash -c "uv sync && kamihi db migrate && kamihi db upgrade && {run_command}"'
 
 
 class EndOfLogsException(Exception):
@@ -353,24 +388,16 @@ class KamihiContainer(Container):
         self.wait_for_log("Stopped!", "SUCCESS")
 
 
-mongo_image = fetch(repository="mongo:latest")
-"""Fixture that fetches the mongodb container image."""
-
-
-mongo_volume = volume()
-"""Fixture that creates a volume for the mongodb container."""
-
-
-mongo_container = container(image="{mongo_image.id}", volumes={"{mongo_volume.name}": {"bind": "/data/db"}})
-"""Fixture that provides the mongodb container."""
-
-
 kamihi_image = build(path=".", dockerfile="tests/functional/Dockerfile")
 """Fixture that builds the kamihi container image."""
 
 
 kamihi_volume = volume(initial_content=fxtr("app_folder"))
 """Fixture that creates a volume for the kamihi container."""
+
+
+uv_cache_volume = volume(scope="session")
+"""Fixture that creates a volume for the uv cache."""
 
 
 kamihi_container = container(
@@ -380,12 +407,11 @@ kamihi_container = container(
         "KAMIHI_TOKEN": "{test_settings.bot_token}",
         "KAMIHI_LOG__STDOUT_LEVEL": "TRACE",
         "KAMIHI_LOG__STDOUT_SERIALIZE": "True",
-        "KAMIHI_DB__HOST": "mongodb://{mongo_container.ips.primary}",
         "KAMIHI_WEB__HOST": "0.0.0.0",
     },
     volumes={
         "{kamihi_volume.name}": {"bind": "/app"},
-        str(Path("~/.cache/uv").expanduser()): {"bind": "/root/.cache/uv"},
+        "{uv_cache_volume.name}": {"bind": "/root/.cache/uv"},
     },
     command="{sync_and_run_command}",
     wrapper_class=KamihiContainer,
@@ -402,7 +428,16 @@ def kamihi(kamihi_container: KamihiContainer, run_command, request) -> Generator
 
     yield kamihi_container
 
-    if request.node.rep_call.failed:
+    try:
+        if request.node.rep_call.failed:
+            title = f" Kamihi container logs for {request.node.name} "
+            print(f"\n{title:=^80}")
+            for line in kamihi_container.logs():
+                if jline := kamihi_container.parse_log_json(line):
+                    print(jline["text"].strip())
+                else:
+                    print(line.strip())
+    except AttributeError:
         title = f" Kamihi container logs for {request.node.name} "
         print(f"\n{title:=^80}")
         for line in kamihi_container.logs():
@@ -410,6 +445,7 @@ def kamihi(kamihi_container: KamihiContainer, run_command, request) -> Generator
                 print(jline["text"].strip())
             else:
                 print(line.strip())
+
     if run_command == "kamihi run":
         kamihi_container.stop()
 
@@ -423,41 +459,33 @@ async def admin_page(kamihi: KamihiContainer, page) -> Page:
 
 
 @pytest.fixture
-def mongodb(mongo_container: Container) -> Generator[MongoClient, None, None]:
-    """Fixture that provides the MongoDB container."""
-    client = MongoClient(f"mongodb://{mongo_container.ips.primary}:27017")
-
-    yield client.kamihi
-
-    client.close()
-
-
-@pytest.fixture
 def user_custom_data():
     """Fixture to provide the user custom data."""
     return {}
 
 
 @pytest.fixture
-async def user_in_db(kamihi: KamihiContainer, test_settings, user_custom_data, mongodb):
-    """Fixture that creates a user in the MongoDB database."""
-    kamihi.run_and_wait_for_log(
+async def user_in_db(kamihi: KamihiContainer, test_settings, user_custom_data):
+    """Fixture that creates a user in the database."""
+    record = kamihi.run_and_wait_for_log(
         f"kamihi user add {test_settings.user_id} --data '{json.dumps(user_custom_data)}'",
         level="SUCCESS",
-        message="User added.",
+        message="User added",
     )
 
-    yield mongodb.user.find_one({"telegram_id": test_settings.user_id})
+    yield record["record"]["extra"]
 
 
 @pytest.fixture
-async def add_permission_for_user(test_settings, mongodb):
-    """Fixture that returns a function to add permissions to a user for an action in the MongoDB database."""
+async def add_permission_for_user(kamihi: KamihiContainer, test_settings):
+    """Fixture that returns a function to add permissions to a user for an action in the database."""
 
-    def _add_permission(user: dict, action_name: str):
-        action_id = mongodb.registered_action.find_one({"name": action_name})["_id"]
-        user_id = mongodb.user.find_one({"telegram_id": user["telegram_id"]})["_id"]
-        mongodb.permission.insert_one({"action": action_id, "users": [user_id], "roles": []})
+    def _add_permission(user: int, action_name: str):
+        kamihi.run_and_wait_for_log(
+            f"kamihi permission add {action_name} --user {user}",
+            level="SUCCESS",
+            message="Permission added",
+        )
 
     yield _add_permission
 

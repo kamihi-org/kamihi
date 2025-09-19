@@ -29,7 +29,7 @@ from telethon.tl.custom import Conversation
 )
 async def test_action_decorator_no_parentheses(user_in_db, add_permission_for_user, chat: Conversation, actions_folder):
     """Test the action decorator without parentheses."""
-    add_permission_for_user(user_in_db, "start")
+    add_permission_for_user(user_in_db["telegram_id"], "start")
 
     await chat.send_message("/start")
     response = await chat.get_response()
@@ -64,8 +64,8 @@ async def test_action_decorator_no_parentheses(user_in_db, add_permission_for_us
 )
 async def test_action_multiple_defined(user_in_db, add_permission_for_user, chat: Conversation, actions_folder):
     """Test the action decorator with multiple defined actions."""
-    add_permission_for_user(user_in_db, "start")
-    add_permission_for_user(user_in_db, "start2")
+    add_permission_for_user(user_in_db["telegram_id"], "start")
+    add_permission_for_user(user_in_db["telegram_id"], "start2")
 
     await chat.send_message("/start")
     response = await chat.get_response()

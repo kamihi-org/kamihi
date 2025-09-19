@@ -77,6 +77,7 @@ func = [
     "pytest-docker-tools>=3.1.9",
     "pytest-playwright-asyncio>=0.7.0",
     "telethon>=1.40.0",
+    "toml>=0.10.2",
 ]
 unit = [
     "logot[loguru]>=1.4.0",
@@ -171,9 +172,9 @@ asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 logot_capturer = "logot.loguru.LoguruCapturer"
 log_cli = true
-retries = 3
+retries = 1
 timeout = 60
-retry_delay = 60
+retry_delay = 0
 timeout_func_only = true
 
 [tool.coverage.run]

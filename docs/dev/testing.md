@@ -156,7 +156,7 @@ Most functional tests follow this pattern:
 async def test_my_feature(user_in_db, add_permission_for_user, chat):
     """Test description."""
     # Setup permissions
-    add_permission_for_user(user_in_db, "my_action")
+    add_permission_for_user(user_in_db["telegram_id"], "my_action")
     
     # Test interaction
     await chat.send_message("/my_command")
@@ -314,7 +314,7 @@ async def test_web_feature(admin_page):
 )
 async def test_greeting(user_in_db, add_permission_for_user, chat, actions_folder):
     """Test custom greeting action."""
-    add_permission_for_user(user_in_db, "greet")
+    add_permission_for_user(user_in_db["telegram_id"], "greet")
     
     await chat.send_message("/greet")
     response = await chat.get_response()
