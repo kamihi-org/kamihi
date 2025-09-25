@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from kamihi.base.config import KamihiSettings
 from kamihi.base.logging import configure_logging
 from kamihi.cli.utils import import_models, telegram_id_callback
-from kamihi.db import BaseUser, get_engine, init_engine, RegisteredAction, Role, Permission
+from kamihi.db import BaseUser, Permission, RegisteredAction, Role, get_engine, init_engine
 
 app = typer.Typer()
 
@@ -93,4 +93,8 @@ def add(
         permission = Permission(action=action_obj, users=users_objs, roles=roles_objs)
         session.add(permission)
         session.commit()
-        logger.info(f"Permission added")
+        logger.bind(
+            action=action,
+            users=[user.telegram_id for user in users_objs],
+            roles=[role.name for role in roles_objs],
+        ).success(f"Permission added")
