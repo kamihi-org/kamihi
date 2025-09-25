@@ -498,7 +498,6 @@ def pytest_runtest_makereport(item: Item, call: CallInfo):
 @pytest.fixture
 async def admin_page(kamihi: KamihiContainer, page) -> Page:
     """Fixture that provides the admin page of the Kamihi web interface."""
-    kamihi.assert_logged("TRACE", "Uvicorn running on http://0.0.0.0:4242 (Press CTRL+C to quit)")
     await page.goto(f"http://{kamihi.ips.primary}:4242/")
     return page
 

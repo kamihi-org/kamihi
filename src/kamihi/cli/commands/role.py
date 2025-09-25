@@ -40,7 +40,7 @@ def add(
     with Session(get_engine()) as session:
         role = session.execute(select(Role).where(Role.name == name)).scalar_one_or_none()
         if role:
-            lg.error("Role already exists.")
+            lg.error("Role already exists")
             raise typer.Exit(1)
 
         role = Role(name=name)
@@ -72,9 +72,10 @@ def assign(
     with Session(get_engine()) as session:
         role_obj = session.execute(select(Role).where(Role.name == role)).scalar_one_or_none()
         if not role_obj:
-            lg.error("Role does not exist.")
+            lg.error("Role does not exist")
             raise typer.Exit(1)
 
+        assigned_users = []
         for telegram_id in users:
             lg2 = lg.bind(telegram_id=telegram_id)
             user = session.execute(
@@ -85,11 +86,12 @@ def assign(
                 continue
 
             if role_obj in user.roles:
-                lg2.info("User already has role, skipping...")
+                lg2.warning("User already has role, skipping...")
                 continue
 
             user.roles.append(role_obj)
-            lg2.info("Role assigned to user")
+            assigned_users.append(telegram_id)
+            lg2.debug("Role assigned to user")
 
         session.commit()
-        lg.success("Role assigned")
+        lg.success("Role assigned to users", users=assigned_users)
