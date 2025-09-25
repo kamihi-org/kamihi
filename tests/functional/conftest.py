@@ -7,6 +7,8 @@ License:
 """
 
 import json
+import sqlite3
+import tempfile
 from pathlib import Path
 from textwrap import dedent
 from typing import Any, AsyncGenerator, Generator
@@ -399,6 +401,28 @@ class KamihiContainer(Container):
         is stopped gracefully and waits for the logs to confirm the stop.
         """
         self.kill(signal="SIGKILL")
+
+    def query_db(self, query: str) -> list[tuple]:
+        """
+        Execute a SQL query in the Kamihi container's SQLite database.
+
+        Args:
+            query (str): The SQL query to execute.
+
+        Returns:
+            list[tuple]: The results of the query as a list of tuples.
+        """
+        with tempfile.NamedTemporaryFile() as tmp:
+            tmp.write(self.get_files("/app/kamihi.db")["kamihi.db"])
+
+            conn = sqlite3.connect(tmp.name)
+            cursor = conn.cursor()
+            res = cursor.execute(query)
+            res = cursor.fetchall()
+
+            conn.close()
+
+        return res
 
 
 kamihi_image = build(path=".", dockerfile="tests/functional/Dockerfile")
