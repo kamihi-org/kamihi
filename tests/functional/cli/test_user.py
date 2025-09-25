@@ -195,4 +195,6 @@ async def test_user_add_custom_data_invalid_type(kamihi: KamihiContainer, admin_
 @pytest.mark.asyncio
 async def user_add_existing_user(kamihi: KamihiContainer, user_in_db: dict):
     """Test adding a user that already exists in the database."""
-    kamihi.run_command_and_wait_for_log(f"kamihi user add {user_in_db['telegram_id']}", "User inputted is not valid.", "ERROR")
+    kamihi.run_command_and_wait_for_log(
+        f"kamihi user add {user_in_db['telegram_id']}", "User inputted is not valid.", "ERROR"
+    )
