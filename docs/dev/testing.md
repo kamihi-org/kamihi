@@ -268,7 +268,7 @@ async def test(..., actions_folder): ...
 ```python
 def test_cli_validation(kamihi):
     """Test invalid CLI parameters."""
-    kamihi.run_and_wait_for_message(
+    kamihi.run_command_and_wait_for_message(
         "kamihi run --port=invalid",
         "Invalid value for '--port'"
     )

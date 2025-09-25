@@ -16,7 +16,7 @@ from tests.functional.conftest import KamihiContainer
 @pytest.mark.asyncio
 async def test_user_add(kamihi: KamihiContainer, admin_page: Page):
     """Test adding a user with valid parameters."""
-    kamihi.run_and_wait_for_log(
+    kamihi.run_command_and_wait_for_log(
         "kamihi user add 123456789",
         "User added",
         "SUCCESS",
@@ -30,7 +30,7 @@ async def test_user_add(kamihi: KamihiContainer, admin_page: Page):
 @pytest.mark.asyncio
 async def test_user_add_admin(kamihi: KamihiContainer, admin_page: Page):
     """Test adding a user with admin permissions."""
-    kamihi.run_and_wait_for_log(
+    kamihi.run_command_and_wait_for_log(
         "kamihi user add 123456789 --admin", "User added", "SUCCESS", {"telegram_id": 123456789, "is_admin": True}
     )
     await admin_page.get_by_role("link", name=" Users").click()
@@ -50,7 +50,7 @@ async def test_user_add_admin(kamihi: KamihiContainer, admin_page: Page):
 )
 async def test_user_add_invalid_telegram_id(kamihi: KamihiContainer, admin_page: Page, telegram_id: str):
     """Test adding a user with an invalid Telegram ID."""
-    kamihi.run_and_wait_for_message(
+    kamihi.run_command_and_wait_for_message(
         f"kamihi user add '{telegram_id}'",
         "Invalid value for 'TELEGRAM_ID'",
     )
@@ -78,7 +78,7 @@ async def test_user_add_invalid_telegram_id(kamihi: KamihiContainer, admin_page:
 )
 async def test_user_add_custom_data(kamihi: KamihiContainer, admin_page: Page, models_folder):
     """Test adding a user with custom data."""
-    kamihi.run_and_wait_for_log(
+    kamihi.run_command_and_wait_for_log(
         'kamihi user add 123456789 --data \'{"name": "John Doe"}\'',
         "User added",
         "SUCCESS",
@@ -117,7 +117,7 @@ async def test_user_add_custom_data_invalid_json_format(
     kamihi: KamihiContainer, admin_page: Page, models_folder, data: str
 ):
     """Test adding a user with invalid JSON data format."""
-    kamihi.run_and_wait_for_message(
+    kamihi.run_command_and_wait_for_message(
         f"kamihi user add 123456789 --data '{data}'",
         "Invalid JSON data",
     )
@@ -141,7 +141,7 @@ async def test_user_add_custom_data_invalid_json_format(
 )
 async def test_user_add_custom_data_missing_required_field(kamihi: KamihiContainer, admin_page: Page, models_folder):
     """Test adding a user with missing required custom data field."""
-    kamihi.run_and_wait_for_log("kamihi user add 123456789", "User inputted is not valid.", "ERROR")
+    kamihi.run_command_and_wait_for_log("kamihi user add 123456789", "User inputted is not valid.", "ERROR")
 
 
 @pytest.mark.asyncio
@@ -162,7 +162,7 @@ async def test_user_add_custom_data_missing_required_field(kamihi: KamihiContain
 )
 async def test_user_add_custom_data_field_not_defined(kamihi: KamihiContainer, admin_page: Page, models_folder):
     """Test adding a user with custom data field not defined in the user model."""
-    kamihi.run_and_wait_for_log(
+    kamihi.run_command_and_wait_for_log(
         'kamihi user add 123456789 --data \'{"undefined_field": "value"}\'',
         "Custom user model does not have the field provided.",
         "ERROR",
@@ -187,7 +187,7 @@ async def test_user_add_custom_data_field_not_defined(kamihi: KamihiContainer, a
 )
 async def test_user_add_custom_data_invalid_type(kamihi: KamihiContainer, admin_page: Page, models_folder):
     """Test adding a user with custom data of invalid type."""
-    kamihi.run_and_wait_for_log(
+    kamihi.run_command_and_wait_for_log(
         "kamihi user add 123456789 --data '{\"name\": 1234567890}'", "User inputted is not valid.", "ERROR"
     )
 
@@ -195,4 +195,4 @@ async def test_user_add_custom_data_invalid_type(kamihi: KamihiContainer, admin_
 @pytest.mark.asyncio
 async def user_add_existing_user(kamihi: KamihiContainer, user_in_db: dict):
     """Test adding a user that already exists in the database."""
-    kamihi.run_and_wait_for_log(f"kamihi user add {user_in_db['telegram_id']}", "User inputted is not valid.", "ERROR")
+    kamihi.run_command_and_wait_for_log(f"kamihi user add {user_in_db['telegram_id']}", "User inputted is not valid.", "ERROR")

@@ -193,18 +193,6 @@ def app_folder(pyproject, config_file, actions_folder, models_folder, migrations
     return res
 
 
-@pytest.fixture
-def run_command():
-    """Fixture to provide the command for the bot."""
-    return "kamihi run"
-
-
-@pytest.fixture
-def sync_and_run_command(run_command):
-    """Fixture to provide the command for the bot."""
-    return f'/bin/bash -c "uv sync && kamihi db migrate && kamihi db upgrade && {run_command}"'
-
-
 class EndOfLogsException(Exception):
     """Exception raised when the end of logs is reached without finding the expected log entry."""
 
@@ -218,6 +206,8 @@ class KamihiContainer(Container):
     """
 
     _container: docker.models.containers.Container
+
+    command_logs: list[str] = []
 
     def logs(self, stream: bool = False) -> CancellableStream | list[str]:
         """
@@ -275,8 +265,11 @@ class KamihiContainer(Container):
         """
         if stream is None:
             stream = self.logs(stream=True)
+
+        self.command_logs.append(f"\nWaiting for log: level={level}, message={message}, extra_values={extra_values}")
         for line in stream:
             line = line.decode().strip()
+            self.command_logs.append(line)
             if parse_json:
                 log_entry = self.parse_log_json(line)
                 if (
@@ -293,7 +286,8 @@ class KamihiContainer(Container):
                 log_entry = line
                 if message in log_entry:
                     return log_entry
-        return None
+
+        raise EndOfLogsException("End of logs reached without finding the expected log entry.")
 
     def wait_for_message(self, message: str, stream: CancellableStream = None) -> str:
         """
@@ -320,20 +314,11 @@ class KamihiContainer(Container):
                 return log_entry
         raise EndOfLogsException()
 
-    def wait_until_started(self) -> None:
-        """
-        Wait until the Kamihi container is started.
-
-        This method overrides the default wait_until_started method to ensure that
-        the Kamihi container is ready before proceeding with tests.
-        """
-        self.wait_for_log("Started!", "SUCCESS")
-
-    def run(self, command: str) -> CancellableStream:
+    def run_command(self, command: str) -> CancellableStream:
         """Run a command in the Kamihi container and return the output stream."""
         return self._container.exec_run(command, stream=True).output
 
-    def run_and_wait_for_log(
+    def run_command_and_wait_for_log(
         self,
         command: str,
         message: str,
@@ -354,10 +339,10 @@ class KamihiContainer(Container):
         Returns:
             dict: The log entry that matches the specified level and message.
         """
-        stream = self.run(command)
+        stream = self.run_command(command)
         return self.wait_for_log(message, level, extra_values, stream=stream, parse_json=parse_json)
 
-    def run_and_wait_for_message(self, command: str, message: str) -> dict | None:
+    def run_command_and_wait_for_message(self, command: str, message: str) -> dict | None:
         """
         Run a command in the Kamihi container and wait for a specific log message.
 
@@ -368,7 +353,43 @@ class KamihiContainer(Container):
         Returns:
             dict: The log entry that matches the specified message.
         """
-        return self.run_and_wait_for_log(command, message, parse_json=False)
+        return self.run_command_and_wait_for_log(command, message, parse_json=False)
+
+    def uv_sync(self, command: str = "uv sync -v") -> None:
+        """
+        Sync the Kamihi application in the container.
+
+        Args:
+            command (str): The command to sync the application. Defaults to "uv sync".
+        """
+        self.run_command_and_wait_for_message(command, "Released lock at `/app/.venv/.lock`")
+
+    def db_migrate(self, command: str = "kamihi db migrate") -> None:
+        """
+        Run database migrations in the Kamihi container.
+
+        Args:
+            command (str): The command to run migrations. Defaults to "kamihi db migrate".
+        """
+        self.run_command_and_wait_for_log(command, "Migrated", "SUCCESS")
+
+    def db_upgrade(self, command: str = "kamihi db upgrade") -> None:
+        """
+        Upgrade the database schema in the Kamihi container.
+
+        Args:
+            command (str): The command to upgrade the database. Defaults to "kamihi db upgrade".
+        """
+        self.run_command_and_wait_for_log(command, "Upgraded", "SUCCESS")
+
+    def start(self, command: str = "kamihi run") -> None:
+        """
+        Run Kamihi in the container with the specified command.
+
+        Args:
+            command (str): The command to run Kamihi. Defaults to "kamihi run".
+        """
+        self.run_command_and_wait_for_log(command, "Started!", "SUCCESS")
 
     def stop(self) -> None:
         """
@@ -377,9 +398,7 @@ class KamihiContainer(Container):
         This method overrides the default stop method to ensure that the Kamihi container
         is stopped gracefully and waits for the logs to confirm the stop.
         """
-        self.kill(signal="SIGINT")
-        self.kill(signal="SIGINT")
-        self.wait_for_log("Stopped!", "SUCCESS")
+        self.kill(signal="SIGKILL")
 
 
 kamihi_image = build(path=".", dockerfile="tests/functional/Dockerfile")
@@ -407,41 +426,41 @@ kamihi_container = container(
         "{kamihi_volume.name}": {"bind": "/app"},
         "{uv_cache_volume.name}": {"bind": "/root/.cache/uv"},
     },
-    command="{sync_and_run_command}",
+    command="sleep infinity",
     wrapper_class=KamihiContainer,
 )
 """Fixture that provides the Kamihi container."""
 
 
 @pytest.fixture
-def kamihi(kamihi_container: KamihiContainer, run_command, request) -> Generator[Container, None, None]:
+def kamihi(kamihi_container: KamihiContainer, request) -> Generator[Container, None, None]:
     """Fixture that ensures the Kamihi container is started and ready."""
-    kamihi_container.wait_for_message("Bytecode compiled")
-    if "kamihi run" in run_command:
-        kamihi_container.wait_until_started()
+    kamihi_container.uv_sync()
+    kamihi_container.db_migrate()
+    kamihi_container.db_upgrade()
+    kamihi_container.start()
 
     yield kamihi_container
 
+    kamihi_container.stop()
+
     try:
         if request.node.rep_call.failed:
-            title = f" Kamihi container logs for {request.node.name} "
+            title = f" Logs for {request.node.name} "
             print(f"\n{title:=^80}")
-            for line in kamihi_container.logs():
+            for line in kamihi_container.command_logs:
                 if jline := kamihi_container.parse_log_json(line):
                     print(jline["text"].strip())
                 else:
                     print(line.strip())
     except AttributeError:
-        title = f" Kamihi container logs for {request.node.name} "
+        title = f" Logs for {request.node.name} "
         print(f"\n{title:=^80}")
-        for line in kamihi_container.logs():
+        for line in kamihi_container.command_logs:
             if jline := kamihi_container.parse_log_json(line):
                 print(jline["text"].strip())
             else:
                 print(line.strip())
-
-    if run_command == "kamihi run":
-        kamihi_container.stop()
 
 
 @pytest.fixture
@@ -461,7 +480,7 @@ def user_custom_data():
 @pytest.fixture
 async def user_in_db(kamihi: KamihiContainer, test_settings, user_custom_data):
     """Fixture that creates a user in the database."""
-    record = kamihi.run_and_wait_for_log(
+    record = kamihi.run_command_and_wait_for_log(
         f"kamihi user add {test_settings.user_id} --data '{json.dumps(user_custom_data)}'",
         level="SUCCESS",
         message="User added",
@@ -475,7 +494,7 @@ async def add_permission_for_user(kamihi: KamihiContainer, test_settings):
     """Fixture that returns a function to add permissions to a user for an action in the database."""
 
     def _add_permission(user: int, action_name: str):
-        kamihi.run_and_wait_for_log(
+        kamihi.run_command_and_wait_for_log(
             f"kamihi permission add {action_name} --user {user}",
             level="SUCCESS",
             message="Permission added",

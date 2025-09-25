@@ -5,45 +5,57 @@ License:
     MIT
 
 """
+from typing import Generator
 
 import pytest
+from pytest_docker_tools.wrappers import Container
 
 from tests.functional.conftest import KamihiContainer
 
 
 @pytest.fixture
-def run_command():
-    """
-    Override the run command to a simple sleep command so
-    we can test the run functionality without needing
-    the full application to start.
-    """
-    return "sleep infinity"
+def kamihi(kamihi_container: KamihiContainer, request) -> Generator[Container, None, None]:
+    """Fixture that ensures the Kamihi container is started and ready."""
+    kamihi_container.uv_sync()
+    kamihi_container.db_migrate()
+    kamihi_container.db_upgrade()
+
+    yield kamihi_container
+
+    try:
+        if request.node.rep_call.failed:
+            title = f" Kamihi container logs for {request.node.name} "
+            print(f"\n{title:=^80}")
+            for line in kamihi_container.logs():
+                if jline := kamihi_container.parse_log_json(line):
+                    print(jline["text"].strip())
+                else:
+                    print(line.strip())
+    except AttributeError:
+        title = f" Kamihi container logs for {request.node.name} "
+        print(f"\n{title:=^80}")
+        for line in kamihi_container.logs():
+            if jline := kamihi_container.parse_log_json(line):
+                print(jline["text"].strip())
+            else:
+                print(line.strip())
 
 
 def test_run(kamihi: KamihiContainer):
     """Test the run command."""
-    kamihi.run_and_wait_for_log(
-        "kamihi run --host=localhost --port=4242",
-        "Started!",
-        "SUCCESS",
-    )
+    kamihi.start("kamihi run --host=localhost --port=4242")
 
 
 @pytest.mark.parametrize("level", ["TRACE", "DEBUG", "INFO", "SUCCESS"])
 def test_run_log_level(kamihi: KamihiContainer, level: str):
     """Test the run command with all possible log levels."""
-    kamihi.run_and_wait_for_log(
-        f"kamihi run --log-level={level}",
-        "Started!",
-        "SUCCESS",
-    )
+    kamihi.start(f"kamihi run --log-level={level}")
 
 
 @pytest.mark.parametrize("level", ["INVALID", "debug", "20"])
 def test_run_log_level_invalid(kamihi: KamihiContainer, level: str):
     """Test the run command with an invalid log level."""
-    kamihi.run_and_wait_for_message(
+    kamihi.run_command_and_wait_for_message(
         f"kamihi run --log-level={level}",
         "Invalid value for '--log-level'",
     )
@@ -57,7 +69,7 @@ def test_run_log_level_invalid(kamihi: KamihiContainer, level: str):
 )
 def test_run_web_host(kamihi: KamihiContainer, host):
     """Test the run command with various valid web host options."""
-    kamihi.run_and_wait_for_log(
+    kamihi.run_command_and_wait_for_log(
         f"kamihi run --host={host}", "Web server started on", "INFO", {"host": host, "port": 4242}
     )
 
@@ -71,7 +83,7 @@ def test_run_web_host(kamihi: KamihiContainer, host):
 )
 def test_run_web_host_invalid(kamihi: KamihiContainer, host):
     """Test the run command with various invalid web host options."""
-    kamihi.run_and_wait_for_message(
+    kamihi.run_command_and_wait_for_message(
         f"kamihi run --host={host}",
         "Invalid value for '--host'",
     )
@@ -80,7 +92,7 @@ def test_run_web_host_invalid(kamihi: KamihiContainer, host):
 @pytest.mark.parametrize("port", [2000, 65535])
 def test_run_web_port(kamihi: KamihiContainer, port):
     """Test the run command with various valid web port options."""
-    kamihi.run_and_wait_for_log(
+    kamihi.run_command_and_wait_for_log(
         f"kamihi run --port={port}",
         "Web server started on",
         "INFO",
@@ -91,7 +103,7 @@ def test_run_web_port(kamihi: KamihiContainer, port):
 @pytest.mark.parametrize("port", [-1, 0, 65536, "invalid", "80.80"])
 def test_run_web_port_invalid(kamihi: KamihiContainer, port):
     """Test the run command with various invalid web port options."""
-    kamihi.run_and_wait_for_message(
+    kamihi.run_command_and_wait_for_message(
         f"kamihi run --port={port}",
         "Invalid value for '--port'",
     )
