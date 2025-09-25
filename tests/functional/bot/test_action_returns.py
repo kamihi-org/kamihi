@@ -99,7 +99,7 @@ async def test_action_returns_string(user, add_permission_for_user, chat: Conver
     ids=["implicit", "explicit"],
 )
 async def test_action_returns_document(
-        user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+    user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
 ):
     """Test actions that returns documents."""
     add_permission_for_user(user["telegram_id"], "start")
@@ -136,7 +136,7 @@ async def test_action_returns_document(
     ],
 )
 async def test_action_returns_document_captioned(
-        user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+    user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
 ):
     """Test actions that return a file with a caption."""
     add_permission_for_user(user["telegram_id"], "start")
@@ -190,7 +190,7 @@ async def test_action_returns_document_captioned(
     ids=["implicit", "explicit"],
 )
 async def test_action_returns_photo(
-        user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+    user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
 ):
     """Test actions that return a photo."""
     add_permission_for_user(user["telegram_id"], "start")
@@ -227,7 +227,7 @@ async def test_action_returns_photo(
     ],
 )
 async def test_action_returns_photo_captioned(
-        user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+    user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
 ):
     """Test actions that return a photo with a caption."""
     add_permission_for_user(user["telegram_id"], "start")
@@ -278,7 +278,7 @@ async def test_action_returns_photo_captioned(
     ids=["implicit", "explicit"],
 )
 async def test_action_returns_video(
-        user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+    user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
 ):
     """Test actions that return a video."""
     add_permission_for_user(user["telegram_id"], "start")
@@ -314,7 +314,7 @@ async def test_action_returns_video(
     ],
 )
 async def test_action_returns_video_captioned(
-        user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+    user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
 ):
     """Test actions that return a video with a caption."""
     add_permission_for_user(user["telegram_id"], "start")
@@ -366,7 +366,7 @@ async def test_action_returns_video_captioned(
     ids=["implicit", "explicit"],
 )
 async def test_action_returns_audio(
-        user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+    user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
 ):
     """Test actions that return an audio."""
     add_permission_for_user(user["telegram_id"], "start")
@@ -403,7 +403,7 @@ async def test_action_returns_audio(
     ],
 )
 async def test_action_returns_audio_captioned(
-        user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+    user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
 ):
     """Test actions that return an audio with a caption."""
     add_permission_for_user(user["telegram_id"], "start")
@@ -454,7 +454,7 @@ async def test_action_returns_audio_captioned(
     ids=["implicit", "explicit"],
 )
 async def test_action_returns_voice(
-        user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+    user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
 ):
     """Test actions that returns a voice note."""
     add_permission_for_user(user["telegram_id"], "start")
@@ -490,7 +490,7 @@ async def test_action_returns_voice(
     ],
 )
 async def test_action_returns_voice_captioned(
-        user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
+    user, add_permission_for_user, chat: Conversation, tg_client: TelegramClient, actions_folder, tmp_path
 ):
     """Test actions that return a voice note with a caption."""
     add_permission_for_user(user["telegram_id"], "start")
@@ -667,7 +667,7 @@ async def test_action_returns_list(user, add_permission_for_user, chat: Conversa
     ],
 )
 async def test_action_returns_group_media(
-        user, add_permission_for_user, chat: Conversation, actions_folder, number_of_messages
+    user, add_permission_for_user, chat: Conversation, actions_folder, number_of_messages
 ):
     """Test actions that return multiple messages."""
     add_permission_for_user(user["telegram_id"], "start")

@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 import pytest
 from playwright.async_api import Page, expect
 from telethon.tl.custom import Conversation
@@ -31,7 +32,7 @@ from tests.functional.conftest import KamihiContainer
 async def test_permission_add_user(kamihi: KamihiContainer, user: dict, admin_page: Page, chat: Conversation, actions_folder):
     """Test the permission add command."""
     kamihi.run_command_and_wait_for_log(
-        f"kamihi permission add start --user {user["telegram_id"]}",
+        f"kamihi permission add start --user {user['telegram_id']}",
         level="SUCCESS",
         message="Permission added",
     )
@@ -63,7 +64,9 @@ async def test_permission_add_user(kamihi: KamihiContainer, user: dict, admin_pa
         }
     ],
 )
-async def test_permission_add_role(kamihi: KamihiContainer, user: dict, add_role, assign_role_to_user, admin_page, chat: Conversation, actions_folder):
+async def test_permission_add_role(
+    kamihi: KamihiContainer, user: dict, add_role, assign_role_to_user, admin_page, chat: Conversation, actions_folder
+):
     """Test the permission add command with a role."""
     add_role("test")
     assign_role_to_user(user["telegram_id"], "test")
@@ -96,8 +99,5 @@ def test_permission_add_no_args(kamihi: KamihiContainer):
 def test_permission_add_invalid_action(kamihi: KamihiContainer):
     """Test the permission add command with an invalid action."""
     kamihi.run_command_and_wait_for_log(
-        "kamihi permission add invalid_action --user 123456789",
-        "Action not found",
-        "ERROR",
-        {"name": "invalid_action"}
+        "kamihi permission add invalid_action --user 123456789", "Action not found", "ERROR", {"name": "invalid_action"}
     )
