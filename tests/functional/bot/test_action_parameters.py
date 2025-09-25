@@ -71,7 +71,7 @@ async def test_action_parameter_user(user, add_permission_for_user, chat: Conver
 )
 @pytest.mark.parametrize("user_custom_data", [{"name": "John Doe"}])
 async def test_action_parameter_user_custom(
-        user,
+    user,
     add_permission_for_user,
     chat: Conversation,
     actions_folder,
@@ -185,7 +185,7 @@ async def test_action_parameter_user_custom(
     ],
 )
 async def test_action_parameter_template(
-        user, add_permission_for_user, chat: Conversation, actions_folder, expected_response
+    user, add_permission_for_user, chat: Conversation, actions_folder, expected_response
 ):
     """Test the action decorator without parentheses."""
     add_permission_for_user(user["telegram_id"], "start")

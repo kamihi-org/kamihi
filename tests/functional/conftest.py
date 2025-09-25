@@ -583,7 +583,13 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     report_data = getattr(config, "_docker_cleanup_report", None)
     if report_data:
         terminalreporter.write_sep("-", "Docker cleanup report")
-        terminalreporter.write_line(f"{len(report_data['containers']['ContainersDeleted'] or [])} containers removed ({report_data['containers']['SpaceReclaimed'] / 1024 / 1024:.2f} MB)")
-        terminalreporter.write_line(f"{len(report_data['volumes']['VolumesDeleted'] or [])} volumes removed ({report_data['volumes']['SpaceReclaimed'] / 1024 / 1024:.2f} MB)")
-        terminalreporter.write_line(f"{len(report_data['images']['ImagesDeleted'] or [])} images removed ({report_data['images']['SpaceReclaimed'] / 1024 / 1024:.2f} MB)")
+        terminalreporter.write_line(
+            f"{len(report_data['containers']['ContainersDeleted'] or [])} containers removed ({report_data['containers']['SpaceReclaimed'] / 1024 / 1024:.2f} MB)"
+        )
+        terminalreporter.write_line(
+            f"{len(report_data['volumes']['VolumesDeleted'] or [])} volumes removed ({report_data['volumes']['SpaceReclaimed'] / 1024 / 1024:.2f} MB)"
+        )
+        terminalreporter.write_line(
+            f"{len(report_data['images']['ImagesDeleted'] or [])} images removed ({report_data['images']['SpaceReclaimed'] / 1024 / 1024:.2f} MB)"
+        )
         terminalreporter.write_line("\n")

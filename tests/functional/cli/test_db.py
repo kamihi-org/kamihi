@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 from typing import Generator
 
 import pytest
@@ -27,10 +28,9 @@ def test_db_migrate(kamihi: KamihiContainer):
 
     assert any(
         key.startswith("versions/") and key.endswith("_auto_migration.py")
-        for key
-        in kamihi.get_files("/app/migrations/versions")
+        for key in kamihi.get_files("/app/migrations/versions")
     )
-    assert kamihi.query_db("SELECT version_num FROM alembic_version;") == [] # No migrations applied yet
+    assert kamihi.query_db("SELECT version_num FROM alembic_version;") == []  # No migrations applied yet
 
 
 def test_db_upgrade(kamihi: KamihiContainer):
@@ -41,6 +41,7 @@ def test_db_upgrade(kamihi: KamihiContainer):
     revisions = kamihi.query_db("SELECT version_num FROM alembic_version;")
     assert len(revisions) == 1
     assert f"versions/{revisions[0][0]}_auto_migration.py" in kamihi.get_files("/app/migrations/versions")
+
 
 def test_db_downgrade(kamihi: KamihiContainer):
     """Test the db downgrade command."""
@@ -60,4 +61,3 @@ def test_db_downgrade(kamihi: KamihiContainer):
 
     revisions = kamihi.query_db("SELECT version_num FROM alembic_version;")
     assert len(revisions) == 0
-
