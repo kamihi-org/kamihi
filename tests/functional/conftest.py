@@ -16,6 +16,10 @@ from typing import Any, AsyncGenerator, Generator
 import docker.models.containers
 import pytest
 import toml
+from _pytest._io import TerminalWriter
+from _pytest.nodes import Item
+from _pytest.runner import CallInfo
+from _pytest.terminal import TerminalReporter
 from docker.types import CancellableStream
 from dotenv import load_dotenv
 from playwright.async_api import Page
@@ -268,7 +272,7 @@ class KamihiContainer(Container):
         if stream is None:
             stream = self.logs(stream=True)
 
-        self.command_logs.append(f"\nWaiting for log: level={level}, message={message}, extra_values={extra_values}")
+        self.command_logs.append(f"Waiting for log: level={level}, message={message}, extra_values={extra_values}")
         for line in stream:
             line = line.decode().strip()
             self.command_logs.append(line)
@@ -318,6 +322,7 @@ class KamihiContainer(Container):
 
     def run_command(self, command: str) -> CancellableStream:
         """Run a command in the Kamihi container and return the output stream."""
+        self.command_logs.append(f"$ {command}")
         return self._container.exec_run(command, stream=True).output
 
     def run_command_and_wait_for_log(
@@ -457,7 +462,7 @@ kamihi_container = container(
 
 
 @pytest.fixture
-def kamihi(kamihi_container: KamihiContainer, request) -> Generator[Container, None, None]:
+def kamihi(kamihi_container: KamihiContainer, request, reporter: TerminalWriter) -> Generator[Container, None, None]:
     """Fixture that ensures the Kamihi container is started and ready."""
     kamihi_container.uv_sync()
     kamihi_container.db_migrate()
@@ -468,23 +473,26 @@ def kamihi(kamihi_container: KamihiContainer, request) -> Generator[Container, N
 
     kamihi_container.stop()
 
-    try:
-        if request.node.rep_call.failed:
-            title = f" Logs for {request.node.name} "
-            print(f"\n{title:=^80}")
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_makereport(item: Item, call: CallInfo):
+    # Let's ensure we are dealing with a test report
+    if call.when == "call" and call.excinfo:
+        # Get the fixture instance from the item
+        kamihi_container: KamihiContainer = item.funcargs.get("kamihi_container")
+        reporter: TerminalReporter = item.config.pluginmanager.get_plugin("terminalreporter")
+        if kamihi_container:
+            reporter.write_sep("=", f" Command logs for {item.name} ")
             for line in kamihi_container.command_logs:
-                if jline := kamihi_container.parse_log_json(line):
-                    print(jline["text"].strip())
+                if line.startswith("$ "):
+                    reporter.write_sep("-", line)
+                elif line.startswith("Waiting for log:"):
+                    reporter.write_sep(" ", line)
+                    reporter.write_line("")
+                elif jline := kamihi_container.parse_log_json(line):
+                    reporter.write_line(jline["text"].strip())
                 else:
-                    print(line.strip())
-    except AttributeError:
-        title = f" Logs for {request.node.name} "
-        print(f"\n{title:=^80}")
-        for line in kamihi_container.command_logs:
-            if jline := kamihi_container.parse_log_json(line):
-                print(jline["text"].strip())
-            else:
-                print(line.strip())
+                    reporter.write_line(line.strip())
 
 
 @pytest.fixture
@@ -502,7 +510,7 @@ def user_custom_data():
 
 
 @pytest.fixture
-async def user_in_db(kamihi: KamihiContainer, test_settings, user_custom_data):
+def user(kamihi: KamihiContainer, test_settings, user_custom_data) -> Generator[dict, None, None]:
     """Fixture that creates a user in the database."""
     record = kamihi.run_command_and_wait_for_log(
         f"kamihi user add {test_settings.user_id} --data '{json.dumps(user_custom_data)}'",
@@ -514,7 +522,7 @@ async def user_in_db(kamihi: KamihiContainer, test_settings, user_custom_data):
 
 
 @pytest.fixture
-async def add_permission_for_user(kamihi: KamihiContainer, test_settings):
+def add_permission_for_user(kamihi: KamihiContainer, test_settings) -> Generator:
     """Fixture that returns a function to add permissions to a user for an action in the database."""
 
     def _add_permission(user: int, action_name: str):
@@ -527,8 +535,36 @@ async def add_permission_for_user(kamihi: KamihiContainer, test_settings):
     yield _add_permission
 
 
-@pytest.fixture(scope="session")
-def cleanup():
+@pytest.fixture
+def add_role(kamihi: KamihiContainer, test_settings) -> Generator:
+    """Fixture that returns a function to add a role to a user in the database."""
+
+    def _add_role(role_name: str):
+        kamihi.run_command_and_wait_for_log(
+            f"kamihi role add {role_name}",
+            level="SUCCESS",
+            message="Role added",
+        )
+
+    yield _add_role
+
+
+@pytest.fixture
+def assign_role_to_user(kamihi: KamihiContainer, test_settings) -> Generator:
+    """Fixture that returns a function to assign a role to a user in the database."""
+
+    def _assign_role(user: int, role_name: str):
+        kamihi.run_command_and_wait_for_log(
+            f"kamihi role assign {role_name} {user}",
+            level="SUCCESS",
+            message="Role assigned",
+        )
+
+    yield _assign_role
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup(request):
     """
     Fixture to clean up the host environment after tests.
 
@@ -536,6 +572,18 @@ def cleanup():
     """
     yield
 
-    print(docker.from_env().containers.prune())
-    print(docker.from_env().volumes.prune())
-    print(docker.from_env().images.prune({"dangling": True}))
+    request.config._docker_cleanup_report = {
+        "containers": docker.from_env().containers.prune(),
+        "volumes": docker.from_env().volumes.prune({"label": "creator=pytest-docker-tools"}),
+        "images": docker.from_env().images.prune({"dangling": True}),
+    }
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    report_data = getattr(config, "_docker_cleanup_report", None)
+    if report_data:
+        terminalreporter.write_sep("-", "Docker cleanup report")
+        terminalreporter.write_line(f"{len(report_data['containers']['ContainersDeleted'] or [])} containers removed ({report_data['containers']['SpaceReclaimed'] / 1024 / 1024:.2f} MB)")
+        terminalreporter.write_line(f"{len(report_data['volumes']['VolumesDeleted'] or [])} volumes removed ({report_data['volumes']['SpaceReclaimed'] / 1024 / 1024:.2f} MB)")
+        terminalreporter.write_line(f"{len(report_data['images']['ImagesDeleted'] or [])} images removed ({report_data['images']['SpaceReclaimed'] / 1024 / 1024:.2f} MB)")
+        terminalreporter.write_line("\n")

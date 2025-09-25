@@ -27,14 +27,14 @@ from telethon.tl.custom import Conversation
         }
     ],
 )
-async def test_action_parameter_user(user_in_db, add_permission_for_user, chat: Conversation, actions_folder):
+async def test_action_parameter_user(user, add_permission_for_user, chat: Conversation, actions_folder):
     """Test the action decorator without parentheses."""
-    add_permission_for_user(user_in_db["telegram_id"], "start")
+    add_permission_for_user(user["telegram_id"], "start")
 
     await chat.send_message("/start")
     response = await chat.get_response()
 
-    assert response.text == f"Hello, user with ID {user_in_db['telegram_id']}!"
+    assert response.text == f"Hello, user with ID {user['telegram_id']}!"
 
 
 @pytest.mark.asyncio
@@ -71,7 +71,7 @@ async def test_action_parameter_user(user_in_db, add_permission_for_user, chat: 
 )
 @pytest.mark.parametrize("user_custom_data", [{"name": "John Doe"}])
 async def test_action_parameter_user_custom(
-    user_in_db,
+        user,
     add_permission_for_user,
     chat: Conversation,
     actions_folder,
@@ -79,12 +79,12 @@ async def test_action_parameter_user_custom(
     user_custom_data,
 ):
     """Test the action decorator without parentheses."""
-    add_permission_for_user(user_in_db["telegram_id"], "start")
+    add_permission_for_user(user["telegram_id"], "start")
 
     await chat.send_message("/start")
     response = await chat.get_response()
 
-    assert response.text == f"Hello, {user_in_db['name']}!"
+    assert response.text == f"Hello, {user['name']}!"
 
 
 @pytest.mark.asyncio
@@ -185,10 +185,10 @@ async def test_action_parameter_user_custom(
     ],
 )
 async def test_action_parameter_template(
-    user_in_db, add_permission_for_user, chat: Conversation, actions_folder, expected_response
+        user, add_permission_for_user, chat: Conversation, actions_folder, expected_response
 ):
     """Test the action decorator without parentheses."""
-    add_permission_for_user(user_in_db["telegram_id"], "start")
+    add_permission_for_user(user["telegram_id"], "start")
 
     await chat.send_message("/start")
     response = await chat.get_response()
@@ -216,9 +216,9 @@ async def test_action_parameter_template(
         }
     ],
 )
-async def test_action_parameter_templates(user_in_db, add_permission_for_user, chat: Conversation, actions_folder):
+async def test_action_parameter_templates(user, add_permission_for_user, chat: Conversation, actions_folder):
     """Test the action decorator without parentheses."""
-    add_permission_for_user(user_in_db["telegram_id"], "start")
+    add_permission_for_user(user["telegram_id"], "start")
 
     await chat.send_message("/start")
     response = await chat.get_response()

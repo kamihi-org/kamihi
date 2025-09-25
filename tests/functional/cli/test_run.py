@@ -22,24 +22,6 @@ def kamihi(kamihi_container: KamihiContainer, request) -> Generator[Container, N
 
     yield kamihi_container
 
-    try:
-        if request.node.rep_call.failed:
-            title = f" Kamihi container logs for {request.node.name} "
-            print(f"\n{title:=^80}")
-            for line in kamihi_container.logs():
-                if jline := kamihi_container.parse_log_json(line):
-                    print(jline["text"].strip())
-                else:
-                    print(line.strip())
-    except AttributeError:
-        title = f" Kamihi container logs for {request.node.name} "
-        print(f"\n{title:=^80}")
-        for line in kamihi_container.logs():
-            if jline := kamihi_container.parse_log_json(line):
-                print(jline["text"].strip())
-            else:
-                print(line.strip())
-
 
 def test_run(kamihi: KamihiContainer):
     """Test the run command."""

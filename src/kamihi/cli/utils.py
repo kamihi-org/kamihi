@@ -17,6 +17,8 @@ from loguru import logger
 
 def _ensure_namespace(pkg_name: str, path: Path, *aliases: str) -> None:
     """
+    Ensure a namespace-like package exists in sys.modules.
+
     Ensure a namespace-like package exists in sys.modules pointing at `path`,
     and optionally create aliases that reference the same package module.
     """
@@ -53,9 +55,7 @@ def import_file(path: Path, name: str) -> None:
 
 
 def import_actions(actions_dir: Path) -> None:
-    """
-    Import all Python files from a specified directory.
-    """
+    """Import all Python files from a specified directory."""
     if not actions_dir.is_dir():
         logger.warning("No actions directory found.")
         return
@@ -84,9 +84,7 @@ def import_actions(actions_dir: Path) -> None:
 
 
 def import_models(models_dir: Path) -> None:
-    """
-    Import all Python files from a specified directory.
-    """
+    """Import all Python files from a specified directory."""
     if not models_dir.is_dir():
         logger.debug("No models directory found.")
         return
@@ -107,7 +105,7 @@ def import_models(models_dir: Path) -> None:
             sys.modules.setdefault(f"models.{model_name}", sys.modules[f"kamihi.models.{model_name}"])
 
 
-def telegram_id_callback(value: int | list[int]) -> int:
+def telegram_id_callback(value: int | list[int]) -> int | list[int] | None:
     """
     Validate the Telegram ID.
 
@@ -121,6 +119,9 @@ def telegram_id_callback(value: int | list[int]) -> int:
         typer.BadParameter: If the Telegram ID is invalid.
 
     """
+    if value is None:
+        return value
+
     lvalue = [value] if not isinstance(value, list) else value
 
     for v in lvalue:

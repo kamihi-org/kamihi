@@ -11,7 +11,14 @@ import random
 from pathlib import Path
 
 import numpy as np
+import pytest
 from PIL import Image
+
+
+@pytest.fixture
+def reporter(pytestconfig):
+    """Fixture that provides access to the terminalreporter."""
+    return pytestconfig.pluginmanager.get_plugin("terminalreporter")
 
 
 def random_image() -> bytes:
