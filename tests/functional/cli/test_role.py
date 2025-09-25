@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 import pytest
 from playwright.async_api import Page, expect
 
@@ -21,7 +22,7 @@ async def test_role_add(kamihi: KamihiContainer, admin_page: Page):
     )
 
     await admin_page.get_by_role("link", name=" Roles").click()
-    await expect(admin_page.locator("[id=\"\\31 \"]")).to_contain_text("testrole")
+    await expect(admin_page.locator('[id="\\31 "]')).to_contain_text("testrole")
 
 
 def test_role_add_existing(kamihi: KamihiContainer):
@@ -50,8 +51,8 @@ async def test_role_assign(kamihi: KamihiContainer, user: dict, add_role, admin_
     )
 
     await admin_page.get_by_role("link", name=" Roles").click()
-    await expect(admin_page.locator("[id=\"\\31 \"]")).to_contain_text("testrole")
-    await expect(admin_page.locator("[id=\"\\31 \"]")).to_contain_text(str(user["telegram_id"]))
+    await expect(admin_page.locator('[id="\\31 "]')).to_contain_text("testrole")
+    await expect(admin_page.locator('[id="\\31 "]')).to_contain_text(str(user["telegram_id"]))
 
 
 def test_role_assign_repeated(kamihi: KamihiContainer, user: dict, add_role):

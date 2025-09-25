@@ -29,7 +29,9 @@ from tests.functional.conftest import KamihiContainer
         }
     ],
 )
-async def test_permission_add_user(kamihi: KamihiContainer, user: dict, admin_page: Page, chat: Conversation, actions_folder):
+async def test_permission_add_user(
+    kamihi: KamihiContainer, user: dict, admin_page: Page, chat: Conversation, actions_folder
+):
     """Test the permission add command."""
     kamihi.run_command_and_wait_for_log(
         f"kamihi permission add start --user {user['telegram_id']}",
@@ -38,9 +40,9 @@ async def test_permission_add_user(kamihi: KamihiContainer, user: dict, admin_pa
     )
 
     await admin_page.get_by_role("link", name=" Permissions").click()
-    await expect(admin_page.locator("[id=\"\\31 \"]")).to_contain_text("/start")
-    await expect(admin_page.locator("[id=\"\\31 \"]")).to_contain_text(str(user["telegram_id"]))
-    await expect(admin_page.locator("[id=\"\\31 \"]")).to_contain_text("-empty-")
+    await expect(admin_page.locator('[id="\\31 "]')).to_contain_text("/start")
+    await expect(admin_page.locator('[id="\\31 "]')).to_contain_text(str(user["telegram_id"]))
+    await expect(admin_page.locator('[id="\\31 "]')).to_contain_text("-empty-")
 
     await chat.send_message("/start")
     response = await chat.get_response()
@@ -78,9 +80,9 @@ async def test_permission_add_role(
     )
 
     await admin_page.get_by_role("link", name=" Permissions").click()
-    await expect(admin_page.locator("[id=\"\\31 \"]")).to_contain_text("/start")
-    await expect(admin_page.locator("[id=\"\\31 \"]")).to_contain_text("-empty-")
-    await expect(admin_page.locator("[id=\"\\31 \"]")).to_contain_text("test")
+    await expect(admin_page.locator('[id="\\31 "]')).to_contain_text("/start")
+    await expect(admin_page.locator('[id="\\31 "]')).to_contain_text("-empty-")
+    await expect(admin_page.locator('[id="\\31 "]')).to_contain_text("test")
 
     await chat.send_message("/start")
     response = await chat.get_response()
