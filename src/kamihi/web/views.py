@@ -9,19 +9,19 @@ License:
 from typing import Any, Literal
 
 from starlette.requests import Request
-from starlette_admin.contrib.mongoengine import ModelView
+from starlette_admin.contrib.sqla import ModelView
 
 
-class NoClsView(ModelView):
-    """NoClsView hides the "_cls" field from the admin interface."""
+class ExcludeIDModelView(ModelView):
+    """ExcludeIDModelView is a custom view that excludes the ID field from forms."""
 
-    exclude_fields_from_list = ["_cls"]
-    exclude_fields_from_detail = ["_cls"]
-    exclude_fields_from_create = ["_cls"]
-    exclude_fields_from_edit = ["_cls"]
+    exclude_fields_from_list = ["id"]
+    exclude_fields_from_detail = ["id"]
+    exclude_fields_from_create = ["id"]
+    exclude_fields_from_edit = ["id"]
 
 
-class HooksView(NoClsView):
+class HooksView(ExcludeIDModelView):
     """HooksView is a custom view that accepts a dictionary of hooks on different events."""
 
     hooks: dict[

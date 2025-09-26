@@ -28,12 +28,11 @@ from multipledispatch import dispatch
 from telegram import BotCommand
 
 from kamihi.base.config import KamihiSettings
-from kamihi.db.mongo import connect, disconnect
+from kamihi.db import init_engine
 from kamihi.tg import TelegramClient
 from kamihi.tg.handlers import AuthHandler
 from kamihi.tg.media import Audio, Document, Location, Photo, Video, Voice
 from kamihi.users import get_users, is_user_authorized
-from kamihi.users.models import User
 from kamihi.web import KamihiWeb
 
 from .action import Action
@@ -77,8 +76,8 @@ class Bot:
         """
         self.settings = settings
 
-        # Connects to the database
-        connect(self.settings.db)
+        init_engine(self.settings.db)
+        logger.trace("Initialized database engine")
 
     @dispatch([(str, Callable)])
     def action(self, *args: str | Callable, description: str = None) -> Action | Callable:
@@ -126,18 +125,6 @@ class Bot:
 
         """
         return functools.partial(self.action, *commands, description=description)
-
-    def user_class(self, cls: type[User]) -> None:  # skipcq: PYL-R0201
-        """
-        Set the user model for the bot.
-
-        This method is used as a decorator to set the user model for the bot.
-
-        Args:
-            cls: The user class to set.
-
-        """
-        User.set_model(cls)
 
     @property
     def _valid_actions(self) -> list[Action]:
@@ -214,7 +201,6 @@ class Bot:
         # Loads the web server
         self._web = KamihiWeb(
             self.settings.web,
-            self.settings.db,
             {
                 "after_create": [self._set_scopes],
                 "after_edit": [self._set_scopes],
@@ -226,6 +212,3 @@ class Bot:
 
         # Runs the client
         self._client.run()
-
-        # When the client is stopped, stop the database connection
-        disconnect()

@@ -133,10 +133,7 @@ class TelegramClient:
 
         for user_id, commands in scopes.items():
             lg = logger.bind(user_id=user_id, commands=[command.command for command in commands])
-            with lg.catch(
-                exception=TelegramError,
-                message="Failed to set scopes for user {user_id}",
-            ):
+            with lg.catch(exception=TelegramError, message="Failed to set scopes for user {user_id}", reraise=True):
                 await self._app.bot.set_my_commands(
                     commands=commands,
                     scope=BotCommandScopeChat(user_id),

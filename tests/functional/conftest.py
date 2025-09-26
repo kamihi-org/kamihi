@@ -7,20 +7,26 @@ License:
 """
 
 import json
+import sqlite3
+import tempfile
 from pathlib import Path
 from textwrap import dedent
 from typing import Any, AsyncGenerator, Generator
 
 import docker.models.containers
 import pytest
+import toml
+from _pytest._io import TerminalWriter
+from _pytest.nodes import Item
+from _pytest.runner import CallInfo
+from _pytest.terminal import TerminalReporter
 from docker.types import CancellableStream
 from dotenv import load_dotenv
 from playwright.async_api import Page
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pymongo import MongoClient
 from pytest_docker_tools.wrappers import Container
-from pytest_docker_tools import build, container, fetch, volume, fxtr
+from pytest_docker_tools import build, container, volume, fxtr
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.tl.custom import Conversation
@@ -111,23 +117,28 @@ async def chat(test_settings, tg_client) -> AsyncGenerator[Conversation, Any]:
 
 
 @pytest.fixture
-def pyproject() -> dict:
+def pyproject_extra_dependencies() -> list[str]:
+    """Fixture to provide the dependencies for the pyproject.toml file."""
+    return []
+
+
+@pytest.fixture
+def pyproject(pyproject_extra_dependencies: list[str]) -> dict:
     """Fixture to provide the path to the pyproject.toml file."""
-    return {
-        "pyproject.toml": """\
-            [project]
-            name = "kftp"
-            version = "0.0.0"
-            description = "kftp"
-            requires-python = ">=3.12"
-            dependencies = [
-                "kamihi",
-            ]
-            
-            [tool.uv.sources]
-            kamihi = { path = "/lib/kamihi" }
-        """
+    data = {
+        "project": {
+            "name": "kftp",
+            "version": "0.0.0",
+            "description": "kftp",
+            "requires-python": ">=3.12",
+            "dependencies": ["kamihi"] + pyproject_extra_dependencies,
+        },
+        "tool": {
+            "uv": {"sources": {"kamihi": {"path": "/lib/kamihi"}}},
+            "alembic": {"script_location": "%(here)s/migrations"},
+        },
     }
+    return {"pyproject.toml": toml.dumps(data)}
 
 
 @pytest.fixture
@@ -145,11 +156,29 @@ def actions_folder() -> dict:
 @pytest.fixture
 def models_folder() -> dict:
     """Fixture to provide the path to the models folder."""
-    return {}
+    return {
+        "user.py": """\
+            from kamihi import BaseUser
+            
+            class User(BaseUser):
+                __table_args__ = {'extend_existing': True}
+        """
+    }
 
 
 @pytest.fixture
-def app_folder(pyproject, config_file, actions_folder, models_folder) -> dict:
+def migrations_folder() -> dict:
+    """Fixture to provide the path to the migrations folder."""
+    return {
+        "versions/__init__.py": "",
+        "__init__.py": "",
+        "env.py": Path("tests/functional/utils/migrations/env.py").read_text(),
+        "script.py.mako": Path("tests/functional/utils/migrations/script.py.mako").read_text(),
+    }
+
+
+@pytest.fixture
+def app_folder(pyproject, config_file, actions_folder, models_folder, migrations_folder) -> dict:
     """Fixture to provide the path to the app folder."""
     res = {}
     res.update({key: dedent(value) for key, value in pyproject.items()})
@@ -160,20 +189,20 @@ def app_folder(pyproject, config_file, actions_folder, models_folder) -> dict:
     res.update(
         {"models/" + key: dedent(value) if isinstance(value, str) else value for key, value in models_folder.items()}
     )
+    res.update(
+        {
+            "migrations/" + key: dedent(value) if isinstance(value, str) else value
+            for key, value in migrations_folder.items()
+        }
+    )
     res = {key: value.encode() if isinstance(value, str) else value for key, value in res.items()}
     return res
 
 
 @pytest.fixture
-def run_command():
-    """Fixture to provide the command for the bot."""
-    return "kamihi run"
-
-
-@pytest.fixture
-def sync_and_run_command(run_command):
-    """Fixture to provide the command for the bot."""
-    return f"uv run {run_command}"
+def db_url() -> str:
+    """Fixture to provide the database URL."""
+    return "sqlite:///./kamihi.db"
 
 
 class EndOfLogsException(Exception):
@@ -189,6 +218,8 @@ class KamihiContainer(Container):
     """
 
     _container: docker.models.containers.Container
+
+    command_logs: list[str] = []
 
     def logs(self, stream: bool = False) -> CancellableStream | list[str]:
         """
@@ -246,8 +277,11 @@ class KamihiContainer(Container):
         """
         if stream is None:
             stream = self.logs(stream=True)
+
+        self.command_logs.append(f"Waiting for log: level={level}, message={message}, extra_values={extra_values}")
         for line in stream:
             line = line.decode().strip()
+            self.command_logs.append(line)
             if parse_json:
                 log_entry = self.parse_log_json(line)
                 if (
@@ -264,7 +298,11 @@ class KamihiContainer(Container):
                 log_entry = line
                 if message in log_entry:
                     return log_entry
-        return None
+
+        raise EndOfLogsException(
+            "End of logs reached without finding the expected log entry: "
+            f"message={message}, level={level}, extra_values={extra_values}"
+        )
 
     def wait_for_message(self, message: str, stream: CancellableStream = None) -> str:
         """
@@ -291,20 +329,12 @@ class KamihiContainer(Container):
                 return log_entry
         raise EndOfLogsException()
 
-    def wait_until_started(self) -> None:
-        """
-        Wait until the Kamihi container is started.
-
-        This method overrides the default wait_until_started method to ensure that
-        the Kamihi container is ready before proceeding with tests.
-        """
-        self.wait_for_log("Started!", "SUCCESS")
-
-    def run(self, command: str) -> CancellableStream:
+    def run_command(self, command: str) -> CancellableStream:
         """Run a command in the Kamihi container and return the output stream."""
+        self.command_logs.append(f"$ {command}")
         return self._container.exec_run(command, stream=True).output
 
-    def run_and_wait_for_log(
+    def run_command_and_wait_for_log(
         self,
         command: str,
         message: str,
@@ -325,10 +355,10 @@ class KamihiContainer(Container):
         Returns:
             dict: The log entry that matches the specified level and message.
         """
-        stream = self.run(command)
+        stream = self.run_command(command)
         return self.wait_for_log(message, level, extra_values, stream=stream, parse_json=parse_json)
 
-    def run_and_wait_for_message(self, command: str, message: str) -> dict | None:
+    def run_command_and_wait_for_message(self, command: str, message: str) -> dict | None:
         """
         Run a command in the Kamihi container and wait for a specific log message.
 
@@ -339,7 +369,46 @@ class KamihiContainer(Container):
         Returns:
             dict: The log entry that matches the specified message.
         """
-        return self.run_and_wait_for_log(command, message, parse_json=False)
+        return self.run_command_and_wait_for_log(command, message, parse_json=False)
+
+    def uv_sync(self, command: str = "uv sync") -> None:
+        """
+        Sync the Kamihi application in the container.
+
+        Args:
+            command (str): The command to sync the application. Defaults to "uv sync".
+        """
+        stream = self.run_command(command)
+        for line in stream:
+            line = line.decode().strip()
+            self.command_logs.append(line)
+
+    def db_migrate(self, command: str = "kamihi db migrate") -> None:
+        """
+        Run database migrations in the Kamihi container.
+
+        Args:
+            command (str): The command to run migrations. Defaults to "kamihi db migrate".
+        """
+        self.run_command_and_wait_for_log(command, "Migrated", "SUCCESS")
+
+    def db_upgrade(self, command: str = "kamihi db upgrade") -> None:
+        """
+        Upgrade the database schema in the Kamihi container.
+
+        Args:
+            command (str): The command to upgrade the database. Defaults to "kamihi db upgrade".
+        """
+        self.run_command_and_wait_for_log(command, "Upgraded", "SUCCESS")
+
+    def start(self, command: str = "kamihi run") -> None:
+        """
+        Run Kamihi in the container with the specified command.
+
+        Args:
+            command (str): The command to run Kamihi. Defaults to "kamihi run".
+        """
+        self.run_command_and_wait_for_log(command, "Started!", "SUCCESS")
 
     def stop(self) -> None:
         """
@@ -348,21 +417,29 @@ class KamihiContainer(Container):
         This method overrides the default stop method to ensure that the Kamihi container
         is stopped gracefully and waits for the logs to confirm the stop.
         """
-        self.kill(signal="SIGINT")
-        self.kill(signal="SIGINT")
-        self.wait_for_log("Stopped!", "SUCCESS")
+        self.kill(signal="SIGKILL")
 
+    def query_db(self, query: str) -> list[tuple]:
+        """
+        Execute a SQL query in the Kamihi container's SQLite database.
 
-mongo_image = fetch(repository="mongo:latest")
-"""Fixture that fetches the mongodb container image."""
+        Args:
+            query (str): The SQL query to execute.
 
+        Returns:
+            list[tuple]: The results of the query as a list of tuples.
+        """
+        with tempfile.NamedTemporaryFile() as tmp:
+            tmp.write(self.get_files("/app/kamihi.db")["kamihi.db"])
 
-mongo_volume = volume()
-"""Fixture that creates a volume for the mongodb container."""
+            conn = sqlite3.connect(tmp.name)
+            cursor = conn.cursor()
+            res = cursor.execute(query)
+            res = cursor.fetchall()
 
+            conn.close()
 
-mongo_container = container(image="{mongo_image.id}", volumes={"{mongo_volume.name}": {"bind": "/data/db"}})
-"""Fixture that provides the mongodb container."""
+        return res
 
 
 kamihi_image = build(path=".", dockerfile="tests/functional/Dockerfile")
@@ -373,6 +450,10 @@ kamihi_volume = volume(initial_content=fxtr("app_folder"))
 """Fixture that creates a volume for the kamihi container."""
 
 
+uv_cache_volume = volume(scope="session")
+"""Fixture that creates a volume for the uv cache."""
+
+
 kamihi_container = container(
     image="{kamihi_image.id}",
     environment={
@@ -380,56 +461,58 @@ kamihi_container = container(
         "KAMIHI_TOKEN": "{test_settings.bot_token}",
         "KAMIHI_LOG__STDOUT_LEVEL": "TRACE",
         "KAMIHI_LOG__STDOUT_SERIALIZE": "True",
-        "KAMIHI_DB__HOST": "mongodb://{mongo_container.ips.primary}",
         "KAMIHI_WEB__HOST": "0.0.0.0",
+        "KAMIHI_DB__URL": "{db_url}",
     },
     volumes={
         "{kamihi_volume.name}": {"bind": "/app"},
-        str(Path("~/.cache/uv").expanduser()): {"bind": "/root/.cache/uv"},
+        "{uv_cache_volume.name}": {"bind": "/root/.cache/uv"},
     },
-    command="{sync_and_run_command}",
+    command="sleep infinity",
     wrapper_class=KamihiContainer,
 )
 """Fixture that provides the Kamihi container."""
 
 
 @pytest.fixture
-def kamihi(kamihi_container: KamihiContainer, run_command, request) -> Generator[Container, None, None]:
+def kamihi(kamihi_container: KamihiContainer, request, reporter: TerminalWriter) -> Generator[Container, None, None]:
     """Fixture that ensures the Kamihi container is started and ready."""
-    kamihi_container.wait_for_message("Bytecode compiled")
-    if "kamihi run" in run_command:
-        kamihi_container.wait_until_started()
+    kamihi_container.uv_sync()
+    kamihi_container.db_migrate()
+    kamihi_container.db_upgrade()
+    kamihi_container.start()
 
     yield kamihi_container
 
-    if request.node.rep_call.failed:
-        title = f" Kamihi container logs for {request.node.name} "
-        print(f"\n{title:=^80}")
-        for line in kamihi_container.logs():
-            if jline := kamihi_container.parse_log_json(line):
-                print(jline["text"].strip())
-            else:
-                print(line.strip())
-    if run_command == "kamihi run":
-        kamihi_container.stop()
+    kamihi_container.stop()
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_makereport(item: Item, call: CallInfo):
+    # Let's ensure we are dealing with a test report
+    if call.when == "call" and call.excinfo:
+        # Get the fixture instance from the item
+        kamihi_container: KamihiContainer = item.funcargs.get("kamihi_container")
+        reporter: TerminalReporter = item.config.pluginmanager.get_plugin("terminalreporter")
+        if kamihi_container:
+            reporter.write_sep("=", f" Command logs for {item.name} ")
+            for line in kamihi_container.command_logs:
+                if line.startswith("$ "):
+                    reporter.write_sep("-", line)
+                elif line.startswith("Waiting for log:"):
+                    reporter.write_sep(" ", line)
+                    reporter.write_line("")
+                elif jline := kamihi_container.parse_log_json(line):
+                    reporter.write_line(jline["text"].strip())
+                else:
+                    reporter.write_line(line.strip())
 
 
 @pytest.fixture
 async def admin_page(kamihi: KamihiContainer, page) -> Page:
     """Fixture that provides the admin page of the Kamihi web interface."""
-    kamihi.assert_logged("TRACE", "Uvicorn running on http://0.0.0.0:4242 (Press CTRL+C to quit)")
     await page.goto(f"http://{kamihi.ips.primary}:4242/")
     return page
-
-
-@pytest.fixture
-def mongodb(mongo_container: Container) -> Generator[MongoClient, None, None]:
-    """Fixture that provides the MongoDB container."""
-    client = MongoClient(f"mongodb://{mongo_container.ips.primary}:27017")
-
-    yield client.kamihi
-
-    client.close()
 
 
 @pytest.fixture
@@ -439,31 +522,61 @@ def user_custom_data():
 
 
 @pytest.fixture
-async def user_in_db(kamihi: KamihiContainer, test_settings, user_custom_data, mongodb):
-    """Fixture that creates a user in the MongoDB database."""
-    kamihi.run_and_wait_for_log(
+def user(kamihi: KamihiContainer, test_settings, user_custom_data) -> Generator[dict, None, None]:
+    """Fixture that creates a user in the database."""
+    record = kamihi.run_command_and_wait_for_log(
         f"kamihi user add {test_settings.user_id} --data '{json.dumps(user_custom_data)}'",
         level="SUCCESS",
-        message="User added.",
+        message="User added",
     )
 
-    yield mongodb.user.find_one({"telegram_id": test_settings.user_id})
+    yield record["record"]["extra"]
 
 
 @pytest.fixture
-async def add_permission_for_user(test_settings, mongodb):
-    """Fixture that returns a function to add permissions to a user for an action in the MongoDB database."""
+def add_permission_for_user(kamihi: KamihiContainer, test_settings) -> Generator:
+    """Fixture that returns a function to add permissions to a user for an action in the database."""
 
-    def _add_permission(user: dict, action_name: str):
-        action_id = mongodb.registered_action.find_one({"name": action_name})["_id"]
-        user_id = mongodb.user.find_one({"telegram_id": user["telegram_id"]})["_id"]
-        mongodb.permission.insert_one({"action": action_id, "users": [user_id], "roles": []})
+    def _add_permission(user: int, action_name: str):
+        kamihi.run_command_and_wait_for_log(
+            f"kamihi permission add {action_name} --user {user}",
+            level="SUCCESS",
+            message="Permission added",
+        )
 
     yield _add_permission
 
 
-@pytest.fixture(scope="session")
-def cleanup():
+@pytest.fixture
+def add_role(kamihi: KamihiContainer, test_settings) -> Generator:
+    """Fixture that returns a function to add a role to a user in the database."""
+
+    def _add_role(role_name: str):
+        kamihi.run_command_and_wait_for_log(
+            f"kamihi role add {role_name}",
+            level="SUCCESS",
+            message="Role added",
+        )
+
+    yield _add_role
+
+
+@pytest.fixture
+def assign_role_to_user(kamihi: KamihiContainer, test_settings) -> Generator:
+    """Fixture that returns a function to assign a role to a user in the database."""
+
+    def _assign_role(user: int, role_name: str):
+        kamihi.run_command_and_wait_for_log(
+            f"kamihi role assign {role_name} {user}",
+            level="SUCCESS",
+            message="Role assigned",
+        )
+
+    yield _assign_role
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup(request):
     """
     Fixture to clean up the host environment after tests.
 
@@ -471,6 +584,24 @@ def cleanup():
     """
     yield
 
-    print(docker.from_env().containers.prune())
-    print(docker.from_env().volumes.prune())
-    print(docker.from_env().images.prune({"dangling": True}))
+    request.config._docker_cleanup_report = {
+        "containers": docker.from_env().containers.prune(),
+        "volumes": docker.from_env().volumes.prune({"label": "creator=pytest-docker-tools"}),
+        "images": docker.from_env().images.prune({"dangling": True}),
+    }
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    report_data = getattr(config, "_docker_cleanup_report", None)
+    if report_data:
+        terminalreporter.write_sep("-", "Docker cleanup report")
+        terminalreporter.write_line(
+            f"{len(report_data['containers']['ContainersDeleted'] or [])} containers removed ({report_data['containers']['SpaceReclaimed'] / 1024 / 1024:.2f} MB)"
+        )
+        terminalreporter.write_line(
+            f"{len(report_data['volumes']['VolumesDeleted'] or [])} volumes removed ({report_data['volumes']['SpaceReclaimed'] / 1024 / 1024:.2f} MB)"
+        )
+        terminalreporter.write_line(
+            f"{len(report_data['images']['ImagesDeleted'] or [])} images removed ({report_data['images']['SpaceReclaimed'] / 1024 / 1024:.2f} MB)"
+        )
+        terminalreporter.write_line("\n")
