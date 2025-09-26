@@ -299,7 +299,10 @@ class KamihiContainer(Container):
                 if message in log_entry:
                     return log_entry
 
-        raise EndOfLogsException("End of logs reached without finding the expected log entry.")
+        raise EndOfLogsException(
+            "End of logs reached without finding the expected log entry: "
+            f"message={message}, level={level}, extra_values={extra_values}"
+        )
 
     def wait_for_message(self, message: str, stream: CancellableStream = None) -> str:
         """
