@@ -199,6 +199,12 @@ def app_folder(pyproject, config_file, actions_folder, models_folder, migrations
     return res
 
 
+@pytest.fixture
+def db_url() -> str:
+    """Fixture to provide the database URL."""
+    return "sqlite:///./kamihi.db"
+
+
 class EndOfLogsException(Exception):
     """Exception raised when the end of logs is reached without finding the expected log entry."""
 
@@ -450,6 +456,7 @@ kamihi_container = container(
         "KAMIHI_LOG__STDOUT_LEVEL": "TRACE",
         "KAMIHI_LOG__STDOUT_SERIALIZE": "True",
         "KAMIHI_WEB__HOST": "0.0.0.0",
+        "KAMIHI_DB__URL": "{db_url}",
     },
     volumes={
         "{kamihi_volume.name}": {"bind": "/app"},
@@ -477,7 +484,7 @@ def kamihi(kamihi_container: KamihiContainer, request, reporter: TerminalWriter)
 @pytest.hookimpl(tryfirst=True)
 def pytest_runtest_makereport(item: Item, call: CallInfo):
     # Let's ensure we are dealing with a test report
-    if call.when == "call" and call.excinfo:
+    if call.when in ("setup", "call", "teardown") and call.excinfo:
         # Get the fixture instance from the item
         kamihi_container: KamihiContainer = item.funcargs.get("kamihi_container")
         reporter: TerminalReporter = item.config.pluginmanager.get_plugin("terminalreporter")
