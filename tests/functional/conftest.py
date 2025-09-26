@@ -368,14 +368,17 @@ class KamihiContainer(Container):
         """
         return self.run_command_and_wait_for_log(command, message, parse_json=False)
 
-    def uv_sync(self, command: str = "uv sync -v") -> None:
+    def uv_sync(self, command: str = "uv sync") -> None:
         """
         Sync the Kamihi application in the container.
 
         Args:
             command (str): The command to sync the application. Defaults to "uv sync".
         """
-        self.run_command_and_wait_for_message(command, "Released lock at `/app/.venv/.lock`")
+        stream = self.run_command(command)
+        for line in stream:
+            line = line.decode().strip()
+            self.command_logs.append(line)
 
     def db_migrate(self, command: str = "kamihi db migrate") -> None:
         """
@@ -484,7 +487,7 @@ def kamihi(kamihi_container: KamihiContainer, request, reporter: TerminalWriter)
 @pytest.hookimpl(tryfirst=True)
 def pytest_runtest_makereport(item: Item, call: CallInfo):
     # Let's ensure we are dealing with a test report
-    if call.when in ("setup", "call", "teardown") and call.excinfo:
+    if call.when == "call" and call.excinfo:
         # Get the fixture instance from the item
         kamihi_container: KamihiContainer = item.funcargs.get("kamihi_container")
         reporter: TerminalReporter = item.config.pluginmanager.get_plugin("terminalreporter")
