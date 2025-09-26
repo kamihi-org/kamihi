@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 import pytest
 from pytest_docker_tools import container, fetch
 from pytest_docker_tools.wrappers import Container
@@ -30,11 +31,7 @@ postgres_image = fetch(repository="postgres:latest")
 
 postgres_container = container(
     image="{postgres_image.id}",
-    environment={
-        "POSTGRES_USER": "kamihi",
-        "POSTGRES_PASSWORD": "kamihi",
-        "POSTGRES_DB": "kamihi"
-    }
+    environment={"POSTGRES_USER": "kamihi", "POSTGRES_PASSWORD": "kamihi", "POSTGRES_DB": "kamihi"},
 )
 
 
@@ -42,13 +39,10 @@ postgres_container = container(
     "db_url,pyproject_extra_dependencies",
     [
         (
-            lfc(
-                "postgresql+psycopg2://kamihi:kamihi@{ip}:5432/kamihi".format,
-                ip=lf("postgres_container.ips.primary")
-            ),
-            ["psycopg2-binary"]
+            lfc("postgresql+psycopg2://kamihi:kamihi@{ip}:5432/kamihi".format, ip=lf("postgres_container.ips.primary")),
+            ["psycopg2-binary"],
         )
-    ]
+    ],
 )
 def test_db_postgresql(db_url, pyproject_extra_dependencies, kamihi: KamihiContainer):
     """
