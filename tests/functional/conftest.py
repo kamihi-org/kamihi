@@ -217,20 +217,9 @@ class KamihiContainer(Container):
     It allows for additional functionality or customization if needed in the future.
     """
 
-    _container: docker.models.containers.Container
-
     command_logs: list[str] = []
 
-    def logs(self, stream: bool = False) -> CancellableStream | list[str]:
-        """
-        Get the logs of the Kamihi container.
-
-        Args:
-            stream (bool): If True, stream the logs. If False, return the logs as a list.
-        """
-        if stream:
-            return self._container.logs(stream=True)
-        return self._container.logs().decode().split("\n")
+    _container: docker.models.containers.Container
 
     @staticmethod
     def parse_log_json(line: str) -> dict | None:
@@ -243,23 +232,21 @@ class KamihiContainer(Container):
         Returns:
             dict: The parsed log entry as a dictionary.
         """
-        try:
-            res = json.loads(line.strip())
-            assert isinstance(res, dict), "Log entry is not a dictionary"
-            assert "record" in res, "Log entry does not contain 'record' key"
-            assert "level" in res["record"], "Log entry does not contain 'level' key"
-            assert "name" in res["record"]["level"], "Log entry does not contain 'name' key in 'level'"
-            assert "message" in res["record"], "Log entry does not contain 'message' key"
-            return res
-        except (json.JSONDecodeError, AssertionError):
-            return None
+        res = json.loads(line)
+        assert isinstance(res, dict), "Log entry is not a dictionary"
+        assert "record" in res, "Log entry does not contain 'record' key"
+        assert "level" in res["record"], "Log entry does not contain 'level' key"
+        assert "name" in res["record"]["level"], "Log entry does not contain 'name' key in 'level'"
+        assert "message" in res["record"], "Log entry does not contain 'message' key"
+        return res
+
 
     def wait_for_log(
         self,
+        stream: CancellableStream,
         message: str,
         level: str = "INFO",
         extra_values: dict[str, Any] = None,
-        stream: CancellableStream = None,
         parse_json: bool = True,
     ) -> dict | str | None:
         """
@@ -275,28 +262,31 @@ class KamihiContainer(Container):
         Returns:
             dict | str: The log entry or message that matches the specified level and message, or None if not found.
         """
-        if stream is None:
-            stream = self.logs(stream=True)
-
         self.command_logs.append(f"Waiting for log: level={level}, message={message}, extra_values={extra_values}")
-        for line in stream:
-            line = line.decode().strip()
-            self.command_logs.append(line)
-            if parse_json:
-                log_entry = self.parse_log_json(line)
-                if (
-                    log_entry
-                    and log_entry["record"]["level"]["name"] == level
-                    and message in log_entry["record"]["message"]
-                ):
+
+        for raw_line in stream:
+            for line in raw_line.decode().splitlines():
+                line = line.strip()
+                self.command_logs.append(line)
+
+                if not parse_json and message in line:
+                    return line
+
+                try:
+                    log_entry = self.parse_log_json(line)
+                except (json.JSONDecodeError, AssertionError):
+                    continue
+
+                record = log_entry.get("record", {})
+                level_name = record.get("level", {}).get("name")
+                msg = record.get("message", "")
+
+                if level_name == level and message in msg:
                     if extra_values:
-                        if all(item in log_entry["record"].get("extra", {}).items() for item in extra_values.items()):
-                            return log_entry
-                    else:
-                        return log_entry
-            else:
-                log_entry = line
-                if message in log_entry:
+                        extras = record.get("extra", {})
+                        if not all(item in extras.items() for item in extra_values.items()):
+                            continue
+
                     return log_entry
 
         raise EndOfLogsException(
@@ -315,19 +305,7 @@ class KamihiContainer(Container):
         Returns:
             dict: The log entry that matches the specified message.
         """
-        return self.wait_for_log(message, stream=stream, parse_json=False)
-
-    def assert_logged(self, level: str, message: str) -> dict | None:
-        """Assert that the log entry was found."""
-        for line in self.logs():
-            log_entry = self.parse_log_json(line)
-            if (
-                log_entry
-                and log_entry["record"]["level"]["name"] == level
-                and message in log_entry["record"]["message"]
-            ):
-                return log_entry
-        raise EndOfLogsException()
+        return self.wait_for_log(stream, message, parse_json=False)
 
     def run_command(self, command: str) -> CancellableStream:
         """Run a command in the Kamihi container and return the output stream."""
@@ -356,7 +334,7 @@ class KamihiContainer(Container):
             dict: The log entry that matches the specified level and message.
         """
         stream = self.run_command(command)
-        return self.wait_for_log(message, level, extra_values, stream=stream, parse_json=parse_json)
+        return self.wait_for_log(stream, message, level, extra_values, parse_json=parse_json)
 
     def run_command_and_wait_for_message(self, command: str, message: str) -> dict | None:
         """
