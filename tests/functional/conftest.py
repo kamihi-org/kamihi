@@ -240,7 +240,6 @@ class KamihiContainer(Container):
         assert "message" in res["record"], "Log entry does not contain 'message' key"
         return res
 
-
     def wait_for_log(
         self,
         stream: CancellableStream,
