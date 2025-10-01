@@ -217,9 +217,13 @@ class KamihiContainer(Container):
     It allows for additional functionality or customization if needed in the future.
     """
 
-    command_logs: list[str] = []
+    command_logs: list[str]
 
     _container: docker.models.containers.Container
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.command_logs = []
 
     @staticmethod
     def parse_log_json(line: str) -> dict | None:
