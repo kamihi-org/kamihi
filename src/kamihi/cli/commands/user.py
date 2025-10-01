@@ -87,15 +87,14 @@ def add(
     import_models(ctx.obj.cwd / "models")
     init_engine(settings.db)
 
-    with lg.catch(TypeError, message="User inputted is not valid", onerror=onerror):
-        with Session(get_engine()) as session:
-            statement = select(BaseUser.cls()).where(BaseUser.cls().telegram_id == telegram_id)
-            existing_user = session.execute(statement).scalars().first()
-            if existing_user:
-                lg.error("User already exists")
-                raise typer.Exit(1)
-            user = BaseUser.cls()(**user_data)
-            session.add(user)
-            session.commit()
+    with lg.catch(Exception, message="User inputted is not valid", onerror=onerror), Session(get_engine()) as session:
+        statement = select(BaseUser.cls()).where(BaseUser.cls().telegram_id == telegram_id)
+        existing_user = session.execute(statement).scalars().first()
+        if existing_user:
+            lg.error("User already exists")
+            raise typer.Exit(1)
+        user = BaseUser.cls()(**user_data)
+        session.add(user)
+        session.commit()
 
     lg.success("User added")
