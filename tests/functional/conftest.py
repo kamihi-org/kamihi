@@ -479,10 +479,11 @@ def pytest_runtest_makereport(item: Item, call: CallInfo):
                 elif line.startswith("Waiting for log:"):
                     reporter.write_sep(" ", line)
                     reporter.write_line("")
-                elif jline := kamihi_container.parse_log_json(line):
-                    reporter.write_line(jline["text"].strip())
                 else:
-                    reporter.write_line(line.strip())
+                    try:
+                        reporter.write_line(kamihi_container.parse_log_json(line)["text"].strip())
+                    except (json.JSONDecodeError, AssertionError):
+                        reporter.write_line(line.strip())
 
 
 @pytest.fixture
