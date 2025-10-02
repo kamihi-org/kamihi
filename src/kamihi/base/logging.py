@@ -45,6 +45,44 @@ def _extra_formatter(record: loguru.Record) -> None:
         )
 
 
+class _InterceptHandler(logging.Handler):
+    def __init__(
+        self, logger: loguru.Logger, include: list[str] | None = None, exclude: list[str] | None = None
+    ) -> None:
+        super().__init__()
+        self.logger = logger
+        self.include = include or []
+        self.exclude = exclude or []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """
+        Emit a log record.
+
+        Args:
+            record: The log record to emit.
+
+        """
+        logger_name = record.name
+
+        if any(logger_name.startswith(mod) for mod in self.exclude):
+            return
+
+        if self.include and not any(logger_name.startswith(mod) for mod in self.include):
+            return
+
+        try:
+            level = self.logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+
+        frame, depth = inspect.currentframe(), 0
+        while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
+            frame = frame.f_back
+            depth += 1
+
+        self.logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+
+
 def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
     """
     Configure logging for the module.
@@ -112,48 +150,46 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
             enqueue=True,
         )
 
-    class InterceptHandler(logging.Handler):
-        def __init__(self, include: list[str] | None = None, exclude: list[str] | None = None):
-            super().__init__()
-            self.include = include or []
-            self.exclude = exclude or []
-
-        def emit(self, record: logging.LogRecord) -> None:
-            logger_name = record.name
-
-            if any(logger_name.startswith(mod) for mod in self.exclude):
-                return
-
-            if self.include and not any(logger_name.startswith(mod) for mod in self.include):
-                return
-
-            try:
-                level = logger.level(record.levelname).name
-            except ValueError:
-                level = record.levelno
-
-            frame, depth = inspect.currentframe(), 0
-            while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
-                frame = frame.f_back
-                depth += 1
-
-            logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
-
     logging.basicConfig(
-        handlers=[InterceptHandler(include=["alembic"])],
+        handlers=[_InterceptHandler(logger, include=["alembic"])],
         level=0,
         force=True,
     )
 
 
 class StreamToLogger:
-    def __init__(self, logger: loguru.Logger, level="INFO"):
+    """
+    Fake file-like stream object that redirects writes to a logger instance.
+
+    Args:
+        logger: The logger instance to redirect writes to.
+        level: The log level to use for the writes (default: "INFO").
+
+    """
+
+    def __init__(self, logger: loguru.Logger, level: str = "INFO") -> None:
+        """
+        Initialize the stream to logger.
+
+        Args:
+            logger: The logger instance to redirect writes to.
+            level: The log level to use for the writes (default: "INFO").
+
+        """
         self.logger = logger
         self._level = level
 
-    def write(self, buffer):
+    def write(self, buffer: str) -> None:
+        """
+        Write a buffer to the logger.
+
+        Args:
+            buffer: The buffer to write.
+
+        """
         for line in buffer.rstrip().splitlines():
             self.logger.opt(depth=1).log(self._level, line.strip())
 
-    def flush(self):
+    def flush(self) -> None:
+        """Flush the stream."""
         pass
