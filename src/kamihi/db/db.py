@@ -9,10 +9,9 @@ License:
 import time
 
 from loguru import logger
-from sqlalchemy import Engine, event, create_engine
+from sqlalchemy import Engine, create_engine, event
 
 from kamihi.base.config import DatabaseSettings
-
 
 _engine: Engine | None = None
 
@@ -44,7 +43,7 @@ def get_engine() -> Engine:
 
 
 @event.listens_for(Engine, "connect")
-def _set_sqlite_pragma(dbapi_connection, connection_record):
+def _set_sqlite_pragma(dbapi_connection, _) -> None:  # noqa: ANN001
     """Set SQLite PRAGMA settings on connection."""
     from sqlite3 import Connection as SQLite3Connection
 
@@ -57,26 +56,26 @@ def _set_sqlite_pragma(dbapi_connection, connection_record):
 
 @event.listens_for(Engine, "before_cursor_execute")
 def _before_cursor_execute(
-    conn,
-    cursor,
-    statement,
-    parameters,
-    context,
-    executemany,
-):
+    conn,  # noqa: ANN001, ARG001
+    cursor,  # noqa: ANN001, ARG001
+    statement,  # noqa: ANN001, ARG001
+    parameters,  # noqa: ANN001, ARG001
+    context,  # noqa: ANN001
+    executemany,  # noqa: ANN001, ARG001
+) -> None:
     """Event listener to save the start time of a query before execution."""
     context.query_start_time = time.time()
 
 
 @event.listens_for(Engine, "after_cursor_execute")
 def after_cursor_execute(
-    conn,
-    cursor,
-    statement,
-    parameters,
-    context,
-    executemany,
-):
-    """Events after execution"""
+    conn,  # noqa: ANN001, ARG001
+    cursor,  # noqa: ANN001, ARG001
+    statement,  # noqa: ANN001, ARG001
+    parameters,  # noqa: ANN001, ARG001
+    context,  # noqa: ANN001
+    executemany,  # noqa: ANN001, ARG001
+) -> None:
+    """Events after execution."""
     total = time.time() - context.query_start_time
     logger.bind(statement=statement, ms=round(total * 1000, 2)).trace("Executed statement")
