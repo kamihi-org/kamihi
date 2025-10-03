@@ -192,4 +192,4 @@ class StreamToLogger:
 
     def flush(self) -> None:
         """Flush the stream."""
-        pass
+        pass  # No action needed for flushing

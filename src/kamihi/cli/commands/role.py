@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 from kamihi.base.config import KamihiSettings
 from kamihi.base.logging import configure_logging
 from kamihi.cli.utils import import_models, telegram_id_callback
-from kamihi.db import BaseUser, Permission, RegisteredAction, Role, get_engine, init_engine
+from kamihi.db import BaseUser, Role, get_engine, init_engine
 
 app = typer.Typer()
 

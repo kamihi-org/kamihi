@@ -24,7 +24,7 @@ def init_engine(db_settings: DatabaseSettings) -> None:
         db_settings (DatabaseSettings): The database settings.
 
     """
-    global _engine
+    global _engine  # skipcq: PYL-W0603
     if _engine is None:
         _engine = create_engine(db_settings.url)
 
