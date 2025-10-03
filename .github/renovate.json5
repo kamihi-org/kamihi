@@ -3,17 +3,23 @@
   "extends": [
     "config:best-practices"
   ],
+  labels: [
+    "type:task"
+  ],
+  reviewers: [
+    "kiinami"
+  ],
+  ignorePaths: [
+    "requirements.txt"
+  ],
   lockFileMaintenance: {
     enabled: true,
     automerge: true
   },
-  reviewers: [
-    "kiinami"
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true
+    }
   ],
-  labels: [
-    "type:task"
-  ],
-  ignorePaths: [
-    "requirements.txt"
-  ]
 }
