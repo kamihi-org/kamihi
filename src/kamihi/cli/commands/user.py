@@ -11,33 +11,15 @@ from typing import Annotated
 
 import typer
 from loguru import logger
-from mongoengine import FieldDoesNotExist, ValidationError
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from kamihi import KamihiSettings, _init_bot
-from kamihi.cli.commands.run import import_models
-from kamihi.users.models import User
+from kamihi.base.config import KamihiSettings
+from kamihi.base.logging import configure_logging
+from kamihi.cli.utils import import_models, telegram_id_callback
+from kamihi.db import BaseUser, get_engine, init_engine
 
 app = typer.Typer()
-
-
-def telegram_id_callback(value: int) -> int:
-    """
-    Validate the Telegram ID.
-
-    Args:
-        value (int): The Telegram ID to validate.
-
-    Returns:
-        int: The validated Telegram ID.
-
-    Raises:
-        typer.BadParameter: If the Telegram ID is invalid.
-
-    """
-    if not isinstance(value, int) or value <= 0 or len(str(value)) > 16:
-        msg = "Must be a positive integer with up to 16 digits."
-        raise typer.BadParameter(msg)
-    return value
 
 
 def data_callback(data: str) -> dict:
@@ -94,7 +76,7 @@ def add(
     settings = KamihiSettings.from_yaml(ctx.obj.config) if ctx.obj.config else KamihiSettings()
     settings.log.file_enable = False
     settings.log.notification_enable = False
-    _init_bot(settings)
+    configure_logging(logger, settings.log)
 
     user_data = data or {}
     user_data["telegram_id"] = telegram_id
@@ -103,15 +85,16 @@ def add(
     lg = logger.bind(**user_data)
 
     import_models(ctx.obj.cwd / "models")
+    init_engine(settings.db)
 
-    if User.get_model() == User and data:
-        lg.warning("No custom user model found, ignoring extra data provided.")
-        user_data = {"telegram_id": telegram_id, "is_admin": is_admin}
+    with lg.catch(Exception, message="User inputted is not valid", onerror=onerror), Session(get_engine()) as session:
+        statement = select(BaseUser.cls()).where(BaseUser.cls().telegram_id == telegram_id)
+        existing_user = session.execute(statement).scalars().first()
+        if existing_user:
+            lg.error("User already exists")
+            raise typer.Exit(1)
+        user = BaseUser.cls()(**user_data)
+        session.add(user)
+        session.commit()
 
-    with lg.catch(FieldDoesNotExist, message="Custom user model does not have the field provided.", onerror=onerror):
-        user = User.get_model()(**user_data)
-    with lg.catch(ValidationError, message="User inputted is not valid.", onerror=onerror):
-        user.validate()
-        user.save()
-
-    lg.success("User added.")
+    lg.success("User added")

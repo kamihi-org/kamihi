@@ -27,17 +27,19 @@ classifiers = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "alembic>=1.16.5",
     "apprise>=1.9.2",
     "copier>=9.7.1",
     "jinja2>=3.1.6",
     "loguru>=0.7.3",
-    "mongoengine>=0.29.1",
     "multipledispatch>=1.0.0",
     "pydantic>=2.10.6",
+    "pydantic-extra-types>=2.10.5",
     "pydantic-settings>=2.8.1",
     "python-magic>=0.4.27",
     "python-telegram-bot[job-queue]>=22.0",
     "pytz>=2025.2",
+    "sqlalchemy>=2.0.43",
     "starlette>=0.46.2",
     "starlette-admin>=0.14.1",
     "telegramify-markdown>=0.5.1",
@@ -70,20 +72,17 @@ docs = [
     "pymdown-extensions>=10.14.3",
     "termynal>=0.13.0",
 ]
-func = [
+tests = [
     "playwright>=1.52.0",
     "pytest-docker-tools>=3.1.9",
+    "pytest-lazy-fixtures>=1.4.0",
     "pytest-playwright-asyncio>=0.7.0",
     "telethon>=1.40.0",
-]
-unit = [
-    "logot[loguru]>=1.4.0",
-    "mongomock>=4.3.0",
+    "toml>=0.10.2",
     "numpy>=2.3.0",
     "pillow>=11.2.1",
     "pytest>=8.3.5",
     "pytest-asyncio>=1.0.0",
-    "pytest-cov>=6.1.1",
     "pytest-retry>=1.7.0",
     "pytest-timeout>=2.4.0",
 ]
@@ -162,20 +161,12 @@ version_files = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=src --cov-report=xml --cov-report=term-missing -x"
 testpaths = ["tests/"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
-logot_capturer = "logot.loguru.LoguruCapturer"
 log_cli = true
 retries = 3
 timeout = 60
-retry_delay = 60
+retry_delay = 0
 timeout_func_only = true
-
-[tool.coverage.run]
-omit = [
-    "tests/*",
-    ".idea/*",
-]

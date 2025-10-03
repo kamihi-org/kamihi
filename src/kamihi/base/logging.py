@@ -18,68 +18,14 @@ Examples:
 
 from __future__ import annotations
 
+import inspect
+import logging
 import sys
 
 import loguru
-from pymongo import monitoring
-from pymongo.monitoring import CommandFailedEvent
 
 from .config import LogSettings
 from .manual_send import ManualSender
-
-
-class MongoLogger(monitoring.CommandListener):
-    """
-    MongoDB command logger.
-
-    This class listens to MongoDB commands and logs them using the loguru
-    logger.
-
-    Args:
-        logger: The loguru logger instance to use for logging.
-
-    """
-
-    def __init__(self, logger: loguru.Logger) -> None:
-        """
-        Initialize the MongoLogger.
-
-        Args:
-            logger: The loguru logger instance to use for logging.
-
-        """
-        super().__init__()
-        self.logger = logger
-
-    def started(self, event: monitoring.CommandStartedEvent) -> None:
-        """Log the start of a command."""
-        self.logger.trace(
-            "Executing request",
-            command_name=event.command_name,
-            request_id=event.request_id,
-            connection_id=event.connection_id,
-        )
-
-    def succeeded(self, event: monitoring.CommandSucceededEvent) -> None:
-        """Log the success of a command."""
-        self.logger.trace(
-            "Request succeeded",
-            command_name=event.command_name,
-            request_id=event.request_id,
-            connection_id=event.connection_id,
-            micoseconds=event.duration_micros,
-        )
-
-    def failed(self, event: CommandFailedEvent) -> None:
-        """Log the failure of a command."""
-        self.logger.debug(
-            "Request failed",
-            command_name=event.command_name,
-            request_id=event.request_id,
-            connection_id=event.connection_id,
-            micoseconds=event.duration_micros,
-            error=event.failure,
-        )
 
 
 def _extra_formatter(record: loguru.Record) -> None:
@@ -97,6 +43,44 @@ def _extra_formatter(record: loguru.Record) -> None:
         record["extra"]["compact"] = ", ".join(
             f"{key}={repr(value)}" for key, value in record["extra"].items() if key != "compact"
         )
+
+
+class _InterceptHandler(logging.Handler):
+    def __init__(
+        self, logger: loguru.Logger, include: list[str] | None = None, exclude: list[str] | None = None
+    ) -> None:
+        super().__init__()
+        self.logger = logger
+        self.include = include or []
+        self.exclude = exclude or []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """
+        Emit a log record.
+
+        Args:
+            record: The log record to emit.
+
+        """
+        logger_name = record.name
+
+        if any(logger_name.startswith(mod) for mod in self.exclude):
+            return
+
+        if self.include and not any(logger_name.startswith(mod) for mod in self.include):
+            return
+
+        try:
+            level = self.logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+
+        frame, depth = inspect.currentframe(), 0
+        while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
+            frame = frame.f_back
+            depth += 1
+
+        self.logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
 def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
@@ -117,7 +101,7 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
 
     if settings.stdout_enable:
         logger.add(
-            sys.stdout,
+            sys.__stdout__,
             level=settings.stdout_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
@@ -129,7 +113,7 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
 
     if settings.stderr_enable:
         logger.add(
-            sys.stderr,
+            sys.__stderr__,
             level=settings.stderr_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
@@ -166,4 +150,46 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
             enqueue=True,
         )
 
-    monitoring.register(MongoLogger(logger))
+    logging.basicConfig(
+        handlers=[_InterceptHandler(logger, include=["alembic"])],
+        level=0,
+        force=True,
+    )
+
+
+class StreamToLogger:
+    """
+    Fake file-like stream object that redirects writes to a logger instance.
+
+    Args:
+        logger: The logger instance to redirect writes to.
+        level: The log level to use for the writes (default: "INFO").
+
+    """
+
+    def __init__(self, logger: loguru.Logger, level: str = "INFO") -> None:
+        """
+        Initialize the stream to logger.
+
+        Args:
+            logger: The logger instance to redirect writes to.
+            level: The log level to use for the writes (default: "INFO").
+
+        """
+        self.logger = logger
+        self._level = level
+
+    def write(self, buffer: str) -> None:
+        """
+        Write a buffer to the logger.
+
+        Args:
+            buffer: The buffer to write.
+
+        """
+        for line in buffer.rstrip().splitlines():
+            self.logger.opt(depth=1).log(self._level, line.strip())
+
+    def flush(self) -> None:
+        """Flush the stream."""
+        pass  # No action needed for flushing

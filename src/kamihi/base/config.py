@@ -15,7 +15,8 @@ from pathlib import Path
 
 import pytz
 import yaml
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
+from pydantic_extra_types.timezone_name import TimeZoneName
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -132,16 +133,11 @@ class DatabaseSettings(BaseModel):
     Defines the database settings schema.
 
     Attributes:
-        host (str): The URL of the database.
-        name (str): The name of the database.
+        url (str): The database connection URL.
 
     """
 
-    host: str = Field(
-        default="mongodb://localhost:27017",
-        pattern=r"^mongodb(\+srv)?://([a-zA-Z0-9_.-]+(:[a-zA-Z0-9_.-]+)?@)?[a-zA-Z0-9_.-]+(:[0-9]{1,5})?$",
-    )
-    name: str = Field(default="kamihi")
+    url: str = Field(default="sqlite:///kamihi.db")
 
 
 class KamihiSettings(BaseSettings):
@@ -160,7 +156,7 @@ class KamihiSettings(BaseSettings):
 
     # General settings
     testing: bool = Field(default=False)
-    timezone: str = Field(default="UTC", validate_default=True)
+    timezone: TimeZoneName = Field(default="UTC", validate_default=True)
 
     # Logging settings
     log: LogSettings = Field(default_factory=LogSettings)
@@ -174,28 +170,6 @@ class KamihiSettings(BaseSettings):
 
     # Web settings
     web: WebSettings = Field(default_factory=WebSettings)
-
-    @field_validator("timezone")
-    @classmethod
-    def _validate_timezone(cls, value: str) -> str:
-        """
-        Validate the timezone value.
-
-        Args:
-            value (str): The timezone value to validate.
-
-        Returns:
-            str: The validated timezone value.
-
-        Raises:
-            ValueError: If the timezone is invalid.
-
-        """
-        if value not in pytz.all_timezones:
-            msg = f"Invalid timezone: {value}"
-            raise ValueError(msg)
-
-        return value
 
     @property
     def timezone_obj(self) -> DstTzInfo:
@@ -255,7 +229,12 @@ class KamihiSettings(BaseSettings):
             env_settings,
             dotenv_settings,
             YamlConfigSettingsSource(
-                settings_cls, yaml_file=[os.getenv("KAMIHI_CONFIG_FILE", "kamihi.yaml"), "kamihi.yaml", "kamihi.yml"]
+                settings_cls,
+                yaml_file=[
+                    os.getenv("KAMIHI_CONFIG_FILE", "kamihi.yaml"),
+                    "kamihi.yaml",
+                    "kamihi.yml",
+                ],
             ),
             file_secret_settings,
         )

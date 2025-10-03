@@ -6,8 +6,7 @@ You should have the following installed:
 
 - `git`, for version control. You can find download and installation instructions [here](https://git-scm.com/downloads).
 - `uv`, for managing virtual environments and dependencies. Install it using [this guide](https://docs.astral.sh/uv/getting-started/installation/).
-- (optional) `docker` and `docker compose`, for running the database and functional tests. You can install Docker Desktop from [here](https://docs.docker.com/desktop/) or follow the instructions for [Docker Engine](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/).
-- (if not using Docker) `mongodb`, for running the database locally. You can find installation instructions [here](https://www.mongodb.com/docs/manual/installation/).
+- (optional) `docker` and `docker compose`. You can install Docker Desktop from [here](https://docs.docker.com/desktop/) or follow the instructions for [Docker Engine](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/).
 
 ## Setting up the project
 
