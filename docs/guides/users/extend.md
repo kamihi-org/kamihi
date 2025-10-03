@@ -3,24 +3,23 @@ This guide shows how to extend and customize the user model of the framework. Yo
 ## Prerequisites
 
 - A Kamihi application
-- Basic understanding of how MongoDB works
+- Basic understanding of how SQLAlchemy works
 
 ## Extending the User class
 
-You can import the base user class into your code and create a subclass extending it. For the framework to actually use this model, you also have to decorate it with `@bot.user_class` and place it in the `models/` folder. Thus:
+The base project defines a `User` class in `kamihi/models/user.py` that extends from `kamihi.BaseUser`. This class can be extended to add more attributes. For example, to add a `name` attribute, you can modify the file like this:
 
 ```python
-# models/user.py
-from kamihi import bot, BaseUser
-from mongoengine import StringField
+from kamihi import BaseUser
+from sqlalchemy import Column, String
 
-
-@bot.user_class
 class User(BaseUser):
-    name: str = StringField(required=True)
+    __table_args__ = {'extend_existing': True}
+    name = Column(String, nullable=True)
 ```
 
-The user model (and every other model in the framework) is defined using MongoEngine, and you can add any of the [fields supported by it](https://docs.mongoengine.org/guide/defining-documents.html#fields).
+!!! warning
+    Be sure to update the database schema when modifying the model. To obtain more information on how to do this, refer to the [database migrations guide](../db/migrations.md).
 
 ## Adding users with extended attributes using the CLI
 

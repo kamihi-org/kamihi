@@ -24,6 +24,9 @@ nav:
           - Load configuration from environment variables: guides/config/load-environment.md
           - Set configuration values programmatically: guides/config/load-prog.md
           - Configure the timezone: guides/config/configure-timezone.md
+      - Database:
+          - Set up different databases: guides/db/setup.md
+          - Perform migrations: guides/db/migrations.md
       - Actions:
           - Set commands: guides/actions/commands.md
           - Use templates: guides/actions/use-templates.md
@@ -43,11 +46,9 @@ nav:
   - API reference
   - Developers:
       - dev/index.md
-      - Architecture: dev/architecture.md
-      - Directories: dev/directories.md
       - Development setup: dev/setup.md
       - Testing: dev/testing.md
-      - Documentation: dev/documentation.md
+      - Documentation style guide: dev/documentation.md
   - About:
       - Changelog: changelog.md
       - Special thanks: thanks.md

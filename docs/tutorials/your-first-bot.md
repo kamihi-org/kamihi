@@ -1,6 +1,6 @@
 ## Prerequisites
 
-To start using Kamihi, you will need three things installed on your machine:
+To start using Kamihi, you will need two things installed on your machine:
 
 - `git`: a version control manager. You can find installation instructions [here](https://git-scm.com/downloads), although if you are using Linux, you probably have it. To check your installation, you can use the following command on your terminal of choice:
       <!-- termynal -->
@@ -17,15 +17,6 @@ To start using Kamihi, you will need three things installed on your machine:
     uv 0.7.6
     ```
     If you do not want to use `uv`, refer to the [guide for other package managers](../guides/projects/other-package-managers.md).
-
-- `docker` and (optionally) `docker compose`: to deploy the database for Kamihi. Te easiest way to install it is through [Docker Desktop](https://docs.docker.com/desktop/), especially if you are on Windows. Otherwise, you can install the [Docker Engine](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/) directly. Any version is fine, as long as you call Docker Compose with `docker compose` (as opposed to `docker-compose`). Test your installation by running:
-    <!-- termynal -->
-    ```shell
-    > docker --version
-    Docker version 27.5.1, build 3.fc42
-    > docker compose version
-    Docker Compose version v2.24.2
-    ```
 
 ## Creating your project
 
@@ -45,16 +36,21 @@ This will create a folder named `hello-world` in your current directory and crea
 hello-world/
 ├── actions # (1)!
 │   └── start # (2)!
-│       ├── \_\_init\_\_.py
+│       ├── __init__.py
 │       └── start.py
+├── migrations # (6)!
+│   ├── versions/
+│   ├── __init__.py
+│   ├── script.py.mako
+│   └── env.py
+├── models # (4)!
+│   └── user.py
 ├── docker-compose.dev.yml
 ├── docker-compose.yml
 ├── .dockerignore
 ├── .gitignore
 ├── Dockerfile
 ├── kamihi.yml # (3)!
-├── models # (4)!
-│   └── user.py
 ├── pyproject.toml # (5)!
 ├── .python-version
 └── README.md
@@ -65,6 +61,7 @@ hello-world/
 3. The configuration file for Kamihi
 4. The directory for database models, where you can customize the default ones and add more.
 5. The Python project file.
+6. The database migrations folder, which is used to keep track of changes to the database schema.
 
 Don't worry if you are not sure what all files do. The base project is designed to work out of the box.
 
@@ -103,32 +100,18 @@ timezone: UTC # Timezone for the bot
 
 ## Starting the database
 
-Kamihi runs on top of MongoDB, so before we start doing things with our bot, we need to start it.
+Kamihi runs on top of SQLAlchemy and Alembic, which means it needs a database to store its data. For development purposes, we can use SQLite, which is a file-based database that requires no setup. To start the database, we just need to run the following two commands:
 
-There are many ways to deploy MongoDB, but for this tutorial, we will use Docker as it is a matter of one command:
+<!-- termynal -->
+```shell
+> kamihi db migrate
+2025-01-01 at 00:00:00 | SUCCESS  | Migrated revision='xxxxxxxxxxxx'
 
-=== "Docker"
+> kamihi db upgrade
+2025-01-01 at 00:00:00 | SUCCESS  | Upgraded revision='xxxxxxxxxxxx'
+```
 
-    <!-- termynal -->
-    ```bash
-    > docker run -d \
-        --name mongodb \
-        --restart unless-stopped \
-        -p 27017:27017 \
-        -v /data/db \
-        mongo:latest
-    (returns a big hash code)
-    ```
-
-=== "Docker Compose"
-
-    <!-- termynal -->
-    ```bash
-    > docker compose -f docker-compose.dev.yml up mongodb -d
-    ---> 100%
-    [+] Running 1/1
-    ✔ Container mongodb  Started
-    ```
+This will create a file named `kamihi.db` in the root of your project, which is the SQLite database file. It will also create a file in the `migrations` folder, which contains the database schema.
 
 ## Creating our first user
 
@@ -141,7 +124,7 @@ To add it, we just need to run this command (substituting `user_id` with your ac
 <!-- termynal -->
 ```shell
 > kamihi user add user_id --admin
-2025-01-01 at 00:00:00 | SUCCESS  | User added. telegram_id=<your_user_id>, is_admin=True
+2025-01-01 at 00:00:00 | SUCCESS  | User added telegram_id=<your_user_id>, is_admin=True
 ```
 
 ## Running the bot

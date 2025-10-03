@@ -1,9 +1,5 @@
 This guide explains how to run and develop tests for the Kamihi project.
 
-## Unit testing
-
-Unit tests are currently not implemented. They will be added in the future.
-
 ## Functional testing
 
 !!! note
@@ -27,7 +23,7 @@ Running functional tests requires a bit more setup, as they run on Telegram's [t
     $ docker --version
     $ docker compose --version
     ```
-3. Create a `.env` file in the root of the project with the following content, which we will fill in as we go along:
+3. Create a `settings.yml` file in the `tests/` folder with the following content, which we will fill in as we go along:
     ```env
     KAMIHI_TESTING__BOT_TOKEN=
     KAMIHI_TESTING__BOT_USERNAME=
@@ -69,73 +65,58 @@ $ uv run pytest
 
 ### Available fixtures
 
-The functional test suite comes with several convenience fixtures to make writing tests easier:
+The functional test suite provides fixtures grouped by module:
 
-#### Core testing infrastructure
+#### Container management fixtures (`tests.fixtures.docker_container`)
 
-- **`test_settings`** - Provides `TestingSettings` instance with all configuration values from environment variables and `.env` file.
-- **`tg_client`** - Session-scoped Telegram client for interacting with the test bot, automatically connects and disconnects. Ideally, instead of using this fixture, you should use...
-- **`chat`** - Opens a conversation with the test bot using the test user, providing a `Conversation` object for sending/receiving messages.
+- `db_url`: Database URL used by the container (defaults to `sqlite:///./kamihi.db`). For ad‑hoc queries, use `kamihi_container.query_db(sql)`.
+- `kamihi_container`: Custom KamihiContainer with enhanced logging and helper methods:
+    - `command_logs: list[str]`: In‑memory chronological log of every command executed and every line observed while waiting for logs; printed automatically on test failure.
+    - `EndOfLogsException`: Raised by waiting helpers if the log stream ends before the expected entry is found.
+    - `parse_log_json(line: str) -> dict | None`: Parse a structured (JSON‑serialized) log line. Ensures required keys exist; returns dict or None if invalid.
+    - `wait_for_log(stream, message, level="INFO", extra_values: dict[str, Any] | None = None, parse_json: bool = True) -> dict | str`: Consume a Docker log stream until a line matches. If `parse_json` is True, matches on structured log record (level + substring in message + optional key/value pairs inside `record.extra`). If `parse_json` is False, performs a plain substring match and returns the raw line.
+    - `wait_for_message(message: str, stream=None) -> str`: Convenience wrapper for plain‑text (non‑JSON) message search.
+    - `run_command(command: str) -> CancellableStream`: Execute a command inside the container (`docker exec`) and return the live output stream (bytes iterator). Also appends `$ <command>` to `command_logs`.
+    - `run_command_and_wait_for_log(command, message, level="INFO", extra_values=None, parse_json=True) -> dict | str`: Fire a command then immediately wait for a matching log/message (delegates to the two helpers above).
+    - `run_command_and_wait_for_message(command, message) -> str`: Plain‑text variant of the previous helper.
+    - `uv_sync(command: str = "uv sync") -> None`: Runs dependency sync.
+    - `db_migrate(command: str = "kamihi db migrate") -> None`: Applies migrations; waits for structured log containing `Migrated` at `SUCCESS` level.
+    - `db_upgrade(command: str = "kamihi db upgrade") -> None`: Applies any pending schema upgrades; waits for `Upgraded` at `SUCCESS` level.
+    - `start(command: str = "kamihi run") -> None`: Starts the Kamihi app; waits for `Started!` at `SUCCESS` level.
+    - `stop() -> None`: Terminates the running process with `SIGKILL` (fast, deterministic teardown for tests).
+    - `query_db(sql: str) -> list[tuple]`: Copies the SQLite DB file out of the container to a temp file and executes a read query; returns rows. (Write statements are not intended; treat as read‑only.)
+- `kamihi`: Ensures the container is synced, migrated, upgraded, started, and properly stopped around each test. This is the main fixture to use in tests (instead of `kamihi_container`, which should be used only if lifecycle control is needed).
+- `cleanup`: Session‑scoped, autouse; prunes containers, volumes, and images after the session and prints a summary.
 
-#### Application structure fixtures
+#### Docker-mountable app files fixtures (`tests.fixtures.docker_files`)
 
-These fixtures provide the content of the project under test in the container. All of them are dictionaries where the keys represent the paths of the files and the values represent the contents. Directories get created automatically. You can override them to provide custom content for testing:
+These fixtures provide the content mounted into the container. All return dictionaries where keys are file paths and values are file contents. Directories are created automatically. Override them to provide custom content:
 
-- **`pyproject`** - Returns a dictionary with `pyproject.toml` as key and the file content as value.
-- **`config_file`** - Returns a dictionary with `kamihi.yml` as key and the file content as value.
-- **`actions_folder`** - Dictionary representing the actions folder structure and all its files. Gets `actions/` prepended to all keys at runtime.
-- **`models_folder`** - Dictionary representing the models folder structure and all its files. Gets `models/` prepended to all keys at runtime.
-- **`app_folder`** - Combines all application files into a single dictionary for container mounting. Not to be overridden unless you know what you're doing.
+- `pyproject_extra_dependencies`: Extra dependency list injected into pyproject.toml. Override to add dependencies.
+- `pyproject`: {"pyproject.toml": "..."} including kamihi as dependency and Alembic config. Override to change project configuration, but be sure to include the original content to avoid problems.
+- `config_file`: {"kamihi.yaml": "..."}. Override to change kamihi configuration.
+- `actions_folder`: Dict representing actions; keys relative to actions/. Override to provide custom actions.
+- `models_folder`: Dict representing models; keys relative to models/. Override to provide custom models.
+- `migrations_folder`: Dict representing Alembic migrations; keys relative to migrations/. Don't override unless you know what you're doing.
+- `app_folder`: Combines all the above for container mounting. Do not override unless necessary.
 
-#### Container and database fixtures
+#### App utilities and commands (`tests.fixtures.app`)
 
-- **`mongo_container`** - MongoDB container instance for database operations.
-- **`kamihi_container`** - Custom `KamihiContainer` instance with enhanced logging and control methods.
-- **`kamihi`** - Main fixture that ensures the Kamihi container is started and ready for testing. This is the one you should use in your tests to interact with the Kamihi application, unless for some reason you need to use the application before it is fully started, in which case you can use the `kamihi_container` fixture directly.
+- `admin_page`: Async Playwright Page for the Kamihi admin interface. 
+- `user_custom_data`: Dict for custom user data (empty by default). Override to provide custom data to add in `user`.
+- `user`: Creates a user with the configured test user_id; yields the created user details.
+- `add_permission_for_user`: Yields a function to add a permission to a user for a specific action.
+- `add_role`: Yields a function to create a role.
+- `assign_role_to_user`: Yields a function to assign an existing role to a user.
 
-#### Database fixtures
+#### Telegram client fixtures (`tests.fixtures.tg`)
 
-- **`mongodb`** - MongoDB client connected to the test database using Pymongo, for manually editing the database during tests.
+- `tg_client`: Session‑scoped Telethon client using test settings and test DC. Don't use directly; use `chat` instead.
+- `chat`: Session‑scoped Conversation opened with the test bot.
 
-#### User management fixtures
+#### Testing settings (`tests.fixtures.settings`)
 
-- **`user_custom_data`** - Dictionary for custom user data (empty by default, can be overridden). To be used with the `models_folder` fixture to test with custom user models.
-- **`user_in_db`** - Creates a test user using the test user ID in the database and returns the user document.
-- **`add_permission_for_user`** - Generator fixture that returns a function to add permissions to users for specific actions.
-
-#### Web interface fixtures
-
-- **`admin_page`** - Provides an asynchronous Playwright `Page` object for the Kamihi admin interface.
-
-#### Content functions
-
-These are not fixtures, you must import them directly from `tests.conftests` and use them as normal functions, not in the test function signature:
-
-- **`random_image()`** - Returns a random image file in bytes format, useful for testing image uploads.
-- **`random_video_path()`** - Returns a random video file path from `tests/static/videos`, useful for testing video uploads.
-- **`random_audio_path()`** - Returns a random audio file path from `tests/static/audios`, useful for testing audio uploads.
-- **`random_voice_note_path()`** - Returns a random voice message file path from `tests/static/audios`, useful for testing voice messages.
-
-#### Utility fixtures
-
-- **`run_command`** - Sets the command for running the bot in the container (`"kamihi run"` by default).
-- **`sync_and_run_command`** - UV-wrapped version of the run command. Do not override this unless you know what you're doing, as it will probably make your tests fail.
-- **`cleanup`** - Session-scoped fixture that cleans up Docker resources after tests complete.
-
-#### KamihiContainer methods
-
-The `KamihiContainer` class extends the base container with additional methods:
-
-- **`logs(stream=False)`** - Get container logs as a list or stream
-- **`parse_log_json(line)`** - Parse JSON log entries from the container
-- **`wait_for_log(message, level="INFO", extra_values=None)`** - Wait for specific log entries
-- **`wait_for_message(message)`** - Wait for messages without JSON parsing
-- **`assert_logged(level, message)`** - Assert that a log entry was sent
-- **`wait_until_started()`** - Wait until the container is fully started
-- **`run(command)`** - Execute commands in the container
-- **`run_and_wait_for_log(command, message)`** - Run command and wait for specific log output
-- **`run_and_wait_for_message(command, message)`** - Run command and wait for an specific message, without JSON parsing
-- **`stop()`** - Gracefully stop the container
+- `test_settings`: Provides a TestingSettings instance populated from environment variables (`KAMIHI_TESTING__*`).
 
 ### Using the fixtures
 
@@ -167,11 +148,6 @@ Override fixtures for an entire test file by redefining the fixture:
 
 ```python
 @pytest.fixture
-def run_command():
-    """Override to test without full startup."""
-    return "sleep infinity"
-
-@pytest.fixture
 def actions_folder():
     """Custom actions for all tests in this file."""
     return {
@@ -201,12 +177,12 @@ Override fixtures for specific tests by decorating individual functions:
     [
         {
             "user.py": """\
-                from kamihi import bot, BaseUser
-                from mongoengine import StringField
-                 
-                @bot.user_class
-                class MyCustomUser(BaseUser):
-                    name: str = StringField()
+                from kamihi import BaseUser
+                from sqlalchemy import Column, String
+                
+                class User(BaseUser):
+                    __table_args__ = {'extend_existing': True}
+                    name = Column(String, nullable=True)
             """,
         }
     ],
@@ -325,3 +301,7 @@ async def test_greeting(user_in_db, add_permission_for_user, chat, actions_folde
 - **Do not use test classes**; functional tests should be simple functions
 - **Use meaningful test descriptions** that explain the specific scenario being tested
 - **Use `wait_for_log`** with specific log levels, messages and extra dictionary contents, if there should be any.
+
+## Unit testing
+
+Unit tests are currently not implemented. They may be added in the future, although with the current architecture of the project, they would be highly complex to set up and maintain, and thus not worth the effort.

@@ -17,9 +17,6 @@ hide:
 <p align="center">
     <em>Python framework for rapid Telegram bot development and management</em>
 </p>
-<p align="center">
-    <a href="https://app.deepsource.com/gh/kamihi-org/kamihi/" target="_blank"><img alt="DeepSource" title="DeepSource" src="https://app.deepsource.com/gh/kamihi-org/kamihi.svg/?label=code+coverage&show_trend=true&token=kwaI8_0d9vhiFcXDtD29xGrL"/></a>
-</p>
 
 ---
 
