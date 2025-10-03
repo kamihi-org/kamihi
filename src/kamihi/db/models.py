@@ -180,7 +180,7 @@ class Role(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, index=True, unique=True)
 
-    users: Mapped[list[User]] = relationship(
+    users: Mapped[list["User"]] = relationship(  # noqa: UP037
         "User",
         secondary="userrolelink",
         back_populates="roles",
@@ -222,7 +222,7 @@ class Permission(Base):
         "RegisteredAction",
         back_populates="permissions",
     )
-    users: Mapped[list[User]] = relationship(
+    users: Mapped[list["User"]] = relationship(  # noqa: UP037
         "User",
         secondary="permissionuserlink",
         back_populates="permissions",
