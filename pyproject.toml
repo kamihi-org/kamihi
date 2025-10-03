@@ -79,12 +79,10 @@ tests = [
     "pytest-playwright-asyncio>=0.7.0",
     "telethon>=1.40.0",
     "toml>=0.10.2",
-    "logot[loguru]>=1.4.0",
     "numpy>=2.3.0",
     "pillow>=11.2.1",
     "pytest>=8.3.5",
     "pytest-asyncio>=1.0.0",
-    "pytest-cov>=6.1.1",
     "pytest-retry>=1.7.0",
     "pytest-timeout>=2.4.0",
 ]
@@ -163,20 +161,12 @@ version_files = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=src --cov-report=xml --cov-report=term-missing -x"
 testpaths = ["tests/"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
-logot_capturer = "logot.loguru.LoguruCapturer"
 log_cli = true
 retries = 3
 timeout = 60
 retry_delay = 0
 timeout_func_only = true
-
-[tool.coverage.run]
-omit = [
-    "tests/*",
-    ".idea/*",
-]
