@@ -9,9 +9,9 @@ License:
 import contextlib
 from typing import Annotated
 
+import typer
 from alembic import command
 from alembic.config import Config
-import typer
 from alembic.script import ScriptDirectory
 from loguru import logger
 
@@ -27,6 +27,7 @@ def revision_callback(ctx: typer.Context, value: str) -> str:
     Ensure the revision value is valid.
 
     Args:
+        ctx (typer.Context): The Typer context.
         value (str): The revision value.
 
     Returns:
@@ -44,9 +45,7 @@ def revision_callback(ctx: typer.Context, value: str) -> str:
 
 @app.callback()
 def main(ctx: typer.Context) -> None:
-    """
-    Database management commands for Kamihi CLI.
-    """
+    """Database management commands for Kamihi CLI."""
     ctx.obj.settings = KamihiSettings.from_yaml(ctx.obj.config) if ctx.obj.config is not None else KamihiSettings()
 
     configure_logging(logger, ctx.obj.settings.log)

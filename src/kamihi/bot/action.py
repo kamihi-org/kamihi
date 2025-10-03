@@ -141,7 +141,7 @@ class Action:
         """Check if the action is valid."""
         return self._valid
 
-    def save_to_db(self):
+    def save_to_db(self) -> None:
         """Save the action to the database."""
         with Session(get_engine()) as session:
             sta = select(RegisteredAction).where(RegisteredAction.name == self.name)

@@ -6,12 +6,12 @@ License:
 
 """
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from kamihi.db import Permission, RegisteredAction, BaseUser, get_engine
+from kamihi.db import BaseUser, Permission, RegisteredAction, get_engine
 
 
 def get_users() -> Sequence[BaseUser]:
@@ -67,7 +67,8 @@ def is_user_authorized(user: BaseUser, action_name: str) -> bool:
         sta = select(RegisteredAction).where(RegisteredAction.name == action_name)
         action = session.execute(sta).scalars().first()
         if action is None:
-            raise ValueError(f"Action '{action_name}' is not registered in the database.")
+            mes = f"Action '{action_name}' is not registered in the database."
+            raise ValueError(mes)
 
         sta = select(Permission).where(Permission.action == action)
         permissions = session.execute(sta).scalars().all()
@@ -75,4 +76,4 @@ def is_user_authorized(user: BaseUser, action_name: str) -> bool:
         if not permissions:
             return False
 
-        return any([permission.is_user_allowed(user) for permission in permissions])
+        return any(permission.is_user_allowed(user) for permission in permissions)

@@ -19,7 +19,7 @@ from starlette_admin import CustomView
 from starlette_admin.contrib.sqla import Admin
 
 from kamihi.base.config import DatabaseSettings, WebSettings
-from kamihi.db import get_engine, Permission, RegisteredAction, Role, BaseUser
+from kamihi.db import BaseUser, Permission, RegisteredAction, Role, get_engine
 
 from .views import HooksView, ReadOnlyView
 
