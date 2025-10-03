@@ -58,13 +58,13 @@ def add(
     init_engine(settings.db)
 
     if not users and not roles:
-        logger.error("At least one user or role must be specified to assign the permission to.")
+        logger.error("At least one user or role must be specified to assign the permission to")
         raise typer.Exit(1)
 
     with Session(get_engine()) as session:
         action_obj = session.execute(select(RegisteredAction).where(RegisteredAction.name == action)).scalars().first()
         if not action_obj:
-            logger.bind(name=action).error(f"Action not found")
+            logger.bind(name=action).error("Action not found")
             raise typer.Exit(1)
 
         users_objs = []
@@ -76,7 +76,7 @@ def add(
                     .first()
                 )
                 if not user:
-                    logger.bind(telegram_id=user_id).error(f"User not found")
+                    logger.bind(telegram_id=user_id).error("User not found")
                     raise typer.Exit(1)
                 users_objs.append(user)
 
@@ -85,7 +85,7 @@ def add(
             for role_name in roles:
                 role = session.execute(select(Role).where(Role.name == role_name)).scalars().first()
                 if not role:
-                    logger.bind(name=role_name).error(f"Role not found")
+                    logger.bind(name=role_name).error("Role not found")
                     raise typer.Exit(1)
                 roles_objs.append(role)
 
@@ -96,4 +96,4 @@ def add(
             action=action,
             users=[user.telegram_id for user in users_objs],
             roles=[role.name for role in roles_objs],
-        ).success(f"Permission added")
+        ).success("Permission added")

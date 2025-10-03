@@ -84,7 +84,7 @@ def upgrade(
 ) -> None:
     """Upgrade the database to a later version."""
     command.upgrade(ctx.obj.alembic_cfg, revision)
-    logger.bind(revision=revision).success(f"Upgraded")
+    logger.bind(revision=revision).success("Upgraded")
 
 
 @app.command("downgrade")
@@ -99,4 +99,4 @@ def downgrade(
 ) -> None:
     """Downgrade the database to an earlier version."""
     command.downgrade(ctx.obj.alembic_cfg, revision)
-    logger.bind(revision=revision).success(f"Downgraded")
+    logger.bind(revision=revision).success("Downgraded")
