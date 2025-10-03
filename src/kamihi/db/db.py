@@ -56,12 +56,12 @@ def _set_sqlite_pragma(dbapi_connection, _) -> None:  # noqa: ANN001
 
 @event.listens_for(Engine, "before_cursor_execute")
 def _before_cursor_execute(
-    conn,  # noqa: ANN001, ARG001
-    cursor,  # noqa: ANN001, ARG001
-    statement,  # noqa: ANN001, ARG001
-    parameters,  # noqa: ANN001, ARG001
+    _conn,  # noqa: ANN001
+    _cursor,  # noqa: ANN001
+    _statement,  # noqa: ANN001
+    _parameters,  # noqa: ANN001
     context,  # noqa: ANN001
-    executemany,  # noqa: ANN001, ARG001
+    _executemany,  # noqa: ANN001
 ) -> None:
     """Event listener to save the start time of a query before execution."""
     context.query_start_time = time.time()
@@ -69,12 +69,12 @@ def _before_cursor_execute(
 
 @event.listens_for(Engine, "after_cursor_execute")
 def after_cursor_execute(
-    conn,  # noqa: ANN001, ARG001
-    cursor,  # noqa: ANN001, ARG001
-    statement,  # noqa: ANN001, ARG001
-    parameters,  # noqa: ANN001, ARG001
+    _conn,  # noqa: ANN001
+    _cursor,  # noqa: ANN001
+    statement,  # noqa: ANN001
+    _parameters,  # noqa: ANN001
     context,  # noqa: ANN001
-    executemany,  # noqa: ANN001, ARG001
+    _executemany,  # noqa: ANN001
 ) -> None:
     """Events after execution."""
     total = time.time() - context.query_start_time
