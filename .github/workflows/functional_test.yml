@@ -31,12 +31,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --group unit --group func
+          uv sync --group tests
           uv run playwright install
 
       - name: Run tests
         run: |
-          uv run pytest tests/functional -x --retries 3
+          uv run pytest -x --retries 3
         env:
           KAMIHI_TESTING__BOT_TOKEN: ${{ secrets.TOKEN }}
           KAMIHI_TESTING__BOT_USERNAME: ${{ secrets.BOT_USERNAME }}

@@ -72,15 +72,13 @@ docs = [
     "pymdown-extensions>=10.14.3",
     "termynal>=0.13.0",
 ]
-func = [
+tests = [
     "playwright>=1.52.0",
     "pytest-docker-tools>=3.1.9",
     "pytest-lazy-fixtures>=1.4.0",
     "pytest-playwright-asyncio>=0.7.0",
     "telethon>=1.40.0",
     "toml>=0.10.2",
-]
-unit = [
     "logot[loguru]>=1.4.0",
     "numpy>=2.3.0",
     "pillow>=11.2.1",

@@ -11,7 +11,7 @@ from pytest_docker_tools import container, fetch
 from pytest_docker_tools.wrappers import Container
 from pytest_lazy_fixtures import lf, lfc
 
-from tests.functional.conftest import KamihiContainer
+from tests.conftest import KamihiContainer
 
 
 def test_db_sqlite(kamihi: KamihiContainer):

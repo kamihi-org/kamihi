@@ -23,8 +23,5 @@ name = "python"
 [[analyzers]]
 name = "docker"
 
-[[analyzers]]
-name = "test-coverage"
-
 [[transformers]]
 name = "ruff"

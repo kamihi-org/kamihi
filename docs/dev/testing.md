@@ -1,15 +1,8 @@
-This guide explains how to run and develop tests for the Kamihi project, including unit and functional tests.
+This guide explains how to run and develop tests for the Kamihi project.
 
 ## Unit testing
 
-Unit tests are located in the `tests/unit` directory. They are organized in the same way as the source code, with a folder per module, each with one or more test files that normally correspond to the files in the module.
-
-Unit tests are written using `pytest`. Once the project has been correctly set up following the [setup guide](setup.md), you just need to install their dependencies and run them:
-
-```bash
-$ uv sync --group unit
-$ uv run pytest tests/unit
-```
+Unit tests are currently not implemented. They will be added in the future.
 
 ## Functional testing
 
@@ -19,7 +12,7 @@ $ uv run pytest tests/unit
 !!! warning
     As of the time of writing this documentation, it is not possible to run functional tests unless you have an iOS device for the initial setup. This is because for now creating test accounts can only be done through the Telegram app on iOS. This is a limitation of Telegram, not Kamihi.
 
-Functional tests are located in the `tests/functional` directory. They are organized by feature, based loosely on the structure of the source code but not constrained by it.
+Functional tests are located in the `tests` directory. They are organized by feature, based loosely on the structure of the source code but not constrained by it.
 
 ### Setup
 
@@ -27,7 +20,7 @@ Running functional tests requires a bit more setup, as they run on Telegram's [t
 
 1. Install the dependencies:
     ```bash
-    $ uv sync --group unit --group func
+    $ uv sync --group tests
     ```
 2. Make sure you have Docker and Docker Compose installed on your machine.
     ```bash
@@ -63,7 +56,7 @@ Running functional tests requires a bit more setup, as they run on Telegram's [t
 10. Now you must obtain your test account's Telegram User ID. The easiest is to message one of the many bots that will provide it for you, like [this one](https://t.me/myidbot). This value corresponds to the `USER_ID' environment variable.
 11. For the tests to be able to log in without any user input, two-factor authentication must be skipped. For that to happen, we need a session token. We have a script for that, so to obtain the token, run the following command from the root of the project after having filled in all the values from the previous steps in the `.env` file:
     ```bash
-    $ uv run tests/functional/utils/get_string_session.py
+    $ uv run tests/utils/get_string_session.py
     ```
     This value can then be added to the `.env` file in the `TG_SESSION` variable.
 12. Last, but not least, we need a bot to test on. From your test account, talk to the [@BotFather](https://t.me/botfather) and fill in the `BOT_TOKEN` and `BOT_USERNAME` values in the `.env` file.
@@ -71,7 +64,7 @@ Running functional tests requires a bit more setup, as they run on Telegram's [t
 Once this odyssey has been completed, you should be able to run the functional tests with the following command:
 
 ```bash
-$ uv run pytest tests/functional
+$ uv run pytest
 ```
 
 ### Available fixtures

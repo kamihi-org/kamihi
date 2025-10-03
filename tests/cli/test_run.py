@@ -11,7 +11,7 @@ from typing import Generator
 import pytest
 from pytest_docker_tools.wrappers import Container
 
-from tests.functional.conftest import KamihiContainer
+from tests.conftest import KamihiContainer
 
 
 @pytest.fixture

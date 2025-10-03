@@ -569,23 +569,21 @@ docs = [
     { name = "pymdown-extensions" },
     { name = "termynal" },
 ]
-func = [
-    { name = "playwright" },
-    { name = "pytest-docker-tools" },
-    { name = "pytest-lazy-fixtures" },
-    { name = "pytest-playwright-asyncio" },
-    { name = "telethon" },
-    { name = "toml" },
-]
-unit = [
+tests = [
     { name = "logot", extra = ["loguru"] },
     { name = "numpy" },
     { name = "pillow" },
+    { name = "playwright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
+    { name = "pytest-docker-tools" },
+    { name = "pytest-lazy-fixtures" },
+    { name = "pytest-playwright-asyncio" },
     { name = "pytest-retry" },
     { name = "pytest-timeout" },
+    { name = "telethon" },
+    { name = "toml" },
 ]
 
 [package.metadata]
@@ -629,23 +627,21 @@ docs = [
     { name = "pymdown-extensions", specifier = ">=10.14.3" },
     { name = "termynal", specifier = ">=0.13.0" },
 ]
-func = [
-    { name = "playwright", specifier = ">=1.52.0" },
-    { name = "pytest-docker-tools", specifier = ">=3.1.9" },
-    { name = "pytest-lazy-fixtures", specifier = ">=1.4.0" },
-    { name = "pytest-playwright-asyncio", specifier = ">=0.7.0" },
-    { name = "telethon", specifier = ">=1.40.0" },
-    { name = "toml", specifier = ">=0.10.2" },
-]
-unit = [
+tests = [
     { name = "logot", extras = ["loguru"], specifier = ">=1.4.0" },
     { name = "numpy", specifier = ">=2.3.0" },
     { name = "pillow", specifier = ">=11.2.1" },
+    { name = "playwright", specifier = ">=1.52.0" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pytest-asyncio", specifier = ">=1.0.0" },
     { name = "pytest-cov", specifier = ">=6.1.1" },
+    { name = "pytest-docker-tools", specifier = ">=3.1.9" },
+    { name = "pytest-lazy-fixtures", specifier = ">=1.4.0" },
+    { name = "pytest-playwright-asyncio", specifier = ">=0.7.0" },
     { name = "pytest-retry", specifier = ">=1.7.0" },
     { name = "pytest-timeout", specifier = ">=2.4.0" },
+    { name = "telethon", specifier = ">=1.40.0" },
+    { name = "toml", specifier = ">=0.10.2" },
 ]
 
 [[package]]

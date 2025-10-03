@@ -10,7 +10,7 @@ import pytest
 from playwright.async_api import Page, expect
 from telethon.tl.custom import Conversation
 
-from tests.functional.conftest import KamihiContainer
+from tests.conftest import KamihiContainer
 
 
 @pytest.mark.asyncio
