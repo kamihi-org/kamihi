@@ -33,9 +33,7 @@ def test_env_var_overrides_default():
 def test_config_file_loading():
     """Test that configuration is correctly loaded from a file."""
     # Create a temporary YAML config file
-    with tempfile.NamedTemporaryFile(
-        suffix=".yaml", mode="w+", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
         temp_file.write("""
 log:
   stdout_level: WARNING
@@ -81,9 +79,7 @@ def test_parameters_have_correct_types():
 def test_config_custom_location_via_env():
     """Test loading configuration from a custom location specified by env var."""
     # Create a temporary YAML config file
-    with tempfile.NamedTemporaryFile(
-        suffix=".yaml", mode="w+", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
         temp_file.write("""
 log:
   stdout_level: DEBUG
@@ -126,9 +122,7 @@ def test_config_location_fallback():
 def test_config_location_preference_order():
     """Test order of preference between different configuration locations."""
     # Create a YAML file with one set of values
-    with tempfile.NamedTemporaryFile(
-        suffix=".yaml", mode="w+", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
         temp_file.write("""
 log:
   stdout_level: WARNING
@@ -197,9 +191,7 @@ log:
 def test_config_file_overrides_default():
     """Test that config file values override default values."""
     # Create a config file with non-default values
-    with tempfile.NamedTemporaryFile(
-        suffix=".yaml", mode="w+", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
         temp_file.write("""
 log:
   stdout_level: WARNING
@@ -221,9 +213,7 @@ log:
 def test_env_var_overrides_config_file():
     """Test that environment variables override config file values."""
     # Create a config file with some values
-    with tempfile.NamedTemporaryFile(
-        suffix=".yaml", mode="w+", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
         temp_file.write("""
 log:
   stdout_level: WARNING
@@ -251,9 +241,7 @@ log:
 def test_full_precedence_chain():
     """Test complete precedence chain for configuration sources."""
     # Create a config file
-    with tempfile.NamedTemporaryFile(
-        suffix=".yaml", mode="w+", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
         temp_file.write("""
 log:
   stdout_level: WARNING
@@ -318,9 +306,7 @@ def test_db_url(url: str):
 def test_from_yaml_with_valid_file():
     """Test loading settings from a valid YAML file."""
     # Create a temporary YAML file with valid configuration
-    with tempfile.NamedTemporaryFile(
-        suffix=".yaml", mode="w+", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
         temp_file.write("""
 log:
   stdout_level: WARNING
@@ -353,9 +339,7 @@ timezone: Europe/London
 def test_from_yaml_with_partial_config():
     """Test loading settings from a YAML file with only partial configuration."""
     # Create a temporary YAML file with partial configuration
-    with tempfile.NamedTemporaryFile(
-        suffix=".yaml", mode="w+", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
         temp_file.write("""
 log:
   stdout_level: ERROR
@@ -403,9 +387,7 @@ def test_from_yaml_with_nonexistent_file():
 def test_from_yaml_with_empty_file():
     """Test loading settings from an empty YAML file returns default settings."""
     # Create an empty YAML file
-    with tempfile.NamedTemporaryFile(
-        suffix=".yaml", mode="w+", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
         temp_file.write("")  # Empty file
         yaml_path = Path(temp_file.name)
 
@@ -428,9 +410,7 @@ def test_from_yaml_with_empty_file():
 def test_from_yaml_with_null_content():
     """Test loading settings from a YAML file with null content returns default settings."""
     # Create a YAML file with null content
-    with tempfile.NamedTemporaryFile(
-        suffix=".yaml", mode="w+", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
         temp_file.write("~")  # YAML null
         yaml_path = Path(temp_file.name)
 
@@ -453,9 +433,7 @@ def test_from_yaml_with_null_content():
 def test_from_yaml_with_invalid_yaml():
     """Test loading settings from a YAML file with invalid YAML syntax raises an error."""
     # Create a YAML file with invalid syntax
-    with tempfile.NamedTemporaryFile(
-        suffix=".yaml", mode="w+", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
         temp_file.write("""
 log:
   stdout_level: WARNING
@@ -476,9 +454,7 @@ log:
 def test_from_yaml_with_invalid_config_values():
     """Test loading settings from a YAML file with invalid configuration values raises validation error."""
     # Create a YAML file with invalid configuration values
-    with tempfile.NamedTemporaryFile(
-        suffix=".yaml", mode="w+", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
         temp_file.write("""
 log:
   stdout_level: INVALID_LEVEL
@@ -519,9 +495,7 @@ def test_from_yaml_with_directory_path():
 def test_from_yaml_with_complex_nested_config():
     """Test loading settings from a YAML file with complex nested configuration."""
     # Create a temporary YAML file with complex nested configuration
-    with tempfile.NamedTemporaryFile(
-        suffix=".yaml", mode="w+", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
         temp_file.write("""
 log:
   stdout_enable: true
@@ -580,10 +554,7 @@ testing: false
         ]
 
         # Verify database settings
-        assert (
-            settings.db.url
-            == "postgresql+psycopg2://user:password@localhost:5432/production_db"
-        )
+        assert settings.db.url == "postgresql+psycopg2://user:password@localhost:5432/production_db"
 
         # Verify response settings
         assert settings.responses.default_enabled is False
@@ -606,9 +577,7 @@ testing: false
 def test_from_yaml_preserves_defaults_for_missing_sections():
     """Test that missing sections in YAML preserve their default values."""
     # Create a YAML file with only one section
-    with tempfile.NamedTemporaryFile(
-        suffix=".yaml", mode="w+", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as temp_file:
         temp_file.write("""
 timezone: Europe/Paris
         """)
