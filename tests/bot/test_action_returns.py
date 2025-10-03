@@ -12,7 +12,7 @@ from telethon import TelegramClient
 from telethon.tl.custom import Conversation, Message
 
 from kamihi.tg.media import Location
-from tests.conftest import random_image, random_video_path, random_audio_path, random_voice_note_path
+from tests.utils.media import random_image, random_video_path, random_audio_path, random_voice_note_path
 
 
 def random_location() -> Location:

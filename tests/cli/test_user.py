@@ -9,7 +9,7 @@ License:
 import pytest
 from playwright.async_api import Page, expect
 
-from tests.conftest import KamihiContainer
+from tests.fixtures.docker_container import KamihiContainer
 
 
 @pytest.mark.asyncio
