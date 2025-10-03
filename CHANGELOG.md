@@ -1,3 +1,9 @@
+## 4.0.0 (2025-10-03)
+
+### Feat
+
+- **db**: use SQLAlchemy instead of MongoDB (#28)
+
 ## 3.0.0 (2025-09-02)
 
 ### Feat

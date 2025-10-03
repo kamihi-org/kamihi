@@ -19,7 +19,7 @@ from .base.logging import configure_logging
 from .bot import Bot
 from .db import BaseUser
 
-__version__ = "3.0.0"
+__version__ = "4.0.0"
 
 
 bot: Bot
