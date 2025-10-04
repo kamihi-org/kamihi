@@ -1,3 +1,9 @@
+## 4.1.0 (2025-10-04)
+
+### Feat
+
+- **datasources**: external database integrations (#46)
+
 ## 4.0.0 (2025-10-03)
 
 ### Feat
