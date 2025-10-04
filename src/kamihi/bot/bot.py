@@ -22,12 +22,15 @@ Examples:
 import functools
 from collections.abc import Callable
 from functools import partial
+from typing import Any
 
 from loguru import logger
 from multipledispatch import dispatch
 from telegram import BotCommand
+from telegram.ext import Application
 
 from kamihi.base.config import KamihiSettings
+from kamihi.datasources import DataSource
 from kamihi.db import init_engine
 from kamihi.tg import TelegramClient
 from kamihi.tg.handlers import AuthHandler
@@ -54,6 +57,7 @@ class Bot:
     """
 
     settings: KamihiSettings
+    datasources: dict[str, DataSource] = {}
 
     Document: Document = Document
     Photo: Photo = Photo
@@ -79,6 +83,20 @@ class Bot:
         init_engine(self.settings.db)
         logger.trace("Initialized database engine")
 
+        # Loads the datasources
+        for datasource_config in self.settings.datasources:
+            datasource_class = DataSource.get_datasource_class(datasource_config.type)
+            try:
+                self.datasources[datasource_config.name] = datasource_class(datasource_config)
+            except ImportError as e:
+                msg = (
+                    f"Failed to initialize data source '{datasource_config.name}' "
+                    f"of type '{datasource_config.type}' because of missing dependencies."
+                )
+                raise ImportError(msg) from e
+
+            logger.trace("Initialized", datasource=datasource_config.name, type=datasource_config.type)
+
     @dispatch([(str, Callable)])
     def action(self, *args: str | Callable, description: str = None) -> Action | Callable:
         """
@@ -99,13 +117,18 @@ class Bot:
         # Because of the dispatch decorator, the function is passed as the last argument
         args = list(args)
         func: Callable = args.pop()
+
+        name = func.__name__
         commands: list[str] = args or [func.__name__]
 
         # Create and store the action
-        action = Action(func.__name__, commands, description, func)
-        self._actions.append(action)
+        try:
+            action = Action(name, commands, description, func, datasources=self.datasources)
+        except ValueError:
+            logger.bind(action=name).exception("Failed to register action")
+            return func
 
-        # The action is returned so it can be used by the user if needed
+        self._actions.append(action)
         return action
 
     @dispatch([str])
@@ -127,14 +150,9 @@ class Bot:
         return functools.partial(self.action, *commands, description=description)
 
     @property
-    def _valid_actions(self) -> list[Action]:
-        """Return the valid actions for the bot."""
-        return [action for action in self._actions if action.is_valid()]
-
-    @property
     def _handlers(self) -> list[AuthHandler]:
         """Return the handlers for the bot."""
-        return [action.handler for action in self._valid_actions]
+        return [action.handler for action in self._actions]
 
     @property
     def _scopes(self) -> dict[int, list[BotCommand]]:
@@ -142,7 +160,7 @@ class Bot:
         scopes = {}
         for user in get_users():
             scopes[user.telegram_id] = []
-            for action in self._valid_actions:
+            for action in self._actions:
                 if is_user_authorized(user, action.name):
                     scopes[user.telegram_id].extend(
                         [
@@ -153,30 +171,13 @@ class Bot:
 
         return scopes
 
-    async def _set_scopes(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003, ARG002
-        """
-        Set the command scopes for the bot.
-
-        This method sets the command scopes for the bot based on the registered
-        actions.
-
-        Args:
-            *args: Positional arguments. Not used but required for using the method as a callback.
-            **kwargs: Keyword arguments. Not used but required for using the method as a callback.
-
-        """
+    async def _set_scopes(self, *_args: Any) -> None:  # noqa: ANN401
+        """Set the command scopes for the bot."""
         await self._client.set_scopes(self._scopes)
 
-    async def _reset_scopes(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003, ARG002
-        """
-        Reset the command scopes for the bot.
-
-        Args:
-            *args: Positional arguments. Not used but required for using the method as a callback.
-            **kwargs: Keyword arguments. Not used but required for using the method as a callback.
-
-        """
-        await self._client.reset_scopes(*args, **kwargs)
+    async def _reset_scopes(self, *_args: Any) -> None:  # noqa: ANN401
+        """Reset the command scopes for the bot."""
+        await self._client.reset_scopes()
 
     # skipcq: TCV-001
     def start(self) -> None:
@@ -186,21 +187,17 @@ class Bot:
         logger.debug("Removed actions not present in code from database")
 
         # Warns the user if there are no valid actions registered
-        if not self._valid_actions:
+        if not self._actions:
             logger.warning("No valid actions were registered. The bot will not respond to any commands.")
 
         # Loads the Telegram client
-        self._client = TelegramClient(self.settings, self._handlers)
+        self._client = TelegramClient(self.settings, self._handlers, self._post_init, self._post_shutdown)
         logger.trace("Initialized Telegram client")
-
-        # Sets the command scopes for the bot
-        self._client.register_run_once_job(self._reset_scopes, 1)
-        self._client.register_run_once_job(self._set_scopes, 2)
-        logger.trace("Initialized command scopes jobs")
 
         # Loads the web server
         self._web = KamihiWeb(
             self.settings.web,
+            self.settings.db,
             {
                 "after_create": [self._set_scopes],
                 "after_edit": [self._set_scopes],
@@ -212,3 +209,36 @@ class Bot:
 
         # Runs the client
         self._client.run()
+
+    async def _post_init(self, _: Application) -> None:
+        """
+        Post-initialization callback for the bot.
+
+        This method is called after the bot application is initialized. It sets
+        the command scopes and registers the handlers.
+        """
+        # Sets the command scopes for the bot
+        await self._reset_scopes()
+        await self._set_scopes()
+        logger.trace("Set command scopes")
+
+        # Connects to the datasources
+        for datasource in self.datasources.values():
+            await datasource.connect()
+
+        # Logs successful startup
+        logger.success("Bot started")
+
+    async def _post_shutdown(self, _: Application) -> None:
+        """
+        Post-shutdown callback for the bot.
+
+        This method is called after the bot application is shut down. It disconnects
+        from the datasources.
+        """
+        # Disconnects from the datasources
+        for datasource in self.datasources.values():
+            await datasource.disconnect()
+
+        # Logs successful shutdown
+        logger.success("Bot stopped")
