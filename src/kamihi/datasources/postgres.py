@@ -32,9 +32,12 @@ class PostgresDataSourceConfig(DataSourceConfig):
     Attributes:
         host (str): The hostname of the PostgreSQL server.
         port (int): The port number of the PostgreSQL server.
+        database (str): The name of the PostgreSQL database to connect to.
         user (str): The username for connecting to the PostgreSQL database.
         password (str): The password for the specified user.
-        database (str): The name of the PostgreSQL database to connect to.
+        min_pool_size (int): The minimum number of connections in the pool.
+        max_pool_size (int): The maximum number of connections in the pool.
+        timeout (int): The timeout duration for establishing connections, in seconds.
 
     """
 

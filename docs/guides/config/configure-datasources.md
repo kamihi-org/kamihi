@@ -23,7 +23,7 @@ Data sources are configured in the `datasources` section of the `KamihiSettings`
         path: data/database.db
       # A sample PostgreSQL datasource
       - name: my_postgres_db
-        type: postgres
+        type: postgresql
         host: localhost
         port: 5432
         database: my_database
@@ -42,7 +42,7 @@ Data sources are configured in the `datasources` section of the `KamihiSettings`
         },
         {
             "name": "my_postgres_db",
-            "type": "postgres",
+            "type": "postgresql",
             "host": "localhost",
             "port": 5432,
             "database": "my_database",

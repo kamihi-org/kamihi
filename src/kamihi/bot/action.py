@@ -246,6 +246,9 @@ class Action:
                 raise ValueError(msg)
 
         ds_name = re.search(r"\.(.*?)\.", req)
+        if ds_name is None:
+            msg = f"Request name '{req}' does not match expected pattern '.<ds_name>.'"
+            raise ValueError(msg)
         return await self._datasources[ds_name.group(1)].fetch(self._requests[req].render())
 
     async def _fill_parameters(self, update: Update, context: CallbackContext) -> tuple[list[Any], dict[str, Any]]:
