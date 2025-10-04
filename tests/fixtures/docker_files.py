@@ -75,7 +75,7 @@ def migrations_folder() -> dict:
 
 
 @pytest.fixture
-def extra_files_bytes() -> dict:
+def extra_files_bytes() -> dict[str, bytes]:
     """Fixture to provide the contents of extra files in bytes."""
     return {}
 
@@ -98,6 +98,6 @@ def app_folder(pyproject, config_file, actions_folder, models_folder, migrations
             for key, value in migrations_folder.items()
         }
     )
-    res.update({key: value for key, value in extra_files_bytes.items()})
+    res.update(extra_files_bytes)
     res = {key: value.encode() if isinstance(value, str) else value for key, value in res.items()}
     return res
