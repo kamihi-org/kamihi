@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 from pathlib import Path
 
 import pytest
@@ -361,7 +362,7 @@ async def test_action_parameter_templates(user, add_permission_for_user, chat: C
     ],
 )
 async def test_action_parameter_data(
-        actions_folder, config_file, expected_response, user, add_permission_for_user, chat: Conversation
+    actions_folder, config_file, expected_response, user, add_permission_for_user, chat: Conversation
 ):
     """Test the "data" action parameter with SQL queries."""
     add_permission_for_user(user["telegram_id"], "start")
@@ -422,7 +423,7 @@ async def test_action_parameter_data(
     ],
 )
 async def test_action_parameter_multiple_datasources(
-        actions_folder, config_file, extra_files_bytes, expected_response, user, add_permission_for_user, chat: Conversation
+    actions_folder, config_file, extra_files_bytes, expected_response, user, add_permission_for_user, chat: Conversation
 ):
     """Test the "data" action parameter with multiple datasources."""
     add_permission_for_user(user["telegram_id"], "start")
