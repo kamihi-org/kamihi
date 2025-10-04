@@ -8,6 +8,7 @@ License:
 
 pytest_plugins = [
     "tests.fixtures.app",
+    "tests.fixtures.docker_aux",
     "tests.fixtures.docker_container",
     "tests.fixtures.docker_files",
     "tests.fixtures.hooks",

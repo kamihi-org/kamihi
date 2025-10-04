@@ -208,7 +208,7 @@ class KamihiContainer(Container):
         Args:
             command (str): The command to run Kamihi. Defaults to "kamihi run".
         """
-        self.run_command_and_wait_for_log(command, "Started!", "SUCCESS")
+        self.run_command_and_wait_for_log(command, "Bot started", "SUCCESS")
 
     def stop(self) -> None:
         """

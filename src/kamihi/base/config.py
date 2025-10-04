@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytz
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from pydantic_extra_types.timezone_name import TimeZoneName
 from pydantic_settings import (
     BaseSettings,
@@ -24,6 +24,8 @@ from pydantic_settings import (
     YamlConfigSettingsSource,
 )
 from pytz.tzinfo import DstTzInfo
+
+from kamihi.datasources import DataSourceConfig
 
 
 class LogLevel(StrEnum):
@@ -164,6 +166,9 @@ class KamihiSettings(BaseSettings):
     # Database settings
     db: DatabaseSettings = Field(default_factory=DatabaseSettings)
 
+    # Datasources settings
+    datasources: list[DataSourceConfig.union_type()] = Field(default_factory=list)
+
     # Telegram settings
     token: str | None = Field(default=None, pattern=r"^\d+:[0-9A-Za-z_-]{35}$", exclude=True)
     responses: ResponseSettings = Field(default_factory=ResponseSettings)
@@ -181,6 +186,15 @@ class KamihiSettings(BaseSettings):
 
         """
         return pytz.timezone(self.timezone)
+
+    @field_validator("datasources", mode="after")
+    @classmethod
+    def _validate_datasources(cls, value: list[DataSourceConfig]) -> list[DataSourceConfig]:
+        """Check if all datasources have unique names."""
+        names = [ds.name for ds in value]
+        if len(names) != len(set(names)):
+            raise ValueError("Datasources must have unique names.")
+        return value
 
     model_config = SettingsConfigDict(
         env_prefix="KAMIHI_",
