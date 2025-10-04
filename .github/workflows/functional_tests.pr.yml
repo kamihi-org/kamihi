@@ -1,0 +1,18 @@
+# This workflow is a dummy to allow running functional tests only on merge queue.
+# It does nothing on purpose.
+
+name: Functional tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  functional_tests:
+    name: Functional tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Do nothing
+        run: sleep 0.1

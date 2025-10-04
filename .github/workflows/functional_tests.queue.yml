@@ -1,9 +1,9 @@
+# This workflow runs functional tests, but only when a PR is added to the merge queue.
+# It also can be run manually.
+
 name: Functional tests
 
 on:
-  push:
-    branches:
-      - main
   merge_group:
     branches:
       - main
@@ -13,7 +13,7 @@ concurrency:
   group: ${{ github.workflow }}
 
 jobs:
-  test:
+  functional_tests:
     name: Functional tests
     runs-on: self-hosted
 
