@@ -11,6 +11,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
+import anyio
 from loguru import logger
 
 from kamihi.base.utils import requires, timer
@@ -160,7 +161,7 @@ class PostgresDataSource(DataSource):
         with self._logger.contextualize(request=str(request)), timer(self._logger, "Executed command"):
             async with self._pool.acquire() as conn:
                 self._logger.trace("Acquired connection from pool")
-                results = await conn.fetch(request.read_text() if isinstance(request, Path) else request)
+                results = await conn.fetch(anyio.read_text() if isinstance(request, Path) else request)
                 self._logger.trace("Fetched {results} results from datasource", results=len(results))
         return results
 

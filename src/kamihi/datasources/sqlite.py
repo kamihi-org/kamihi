@@ -11,6 +11,7 @@ from pathlib import Path
 from sqlite3 import Row
 from typing import Any, Literal
 
+import anyio
 from loguru import logger
 
 from kamihi.base.utils import requires, timer
@@ -104,7 +105,7 @@ class SQLiteDataSource(DataSource):
             raise RuntimeError("Database connection is not established. Call connect() first.")
 
         with self._logger.contextualize(request=str(request)), timer(self._logger, "Executed command"):
-            async with self._db.execute(request if isinstance(request, str) else request.read_text()) as cursor:
+            async with self._db.execute(request if isinstance(request, str) else anyio.read_text()) as cursor:
                 self._logger.trace("Created cursor and executed query")
                 results = await cursor.fetchall()
                 self._logger.trace("Fetched {results} results from datasource", results=len(results))
