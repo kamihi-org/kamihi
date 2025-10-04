@@ -197,7 +197,6 @@ class Bot:
         # Loads the web server
         self._web = KamihiWeb(
             self.settings.web,
-            self.settings.db,
             {
                 "after_create": [self._set_scopes],
                 "after_edit": [self._set_scopes],

@@ -18,7 +18,7 @@ from starlette.applications import Starlette
 from starlette_admin import CustomView
 from starlette_admin.contrib.sqla import Admin
 
-from kamihi.base.config import DatabaseSettings, WebSettings
+from kamihi.base.config import WebSettings
 from kamihi.db import BaseUser, Permission, RegisteredAction, Role, get_engine
 
 from .views import HooksView, ReadOnlyView
@@ -48,14 +48,12 @@ class KamihiWeb(Thread):
 
     Attributes:
         settings (WebSettings): The settings for the Kamihi bot.
-        db_settings (DatabaseSettings): The database settings for the Kamihi bot.
         app (Starlette): The application instance.
         admin (Admin): The Starlette-Admin instance for the admin interface.
 
     """
 
     settings: WebSettings
-    db_settings: DatabaseSettings
     hooks: dict[
         Literal[
             "before_create",
