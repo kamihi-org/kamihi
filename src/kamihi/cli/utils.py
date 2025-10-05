@@ -99,7 +99,7 @@ def import_models(models_dir: Path) -> None:
     for model_file in models_dir.iterdir():
         model_file: Path
         model_name = model_file.stem
-        lg = logger.bind(model=model_name)
+        lg = lg.bind(model=model_name)
 
         if model_file.is_file() and model_file.suffix == ".py":
             lg.bind(file=str(model_file)).trace("Importing model")
