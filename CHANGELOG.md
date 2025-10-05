@@ -1,3 +1,9 @@
+## 5.0.0 (2025-10-05)
+
+### Refactor
+
+- **base**: made application settings a singleton object (#51)
+
 ## 4.1.0 (2025-10-04)
 
 ### Feat
