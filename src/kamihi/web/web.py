@@ -8,6 +8,7 @@ License:
 
 import inspect
 import logging
+from collections.abc import Callable
 from pathlib import Path
 from threading import Thread
 from typing import Literal
@@ -18,7 +19,7 @@ from starlette.applications import Starlette
 from starlette_admin import CustomView
 from starlette_admin.contrib.sqla import Admin
 
-from kamihi.base.config import WebSettings
+from kamihi.base import get_settings
 from kamihi.db import BaseUser, Permission, RegisteredAction, Role, get_engine
 
 from .views import HooksView, ReadOnlyView
@@ -47,13 +48,11 @@ class KamihiWeb(Thread):
     connection and configuration.
 
     Attributes:
-        settings (WebSettings): The settings for the Kamihi bot.
         app (Starlette): The application instance.
         admin (Admin): The Starlette-Admin instance for the admin interface.
 
     """
 
-    settings: WebSettings
     hooks: dict[
         Literal[
             "before_create",
@@ -63,15 +62,16 @@ class KamihiWeb(Thread):
             "before_delete",
             "after_delete",
         ],
-        list[callable],
+        list[Callable],
     ]
 
     app: Starlette | None
     admin: Admin | None
+    host: str
+    port: int
 
     def __init__(
         self,
-        settings: WebSettings,
         hooks: dict[
             Literal[
                 "before_create",
@@ -81,13 +81,17 @@ class KamihiWeb(Thread):
                 "before_delete",
                 "after_delete",
             ],
-            list[callable],
+            list[Callable],
         ] = None,
     ) -> None:
         """Initialize the KamihiWeb instance."""
+        settings = get_settings()
+
         super().__init__()
-        self.settings = settings
+
         self.hooks = hooks
+        self.host = settings.web.host
+        self.port = settings.web.port
 
         self.daemon = True
 
@@ -99,8 +103,8 @@ class KamihiWeb(Thread):
             on_startup=[
                 lambda: logger.info(
                     "Web server started on http://{host}:{port}",
-                    host=self.settings.host,
-                    port=self.settings.port,
+                    host=self.host,
+                    port=self.port,
                 ),
             ],
         )
@@ -128,8 +132,8 @@ class KamihiWeb(Thread):
 
         uvicorn.run(
             self.app,
-            host=self.settings.host,
-            port=self.settings.port,
+            host=self.host,
+            port=self.port,
             log_config={
                 "version": 1,
                 "disable_existing_loggers": False,

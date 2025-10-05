@@ -271,3 +271,26 @@ class KamihiSettings(BaseSettings):
             if data and isinstance(data, dict):
                 return cls(**data)
         return cls()
+
+
+_settings: KamihiSettings | None = None
+
+
+def init_settings(path: Path | None = None) -> None:
+    """
+    Initialize the global settings instance.
+
+    Args:
+        path (Path | None): Optional path to a YAML configuration file.
+
+    """
+    global _settings  # skipcq: PYL-W0603
+    if _settings is None:
+        _settings = KamihiSettings.from_yaml(path) if path else KamihiSettings()
+
+
+def get_settings() -> KamihiSettings:
+    """Get the global settings instance."""
+    if _settings is None:
+        raise RuntimeError("Settings not initialized. Call init_settings() first.")
+    return _settings

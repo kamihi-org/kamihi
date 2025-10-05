@@ -13,9 +13,7 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from kamihi.base.config import KamihiSettings
-from kamihi.base.logging import configure_logging
-from kamihi.cli.utils import import_models, telegram_id_callback
+from kamihi.cli.utils import telegram_id_callback
 from kamihi.db import BaseUser, Permission, RegisteredAction, Role, get_engine, init_engine
 
 app = typer.Typer()
@@ -23,7 +21,6 @@ app = typer.Typer()
 
 @app.command()
 def add(
-    ctx: typer.Context,
     action: Annotated[
         str,
         typer.Argument(..., help="Name of the action to assign permission for (without the leading slash)."),
@@ -49,14 +46,6 @@ def add(
     ] = None,
 ) -> None:
     """Add a new permission for an action to specified users and/or roles."""
-    settings = KamihiSettings.from_yaml(ctx.obj.config) if ctx.obj.config else KamihiSettings()
-    settings.log.file_enable = False
-    settings.log.notification_enable = False
-    configure_logging(logger, settings.log)
-
-    import_models(ctx.obj.cwd / "models")
-    init_engine(settings.db)
-
     if not users and not roles:
         logger.error("At least one user or role must be specified to assign the permission to")
         raise typer.Exit(1)

@@ -65,7 +65,7 @@ async def test_user_add_invalid_telegram_id(kamihi: KamihiContainer, admin_page:
     [
         {
             "user.py": """\
-                from kamihi import BaseUser
+                from kamihi.db import BaseUser
                 from sqlalchemy import Column, String
                 
                 class User(BaseUser):
@@ -95,7 +95,7 @@ async def test_user_add_custom_data(kamihi: KamihiContainer, admin_page: Page, m
     [
         {
             "user.py": """\
-                from kamihi import BaseUser
+                from kamihi.db import BaseUser
                 from sqlalchemy import Column, String
                 
                 class User(BaseUser):
@@ -128,7 +128,7 @@ async def test_user_add_custom_data_invalid_json_format(
     [
         {
             "user.py": """\
-                from kamihi import BaseUser
+                from kamihi.db import BaseUser
                 from sqlalchemy import Column, String
                 
                 class User(BaseUser):
@@ -149,7 +149,7 @@ async def test_user_add_custom_data_missing_required_field(kamihi: KamihiContain
     [
         {
             "user.py": """\
-                from kamihi import BaseUser
+                from kamihi.db import BaseUser
                 from sqlalchemy import Column, String
                 
                 class User(BaseUser):

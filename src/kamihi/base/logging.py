@@ -24,7 +24,7 @@ import sys
 
 import loguru
 
-from .config import LogSettings
+from .config import LogSettings, get_settings
 from .manual_send import ManualSender
 
 
@@ -83,7 +83,7 @@ class _InterceptHandler(logging.Handler):
         self.logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
-def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
+def configure_logging(logger: loguru.Logger) -> None:
     """
     Configure logging for the module.
 
@@ -95,8 +95,9 @@ def configure_logging(logger: loguru.Logger, settings: LogSettings) -> None:
         settings: The logging settings to configure.
 
     """
-    logger.remove()
+    settings = get_settings().log
 
+    logger.remove()
     logger.configure(patcher=_extra_formatter, extra={"compact": ""})
 
     if settings.stdout_enable:

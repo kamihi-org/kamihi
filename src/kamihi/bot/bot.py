@@ -29,9 +29,8 @@ from multipledispatch import dispatch
 from telegram import BotCommand
 from telegram.ext import Application
 
-from kamihi.base.config import KamihiSettings
+from kamihi.base import get_settings
 from kamihi.datasources import DataSource
-from kamihi.db import init_engine
 from kamihi.tg import TelegramClient
 from kamihi.tg.handlers import AuthHandler
 from kamihi.tg.media import Audio, Document, Location, Photo, Video, Voice
@@ -50,13 +49,8 @@ class Bot:
     can be used to start the bot. The managed instance is preferable to using the
     `Bot` class directly, as it ensures that the bot is properly configured and
     managed by the framework.
-
-    Attributes:
-        settings (KamihiSettings): The settings for the bot.
-
     """
 
-    settings: KamihiSettings
     datasources: dict[str, DataSource] = {}
 
     Document: Document = Document
@@ -70,21 +64,12 @@ class Bot:
     _web: KamihiWeb
     _actions: list[Action] = []
 
-    def __init__(self, settings: KamihiSettings) -> None:
-        """
-        Initialize the Bot class.
-
-        Args:
-            settings: The settings for the bot.
-
-        """
-        self.settings = settings
-
-        init_engine(self.settings.db)
-        logger.trace("Initialized database engine")
-
+    def __init__(self) -> None:
+        """Initialize the Bot class."""
         # Loads the datasources
-        for datasource_config in self.settings.datasources:
+        settings = get_settings()
+
+        for datasource_config in settings.datasources:
             datasource_class = DataSource.get_datasource_class(datasource_config.type)
             try:
                 self.datasources[datasource_config.name] = datasource_class(datasource_config)
@@ -191,12 +176,11 @@ class Bot:
             logger.warning("No valid actions were registered. The bot will not respond to any commands.")
 
         # Loads the Telegram client
-        self._client = TelegramClient(self.settings, self._handlers, self._post_init, self._post_shutdown)
+        self._client = TelegramClient(self._handlers, self._post_init, self._post_shutdown)
         logger.trace("Initialized Telegram client")
 
         # Loads the web server
         self._web = KamihiWeb(
-            self.settings.web,
             {
                 "after_create": [self._set_scopes],
                 "after_edit": [self._set_scopes],

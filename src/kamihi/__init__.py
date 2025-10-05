@@ -12,28 +12,25 @@ Attributes:
 
 """
 
-from loguru import logger
+import typing
 
-from .base.config import KamihiSettings
-from .base.logging import configure_logging
-from .bot import Bot
-from .db import BaseUser
+if typing.TYPE_CHECKING:
+    from .bot import Bot
 
 __version__ = "4.1.0"
 
 
-bot: Bot
+bot: "Bot"
 
 
-def _init_bot(settings: KamihiSettings) -> Bot:
+def init_bot() -> "Bot":
     """Start the Kamihi bot."""
     global bot  # skipcq: PYL-W0603
 
-    configure_logging(logger, settings.log)
-    logger.trace("Initialized settings and logging")
+    from .bot import Bot
 
-    bot = Bot(settings)
+    bot = Bot()
     return bot
 
 
-__all__ = ["__version__", "bot", "KamihiSettings", "BaseUser"]
+__all__ = ["__version__", "bot"]

@@ -10,6 +10,8 @@ from loguru import logger
 from telegram import Update
 from telegram.ext import ApplicationHandlerStop, CallbackContext
 
+from kamihi.base import get_settings
+
 from .send import send
 
 
@@ -22,12 +24,13 @@ async def default(update: Update, context: CallbackContext) -> None:
         context (CallbackContext): CallbackContext object
 
     """
+    settings = get_settings().responses
+
     logger.bind(chat_id=update.effective_message.chat_id, message_id=update.effective_message.message_id).debug(
         "Received message but no handler matched, so sending default response"
     )
 
-    text = context.bot_data["responses"]["default_message"]
-    await send(text, update=update, context=context)
+    await send(settings.default_message, update=update, context=context)
     raise ApplicationHandlerStop
 
 
@@ -40,10 +43,11 @@ async def error(update: object | None, context: CallbackContext) -> None:
         context (CallbackContext): CallbackContext object
 
     """
+    settings = get_settings().responses
+
     logger.opt(exception=context.error).error("An error occurred")
 
     if isinstance(update, Update):
-        text = context.bot_data["responses"]["error_message"]
-        await send(text, update=update, context=context)
+        await send(settings.error_message, update=update, context=context)
 
     raise ApplicationHandlerStop

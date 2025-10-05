@@ -11,20 +11,17 @@ import time
 from loguru import logger
 from sqlalchemy import Engine, create_engine, event
 
-from kamihi.base.config import DatabaseSettings
+from kamihi.base import get_settings
 
 _engine: Engine | None = None
 
 
-def init_engine(db_settings: DatabaseSettings) -> None:
-    """
-    Initialize the database engine.
-
-    Args:
-        db_settings (DatabaseSettings): The database settings.
-
-    """
+def init_engine() -> None:
+    """Initialize the database engine."""
     global _engine  # skipcq: PYL-W0603
+
+    db_settings = get_settings().db
+
     if _engine is None:
         _engine = create_engine(db_settings.url)
 

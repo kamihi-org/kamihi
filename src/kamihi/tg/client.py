@@ -16,6 +16,8 @@ Examples:
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from loguru import logger
 from telegram import BotCommand, BotCommandScopeChat, Update
 from telegram.constants import ParseMode
@@ -30,7 +32,7 @@ from telegram.ext import (
     filters,
 )
 
-from kamihi.base.config import KamihiSettings
+from kamihi.base import get_settings
 
 from .default_handlers import default, error
 
@@ -43,28 +45,26 @@ class TelegramClient:
 
     """
 
-    _bot_settings: KamihiSettings
     _base_url: str = "https://api.telegram.org/bot"
     _builder: ApplicationBuilder
     _app: Application
+    _testing: bool = False
 
-    def __init__(
-        self, settings: KamihiSettings, handlers: list[BaseHandler], _post_init: callable, _post_shutdown: callable
-    ) -> None:
+    def __init__(self, handlers: list[BaseHandler], _post_init: Callable, _post_shutdown: Callable) -> None:
         """
         Initialize the Telegram client.
 
         Args:
-            settings (KamihiSettings): The settings object.
             handlers (list[BaseHandler]): List of handlers to register.
             _post_init (callable): Function to call after the application is initialized.
             _post_shutdown (callable): Function to call after the application is shut down.
 
         """
-        self._bot_settings = settings
+        settings = get_settings()
 
-        if self._bot_settings.testing:
+        if settings.testing:
             self._base_url = "https://api.telegram.org/bot{token}/test"
+            self._testing = True
 
         # Set up the application with all the settings
         self._builder = Application.builder()
@@ -78,7 +78,6 @@ class TelegramClient:
         )
         self._builder.post_init(_post_init)
         self._builder.post_shutdown(_post_shutdown)
-        self._builder.persistence(DictPersistence(bot_data_json=settings.model_dump_json()))
 
         # Build the application
         self._app: Application = self._builder.build()
@@ -100,7 +99,7 @@ class TelegramClient:
 
         This method clears all command scopes and sets the default commands.
         """
-        if self._bot_settings.testing:
+        if self._testing:
             logger.debug("Testing mode, skipping resetting scopes")
             return
 
@@ -116,7 +115,7 @@ class TelegramClient:
             scopes (dict[int, list[BotCommand]]): The command scopes to set.
 
         """
-        if self._bot_settings.testing:
+        if self._testing:
             logger.debug("Testing mode, skipping setting scopes")
             return
 
