@@ -210,7 +210,7 @@ class KamihiSettings(BaseSettings):
     def settings_customise_sources(
         cls,
         settings_cls: type[BaseSettings],
-        init_settings: PydanticBaseSettingsSource,
+        class_init_settings: PydanticBaseSettingsSource,
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
@@ -229,7 +229,7 @@ class KamihiSettings(BaseSettings):
 
         Args:
             settings_cls: the settings class to customize sources for
-            init_settings: settings from class initialization
+            class_init_settings: settings from class initialization
             env_settings: settings from environment variables
             dotenv_settings: settings from .env file
             file_secret_settings: settings from file secrets
@@ -239,7 +239,7 @@ class KamihiSettings(BaseSettings):
 
         """
         return (
-            init_settings,
+            class_init_settings,
             env_settings,
             dotenv_settings,
             YamlConfigSettingsSource(
