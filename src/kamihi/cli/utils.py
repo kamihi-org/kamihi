@@ -63,7 +63,7 @@ def import_actions(actions_dir: Path) -> None:
 
     _ensure_namespace("kamihi.actions", actions_dir, "actions")
 
-    lg.trace(f"Scanning for actions")
+    lg.trace("Scanning for actions")
 
     for action_dir in actions_dir.iterdir():
         action_dir: Path
@@ -75,12 +75,12 @@ def import_actions(actions_dir: Path) -> None:
             lg = lg.bind(file=str(action_file))
 
             if action_file.exists() and action_file.is_file():
-                lg.debug(f"Importing action")
+                lg.debug("Importing action")
                 import_file(action_file, f"kamihi.actions.{action_name}")
 
                 sys.modules.setdefault(f"actions.{action_name}", sys.modules[f"kamihi.actions.{action_name}"])
             else:
-                lg.error(f"Action directory found, but no '.py' file exists.")
+                lg.error("Action directory found, but no '.py' file exists.")
         elif action_dir.is_dir():
             lg.error("Action directory found, but no '__init__.py' file exists.")
 
@@ -94,7 +94,7 @@ def import_models(models_dir: Path) -> None:
 
     _ensure_namespace("kamihi.models", models_dir, "models")
 
-    lg.trace(f"Scanning for models")
+    lg.trace("Scanning for models")
 
     for model_file in models_dir.iterdir():
         model_file: Path
@@ -102,7 +102,7 @@ def import_models(models_dir: Path) -> None:
         lg = logger.bind(model=model_name)
 
         if model_file.is_file() and model_file.suffix == ".py":
-            lg.bind(file=str(model_file)).trace(f"Importing model")
+            lg.bind(file=str(model_file)).trace("Importing model")
             import_file(model_file, f"kamihi.models.{model_name}")
 
             sys.modules.setdefault(f"models.{model_name}", sys.modules[f"kamihi.models.{model_name}"])
