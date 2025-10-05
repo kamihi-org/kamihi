@@ -15,7 +15,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from loguru import logger
 
-from kamihi import KamihiSettings, configure_logging
+from kamihi.base import get_settings
 from kamihi.base.logging import StreamToLogger
 from kamihi.cli.utils import import_models
 
@@ -46,18 +46,12 @@ def revision_callback(ctx: typer.Context, value: str) -> str:
 @app.callback()
 def main(ctx: typer.Context) -> None:
     """Database management commands for Kamihi CLI."""
-    ctx.obj.settings = KamihiSettings.from_yaml(ctx.obj.config) if ctx.obj.config is not None else KamihiSettings()
-
-    configure_logging(logger, ctx.obj.settings.log)
+    settings = get_settings()
 
     import_models(ctx.obj.cwd / "models")
 
-    ctx.obj.config_path = ctx.obj.cwd / "alembic.ini"
-    ctx.obj.toml_path = ctx.obj.cwd / "pyproject.toml"
-    ctx.obj.migrations_path = ctx.obj.cwd / "migrations"
-
-    ctx.obj.alembic_cfg = Config(toml_file=ctx.obj.toml_path)
-    ctx.obj.alembic_cfg.set_main_option("sqlalchemy.url", ctx.obj.settings.db.url)
+    ctx.obj.alembic_cfg = Config(toml_file=ctx.obj.cwd / "pyproject.toml")
+    ctx.obj.alembic_cfg.set_main_option("sqlalchemy.url", settings.db.url)
 
     if not (ctx.obj.cwd / "migrations").exists():
         logger.error("No migrations directory found. Please run 'kamihi init' first.")

@@ -55,7 +55,7 @@ def models_folder() -> dict:
     """Fixture to provide the contents of the models folder."""
     return {
         "user.py": """\
-            from kamihi import BaseUser
+            from kamihi.db import BaseUser
             
             class User(BaseUser):
                 __table_args__ = {'extend_existing': True}

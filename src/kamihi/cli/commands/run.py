@@ -9,11 +9,13 @@ License:
 from typing import Annotated
 
 import typer
+from loguru import logger
 from validators import ValidationError, hostname
 
-from kamihi import KamihiSettings, _init_bot
+from kamihi import init_bot
+from kamihi.base import get_settings
 from kamihi.base.config import LogLevel
-from kamihi.cli.utils import import_actions, import_models
+from kamihi.cli.utils import import_actions
 
 app = typer.Typer()
 
@@ -57,7 +59,7 @@ def run(
     ] = None,
 ) -> None:
     """Run a project with the Kamihi framework."""
-    settings = KamihiSettings.from_yaml(ctx.obj.config) if ctx.obj.config is not None else KamihiSettings()
+    settings = get_settings()
     if web_host:
         settings.web.host = web_host
     if web_port:
@@ -68,10 +70,9 @@ def run(
         settings.log.file_level = log_level
         settings.log.notification_level = log_level
 
-    import_models(ctx.obj.cwd / "models")
-
-    bot = _init_bot(settings)
+    bot = init_bot()
 
     import_actions(ctx.obj.cwd / "actions")
+    logger.bind(folder=str(ctx.obj.cwd / "actions")).debug("Imported actions")
 
     bot.start()

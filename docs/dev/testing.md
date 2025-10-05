@@ -177,7 +177,7 @@ Override fixtures for specific tests by decorating individual functions:
     [
         {
             "user.py": """\
-                from kamihi import BaseUser
+                from kamihi.db import BaseUser
                 from sqlalchemy import Column, String
                 
                 class User(BaseUser):

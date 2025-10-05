@@ -14,10 +14,8 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from kamihi.base.config import KamihiSettings
-from kamihi.base.logging import configure_logging
-from kamihi.cli.utils import import_models, telegram_id_callback
-from kamihi.db import BaseUser, get_engine, init_engine
+from kamihi.cli.utils import telegram_id_callback
+from kamihi.db import BaseUser, get_engine
 
 app = typer.Typer()
 
@@ -58,7 +56,6 @@ def onerror(e: BaseException) -> None:  # noqa: ARG001
 
 @app.command()
 def add(
-    ctx: typer.Context,
     telegram_id: Annotated[int, typer.Argument(..., help="Telegram ID of the user", callback=telegram_id_callback)],
     is_admin: Annotated[bool, typer.Option("--admin", "-a", help="Is the user an admin?")] = False,  # noqa: FBT002
     data: Annotated[
@@ -73,19 +70,11 @@ def add(
     ] = None,
 ) -> None:
     """Add a new user."""
-    settings = KamihiSettings.from_yaml(ctx.obj.config) if ctx.obj.config else KamihiSettings()
-    settings.log.file_enable = False
-    settings.log.notification_enable = False
-    configure_logging(logger, settings.log)
-
     user_data = data or {}
     user_data["telegram_id"] = telegram_id
     user_data["is_admin"] = is_admin
 
     lg = logger.bind(**user_data)
-
-    import_models(ctx.obj.cwd / "models")
-    init_engine(settings.db)
 
     with lg.catch(Exception, message="User inputted is not valid", onerror=onerror), Session(get_engine()) as session:
         statement = select(BaseUser.cls()).where(BaseUser.cls().telegram_id == telegram_id)

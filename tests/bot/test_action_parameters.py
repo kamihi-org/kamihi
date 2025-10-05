@@ -62,7 +62,7 @@ async def test_action_parameter_user(user, add_permission_for_user, chat: Conver
     [
         {
             "user.py": """\
-                from kamihi import BaseUser
+                from kamihi.db import BaseUser
                 from sqlalchemy import Column, String
                 
                 class User(BaseUser):

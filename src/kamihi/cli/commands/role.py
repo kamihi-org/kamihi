@@ -13,29 +13,18 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from kamihi.base.config import KamihiSettings
-from kamihi.base.logging import configure_logging
-from kamihi.cli.utils import import_models, telegram_id_callback
-from kamihi.db import BaseUser, Role, get_engine, init_engine
+from kamihi.cli.utils import telegram_id_callback
+from kamihi.db import BaseUser, Role, get_engine
 
 app = typer.Typer()
 
 
 @app.command()
 def add(
-    ctx: typer.Context,
     name: Annotated[str, typer.Argument(..., help="Name of the role to add.")],
 ) -> None:
     """Add a new role and optionally assign it to specified users."""
-    settings = KamihiSettings.from_yaml(ctx.obj.config) if ctx.obj.config else KamihiSettings()
-    settings.log.file_enable = False
-    settings.log.notification_enable = False
-    configure_logging(logger, settings.log)
-
     lg = logger.bind(name=name)
-
-    import_models(ctx.obj.cwd / "models")
-    init_engine(settings.db)
 
     with Session(get_engine()) as session:
         role = session.execute(select(Role).where(Role.name == name)).scalar_one_or_none()
@@ -51,7 +40,6 @@ def add(
 
 @app.command()
 def assign(
-    ctx: typer.Context,
     role: Annotated[str, typer.Argument(..., help="Name of the role to assign to users.")],
     users: Annotated[
         list[int],
@@ -59,15 +47,7 @@ def assign(
     ],
 ) -> None:
     """Assign an existing role to specified users."""
-    settings = KamihiSettings.from_yaml(ctx.obj.config) if ctx.obj.config else KamihiSettings()
-    settings.log.file_enable = False
-    settings.log.notification_enable = False
-    configure_logging(logger, settings.log)
-
     lg = logger.bind(role=role)
-
-    import_models(ctx.obj.cwd / "models")
-    init_engine(settings.db)
 
     with Session(get_engine()) as session:
         role_obj = session.execute(select(Role).where(Role.name == role)).scalar_one_or_none()

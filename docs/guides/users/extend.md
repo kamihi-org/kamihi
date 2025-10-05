@@ -10,7 +10,7 @@ This guide shows how to extend and customize the user model of the framework. Yo
 The base project defines a `User` class in `kamihi/models/user.py` that extends from `kamihi.BaseUser`. This class can be extended to add more attributes. For example, to add a `name` attribute, you can modify the file like this:
 
 ```python
-from kamihi import BaseUser
+from kamihi.db import BaseUser
 from sqlalchemy import Column, String
 
 class User(BaseUser):
