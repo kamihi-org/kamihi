@@ -210,7 +210,7 @@ class KamihiSettings(BaseSettings):
     def settings_customise_sources(
         cls,
         settings_cls: type[BaseSettings],
-        init_settings: PydanticBaseSettingsSource,
+        init_settings: PydanticBaseSettingsSource,  # skipcq: PYL-W0621
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
