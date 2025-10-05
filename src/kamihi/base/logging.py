@@ -24,7 +24,7 @@ import sys
 
 import loguru
 
-from .config import LogSettings, get_settings
+from .config import get_settings
 from .manual_send import ManualSender
 
 

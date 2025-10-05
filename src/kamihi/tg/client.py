@@ -27,7 +27,6 @@ from telegram.ext import (
     ApplicationBuilder,
     BaseHandler,
     Defaults,
-    DictPersistence,
     MessageHandler,
     filters,
 )

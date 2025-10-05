@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from kamihi.cli.utils import telegram_id_callback
-from kamihi.db import BaseUser, Permission, RegisteredAction, Role, get_engine, init_engine
+from kamihi.db import BaseUser, Permission, RegisteredAction, Role, get_engine
 
 app = typer.Typer()
 
