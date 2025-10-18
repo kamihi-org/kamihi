@@ -23,13 +23,13 @@ class Choice(Question):
 
     error_text: str = get_settings().questions.choice_error_text
 
-    choices: dict[str, Any]
+    _choices: dict[str, Any] | Callable
     reply_type: Literal["simple", "keyboard", "inline"]
 
     def __init__(
         self,
         text: str,
-        choices: dict[str, Any] | Iterable[str | tuple[str, Any]],
+        choices: dict[str, Any] | Iterable[str | tuple[str, Any]] | Callable,
         error_text: str = None,
         reply_type: Literal["simple", "keyboard", "inline"] = "simple",
     ) -> None:
@@ -38,8 +38,11 @@ class Choice(Question):
 
         Args:
             text (str): The text of the question.
-            choices (dict[str, Any] | Iterable[str | tuple[str, Any]]): The available choices for the question. Can be a dictionary mapping display text to return values,
-                or an iterable of strings or tuples (display text, return value).
+            choices (dict[str, Any] | Iterable[str | tuple[str, Any]]): The available choices for the question. Can be one of:
+                - A dictionary mapping display text to return values.
+                - An iterable of strings (where each string is both the display text and return value).
+                - An iterable of tuples (where each tuple contains display text and return value).
+                - A callable that returns one of the above.
             error_text (str, optional): The error text to display for invalid responses. Defaults to a value from settings.
             reply_type (Literal["simple", "keyboard", "inline"], optional): The type of choice question. Defaults to "simple".
 
@@ -50,17 +53,35 @@ class Choice(Question):
         if error_text is not None:
             self.error_text = error_text
 
-        if isinstance(choices, dict):
-            self.choices = choices
+        if isinstance(choices, dict) or callable(choices):
+            self._choices = choices
         else:
-            self.choices = {}
+            self._choices = {}
             for choice in choices:
                 if isinstance(choice, tuple):
                     display_text, return_value = choice
-                    self.choices[display_text] = return_value
+                    self._choices[display_text] = return_value
                 else:
-                    self.choices[choice] = choice
+                    self._choices[choice] = choice
+
         self.reply_type = reply_type
+
+    @property
+    def choices(self) -> dict[str, Any]:
+        """Get the available choices for the question."""
+        if callable(self._choices):
+            result = self._choices()
+            if isinstance(result, dict):
+                return result
+            choices_dict = {}
+            for choice in result:
+                if isinstance(choice, tuple):
+                    display_text, return_value = choice
+                    choices_dict[display_text] = return_value
+                else:
+                    choices_dict[choice] = choice
+            return choices_dict
+        return self._choices
 
     async def ask_question(self, update: Update, context: CallbackContext) -> None:
         """
@@ -79,7 +100,10 @@ class Choice(Question):
                 keyboard = [[choice] for choice in self.choices]
                 reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
             case "inline":
-                keyboard = [[InlineKeyboardButton(choice, callback_data=choice)] for choice in self.choices]
+                keyboard = [
+                    [InlineKeyboardButton(choice, callback_data=self._param_name + "_" + choice)]
+                    for choice in self.choices
+                ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
         await send(self.question_text, update, context, reply_markup)
 
@@ -99,9 +123,7 @@ class Choice(Question):
 
         """
         if self.reply_type == "inline":
-            return CallbackQueryHandler(
-                func, pattern="^(" + "|".join(x.replace("'", "\\'") for x in self.choices) + ")$"
-            )
+            return CallbackQueryHandler(func, pattern=rf"^{self._param_name}_")
         return MessageHandler(self.filters, func)
 
     async def get_response(self, update: Update, context: CallbackContext) -> Any:  # noqa: ANN401
@@ -127,7 +149,7 @@ class Choice(Question):
                 return update.message.text
             case "inline":
                 await context.bot.answer_callback_query(callback_query_id=update.callback_query.id)
-                return update.callback_query.data
+                return update.callback_query.data.removeprefix(self._param_name + "_")
 
     async def _validate_internal(self, response: Any) -> Any:  # noqa: ANN401
         """

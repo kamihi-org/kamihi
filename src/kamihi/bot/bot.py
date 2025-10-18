@@ -177,6 +177,7 @@ class Bot:
 
         # Loads the Telegram client
         self._client = TelegramClient(self._handlers, self._post_init, self._post_shutdown)
+        self._client.app.bot_data["datasources"] = self.datasources
         logger.trace("Initialized Telegram client")
 
         # Loads the web server
