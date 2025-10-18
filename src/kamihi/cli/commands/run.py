@@ -7,9 +7,11 @@ License:
 """
 
 from typing import Annotated
+from warnings import filterwarnings
 
 import typer
 from loguru import logger
+from telegram.warnings import PTBUserWarning
 from validators import ValidationError, hostname
 
 from kamihi import init_bot
@@ -69,6 +71,10 @@ def run(
         settings.log.stderr_level = log_level
         settings.log.file_level = log_level
         settings.log.notification_level = log_level
+
+    # Ignore the "If 'per_message=False', ..." warning for CallbackQueryHandler
+    # https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do
+    filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
 
     bot = init_bot()
 

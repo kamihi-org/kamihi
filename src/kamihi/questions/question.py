@@ -7,11 +7,10 @@ License:
 """
 
 from collections.abc import Callable, Coroutine
-from inspect import Parameter
-from typing import Annotated, Any, get_args, get_origin
+from typing import Any
 
 from telegram import Update
-from telegram.ext import ApplicationHandlerStop, CallbackContext, MessageHandler, filters
+from telegram.ext import CallbackContext, MessageHandler, filters
 
 from kamihi.tg import send
 
@@ -20,6 +19,7 @@ class Question:
     """Base class for questions."""
 
     question_text: str
+    error_text: str
 
     _param_name: str
 
@@ -40,6 +40,17 @@ class Question:
         """
         self._param_name = param_name
         return self
+
+    async def ask_question(self, update: Update, context: CallbackContext) -> None:
+        """
+        Send the question text to the user.
+
+        Args:
+            update (Update): The update object.
+            context (CallbackContext): The callback context.
+
+        """
+        await send(self.question_text, update, context)
 
     @property
     def filters(self) -> filters.BaseFilter:
@@ -69,8 +80,7 @@ class Question:
         """
         return MessageHandler(self.filters, func)
 
-    @classmethod
-    async def get_response(cls, update: Update, _context: CallbackContext) -> Any:  # noqa: ANN401
+    async def get_response(self, update: Update, context: CallbackContext) -> Any:  # noqa: ANN401, ARG002
         """
         Get the response from the user.
 
@@ -78,7 +88,7 @@ class Question:
 
         Args:
             update (Update): The update object.
-            _context (CallbackContext): The callback context.
+            context (CallbackContext): The callback context.
 
         Returns:
             Any: The response from the user, which can be of any type.
@@ -86,12 +96,30 @@ class Question:
         """
         return update.message.text
 
-    async def validate(self, response: Any) -> Any:  # noqa: ANN401
+    async def validate_before(self, response: Any) -> Any:  # noqa: ANN401
         """
-        Validate the response from the user.
+        Validate the user's response before Kamihi's built-in validation.
 
-        Override this method to customize how the response is validated. Raising a ValueError indicates an invalid
+        Override this method to add validation before Kamihi's built-in validation. Raising a ValueError indicates an invalid
         response, and the error message will be sent to the user.
+
+        Args:
+            response (Any): The response from the user.
+
+        Returns:
+            Any: The further validated response, which can be of any type.
+
+        Raises:
+            ValueError: If the response is invalid.
+
+        """
+        return response
+
+    async def _validate_internal(self, response: Any) -> Any:  # noqa: ANN401
+        """
+        Validate the user's response using Kamihi's built-in validation.
+
+        Override this method to implement Kamihi's built-in validation logic.
 
         Args:
             response (Any): The response from the user.
@@ -104,6 +132,47 @@ class Question:
 
         """
         return response
+
+    async def validate_after(self, response: Any) -> Any:  # noqa: ANN401
+        """
+        Validate the user's response after Kamihi's built-in validation.
+
+        Override this method to add validation after Kamihi's built-in validation. Raising a ValueError indicates an invalid
+        response, and the error message will be sent to the user.
+
+        Args:
+            response (Any): The response from the user.
+
+        Returns:
+            Any: The further validated response, which can be of any type.
+
+        Raises:
+            ValueError: If the response is invalid.
+
+        """
+        return response
+
+    async def validate(self, response: Any) -> Any:  # noqa: ANN401
+        """
+        Validate the user's response.
+
+        This method is what unifies the validation process. It first calls `validate_before`, then performs any built-in
+        validation (if applicable), and finally calls `validate_after`. Only override this method if you want to
+        completely replace the validation process.
+
+        Args:
+            response (Any): The response from the user.
+
+        Returns:
+            Any: The validated response, which can be of any type.
+
+        Raises:
+            ValueError: If the response is invalid.
+
+        """
+        response = await self.validate_before(response)
+        response = await self._validate_internal(response)
+        return await self.validate_after(response)
 
     async def _save(self, response: Any, context: CallbackContext) -> None:  # noqa: ANN401
         """
@@ -140,7 +209,7 @@ class Question:
                 if not prev_exited_successfully:
                     return current_state
 
-            await send(self.question_text, update, context)
+            await self.ask_question(update, context)
             return current_state + 1
 
         return _enter

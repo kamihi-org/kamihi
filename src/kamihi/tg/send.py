@@ -16,7 +16,7 @@ from typing import Any
 
 import magic
 from loguru import logger
-from telegram import Message, Update
+from telegram import Message, TelegramObject, Update
 from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
@@ -72,7 +72,12 @@ def guess_media_type(file: Path | bytes | BufferedReader, lg: Logger) -> Media:
 
 
 # skipcq: PY-R1000
-async def send(obj: Any, update: Update, context: CallbackContext) -> Message | list[Message]:  # noqa: ANN401, C901
+async def send(  # noqa: C901
+    obj: Any,  # noqa: ANN401
+    update: Update,
+    context: CallbackContext,
+    reply_markup: TelegramObject = None,
+) -> Message | list[Message]:
     """
     Send a message based on the provided object and annotation.
 
@@ -80,6 +85,7 @@ async def send(obj: Any, update: Update, context: CallbackContext) -> Message | 
         obj (Any): The object to send.
         update (Update): The Telegram update object containing the chat information.
         context (CallbackContext): The callback context containing the bot instance.
+        reply_markup (TelegramObject, optional): Additional interface options to be sent with the message. Defaults to None. Only supported for text messages.
 
     Returns:
         Message | list[Message]: The response from the Telegram API, or a list of responses
@@ -94,7 +100,7 @@ async def send(obj: Any, update: Update, context: CallbackContext) -> Message | 
     if isinstance(obj, str):
         lg = lg.bind(text=obj)
         method = context.bot.send_message
-        kwargs = {"text": md(obj)}
+        kwargs = {"text": md(obj), "reply_markup": reply_markup}
         lg.debug("Sending as text message")
     elif isinstance(obj, (Path, bytes, BufferedReader)):
         return await send(guess_media_type(obj, lg), update, context)

@@ -29,7 +29,7 @@ from kamihi.base import get_settings
 from kamihi.base.utils import COMMAND_REGEX
 from kamihi.datasources import DataSource
 from kamihi.db import RegisteredAction, get_engine
-from kamihi.questions.question import Question
+from kamihi.questions import Question
 from kamihi.tg import send
 from kamihi.tg.default_handlers import cancel
 from kamihi.tg.handlers import AuthHandler
@@ -182,6 +182,7 @@ class Action:
             states=states,
             fallbacks=[CommandHandler(get_settings().responses.cancel_command, cancel)],
             allow_reentry=True,
+            conversation_timeout=get_settings().questions.timeout,
         )
 
     @property
