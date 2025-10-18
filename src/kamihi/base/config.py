@@ -114,6 +114,8 @@ class ResponseSettings(BaseModel):
     default_enabled: bool = Field(default=True)
     default_message: str = Field(default="I'm sorry, but I don't know how to respond to that")
     error_message: str = Field(default="An error occurred while processing your request, please try again later")
+    cancel_command: str = Field(default="cancel")
+    cancel_message: str = Field(default="Operation cancelled")
 
 
 class WebSettings(BaseModel):

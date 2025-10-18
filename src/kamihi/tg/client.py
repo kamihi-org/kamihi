@@ -89,7 +89,7 @@ class TelegramClient:
         # Register the default handlers
         with logger.catch(exception=TelegramError, level="ERROR", message="Failed to register default handlers"):
             if settings.responses.default_enabled:
-                self._app.add_handler(MessageHandler(filters.TEXT, default), group=1000)
+                self._app.add_handler(MessageHandler(filters.TEXT, default))
             self._app.add_error_handler(error)
 
     async def reset_scopes(self) -> None:  # noqa: ARG002
