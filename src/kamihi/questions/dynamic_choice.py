@@ -26,7 +26,7 @@ class DynamicChoice(Choice):
     def __init__(
         self,
         text: str,
-        request: str | Path,
+        request: str | Path = None,
         error_text: str = None,
         reply_type: Literal["simple", "keyboard", "inline"] = "simple",
     ) -> None:
@@ -41,7 +41,13 @@ class DynamicChoice(Choice):
 
         """
         super().__init__(text, {}, error_text, reply_type)
-        self.request = request if isinstance(request, Path) else Path(request)
+        if not self.request and request:
+            self.request = request if isinstance(request, Path) else Path(request)
+        elif not self.request:
+            raise ValueError("A request file must be provided for DynamicChoice questions.")
+
+        if not self.request.is_absolute():
+            self.request = Path.cwd() / "questions" / self.request
 
     async def get_choices(self, context: CallbackContext) -> dict[str, Any]:
         """
