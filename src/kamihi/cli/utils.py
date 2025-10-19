@@ -54,6 +54,23 @@ def import_file(path: Path, name: str) -> None:
         spec.loader.exec_module(module)
 
 
+def import_questions(questions_dir: Path) -> None:
+    """Import the questions module from a specified directory with an __init__.py file."""
+    lg = logger.bind(folder=str(questions_dir))
+    if not questions_dir.is_dir():
+        lg.debug("No questions directory found.")
+        return
+
+    _ensure_namespace("kamihi.questions", questions_dir, "questions")
+
+    init_file = questions_dir / "__init__.py"
+    if init_file.exists() and init_file.is_file():
+        lg.trace("Importing questions")
+        import_file(init_file, "questions")
+    else:
+        lg.error("Questions directory found, but no '__init__.py' file exists.")
+
+
 def import_actions(actions_dir: Path) -> None:
     """Import all Python files from a specified directory."""
     lg = logger.bind(actions_folder=str(actions_dir))

@@ -17,7 +17,7 @@ from validators import ValidationError, hostname
 from kamihi import init_bot
 from kamihi.base import get_settings
 from kamihi.base.config import LogLevel
-from kamihi.cli.utils import import_actions
+from kamihi.cli.utils import import_actions, import_questions
 
 app = typer.Typer()
 
@@ -78,6 +78,7 @@ def run(
 
     bot = init_bot()
 
+    import_questions(ctx.obj.cwd / "questions")
     import_actions(ctx.obj.cwd / "actions")
     logger.bind(folder=str(ctx.obj.cwd / "actions")).debug("Imported actions")
 
