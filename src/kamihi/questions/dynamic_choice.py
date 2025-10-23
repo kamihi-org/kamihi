@@ -27,6 +27,7 @@ class DynamicChoice(Question):
 
     request: str | Path
     reply_type: Literal["simple", "keyboard", "inline"]
+    cols: int
 
     def __init__(
         self,
@@ -34,6 +35,7 @@ class DynamicChoice(Question):
         request: str | Path = None,
         error_text: str = None,
         reply_type: Literal["simple", "keyboard", "inline"] = "simple",
+        cols: int = 1,
     ) -> None:
         """
         Initialize an instance of a multiple-choice question.
@@ -43,6 +45,7 @@ class DynamicChoice(Question):
             request (str | Path): The name of the request file from which the choices will be obtained.
             error_text (str, optional): The error text to display for invalid responses. Defaults to a value from settings.
             reply_type (Literal["simple", "keyboard", "inline"], optional): The type of choice question. Defaults to "simple".
+            cols (int, optional): The number of columns for keyboard or inline button layouts. Defaults to 1.
 
         """
         super().__init__()
@@ -60,6 +63,7 @@ class DynamicChoice(Question):
             self.request = Path.cwd() / "questions" / self.request
 
         self.reply_type = reply_type
+        self.cols = max(1, cols)
 
     async def get_choices(self, context: CallbackContext) -> dict[str, Any]:
         """
@@ -96,11 +100,15 @@ class DynamicChoice(Question):
         reply_markup = None
         match self.reply_type:
             case "keyboard":
-                keyboard = [[choice] for choice in choices]
+                keyboard = [list(list(choices.keys())[i : i + self.cols]) for i in range(0, len(choices), self.cols)]
                 reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
             case "inline":
                 keyboard = [
-                    [InlineKeyboardButton(choice, callback_data=self._param_name + "_" + choice)] for choice in choices
+                    [
+                        InlineKeyboardButton(choice, callback_data=self._param_name + "_" + choice)
+                        for choice in list(choices.keys())[i : i + self.cols]
+                    ]
+                    for i in range(0, len(choices), self.cols)
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
         await send(self.question_text, update, context, reply_markup)
