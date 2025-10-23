@@ -56,7 +56,13 @@ class Datetime(Question):
             self.error_text = error_text
 
         self.before = before
+        if self.before and not before.tzinfo:
+            self.before = before.replace(tzinfo=get_settings().timezone_obj)
+
         self.after = after
+        if self.after and not after.tzinfo:
+            self.after = after.replace(tzinfo=get_settings().timezone_obj)
+
         self.in_the_past = in_the_past
         self.in_the_future = in_the_future
 
@@ -83,6 +89,7 @@ class Datetime(Question):
         """
         try:
             dt = dateparser.parse(response)
+            dt = dt.replace(tzinfo=get_settings().timezone_obj)
         except ValueError as e:
             raise ValueError(self.error_text) from e
 
