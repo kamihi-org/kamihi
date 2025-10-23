@@ -8,6 +8,9 @@ License:
 
 from typing import Any
 
+from telegram import Update
+from telegram.ext import CallbackContext
+
 from kamihi.base import get_settings
 
 from .question import Question
@@ -58,12 +61,19 @@ class Integer(Question):
         self.gt = gt
         self.multiple_of = multiple_of
 
-    async def _validate_internal(self, response: Any) -> int:  # noqa: ANN401
+    async def _validate_internal(
+        self,
+        response: Any,
+        update: Update | None = None,
+        context: CallbackContext | None = None,
+    ) -> Any:
         """
         Validate the response as an integer within the specified range.
 
         Args:
             response (Any): The response to validate.
+            update (Update | None): The update object. Defaults to None.
+            context (CallbackContext | None): The callback context. Defaults to None.
 
         Returns:
             int: The validated integer response.
@@ -99,19 +109,3 @@ class Integer(Question):
             raise ValueError(msg)
 
         return value
-
-    async def validate_after(self, response: int) -> int:
-        """
-        Validate the integer response after Kamihi's built-in validation.
-
-        Args:
-            response (int): The response to validate.
-
-        Returns:
-            int: The further validated integer response.
-
-        Raises:
-            ValueError: If the response is invalid.
-
-        """
-        return response

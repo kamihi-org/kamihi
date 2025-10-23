@@ -126,7 +126,7 @@ class Choice(Question):
             return CallbackQueryHandler(func, pattern=rf"^{self._param_name}_")
         return MessageHandler(self.filters, func)
 
-    async def get_response(self, update: Update, context: CallbackContext) -> Any:  # noqa: ANN401
+    async def get_response(self, update: Update, context: CallbackContext) -> Any:
         """
         Get the response from the user.
 
@@ -144,19 +144,28 @@ class Choice(Question):
             case "simple":
                 return update.message.text
             case "keyboard":
-                msg = await send("Removing keyboard...", update, context, reply_markup=ReplyKeyboardRemove())
+                msg = await send(
+                    get_settings().questions.remove_keyboard_text, update, context, reply_markup=ReplyKeyboardRemove()
+                )
                 await msg.delete()
                 return update.message.text
             case "inline":
                 await context.bot.answer_callback_query(callback_query_id=update.callback_query.id)
                 return update.callback_query.data.removeprefix(self._param_name + "_")
 
-    async def _validate_internal(self, response: Any) -> Any:  # noqa: ANN401
+    async def _validate_internal(
+        self,
+        response: Any,
+        update: Update | None = None,
+        context: CallbackContext | None = None,
+    ) -> Any:
         """
         Validate the response as a choice.
 
         Args:
             response (str): The response to validate.
+            update (Update | None): The update object. Defaults to None.
+            context (CallbackContext | None): The callback context. Defaults to None.
 
         Returns:
             str: The validated choice response.

@@ -9,6 +9,9 @@ License:
 import re
 from typing import Any
 
+from telegram import Update
+from telegram.ext import CallbackContext
+
 from kamihi.base import get_settings
 
 from .question import Question
@@ -52,12 +55,19 @@ class String(Question):
         self.min_length = min_length
         self.max_length = max_length
 
-    async def _validate_internal(self, response: Any) -> str:  # noqa: ANN401
+    async def _validate_internal(
+        self,
+        response: Any,
+        update: Update | None = None,
+        context: CallbackContext | None = None,
+    ) -> Any:
         """
         Validate the response as a string.
 
         Args:
             response (str): The response to validate.
+            update (Update | None): The update object. Defaults to None.
+            context (CallbackContext | None): The callback context. Defaults to None.
 
         Returns:
             str: The validated string response.

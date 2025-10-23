@@ -73,7 +73,7 @@ def guess_media_type(file: Path | bytes | BufferedReader, lg: Logger) -> Media:
 
 # skipcq: PY-R1000
 async def send(  # noqa: C901
-    obj: Any,  # noqa: ANN401
+    obj: Any,
     update: Update,
     context: CallbackContext,
     reply_markup: TelegramObject = None,

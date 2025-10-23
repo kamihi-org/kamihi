@@ -55,7 +55,7 @@ def requires(group: str) -> Callable:
 
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             _check_extra_installed(group)
             return func(*args, **kwargs)
 

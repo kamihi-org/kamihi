@@ -8,6 +8,9 @@ License:
 
 from typing import Any
 
+from telegram import Update
+from telegram.ext import CallbackContext
+
 from kamihi.base import get_settings
 
 from .question import Question
@@ -45,12 +48,19 @@ class Bool(Question):
         if false_values is not None:
             self.false_values.update(false_values)
 
-    async def _validate_internal(self, response: Any) -> bool:  # noqa: ANN401
+    async def _validate_internal(
+        self,
+        response: Any,
+        update: Update | None = None,
+        context: CallbackContext | None = None,
+    ) -> bool:
         """
         Validate the response as a boolean.
 
         Args:
             response (Any): The response to validate.
+            update (Update | None): The update object. Defaults to None.
+            context (CallbackContext | None): The callback context. Defaults to None.
 
         Returns:
             bool: The validated boolean response.

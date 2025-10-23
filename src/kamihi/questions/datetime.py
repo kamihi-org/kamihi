@@ -10,6 +10,8 @@ from datetime import datetime
 from typing import Any
 
 import dateparser
+from telegram import Update
+from telegram.ext import CallbackContext
 
 from kamihi.base import get_settings
 
@@ -58,12 +60,19 @@ class Datetime(Question):
         self.in_the_past = in_the_past
         self.in_the_future = in_the_future
 
-    async def _validate_internal(self, response: Any) -> datetime:  # noqa: ANN401
+    async def _validate_internal(
+        self,
+        response: Any,
+        update: Update | None = None,
+        context: CallbackContext | None = None,
+    ) -> Any:
         """
         Validate the response as a date.
 
         Args:
             response (str): The response to validate.
+            update (Update | None): The update object. Defaults to None.
+            context (CallbackContext | None): The callback context. Defaults to None.
 
         Returns:
             str: The validated date response.

@@ -80,7 +80,7 @@ class Question:
         """
         return MessageHandler(self.filters, func)
 
-    async def get_response(self, update: Update, context: CallbackContext) -> Any:  # noqa: ANN401, ARG002
+    async def get_response(self, update: Update, context: CallbackContext) -> Any:
         """
         Get the response from the user.
 
@@ -96,7 +96,12 @@ class Question:
         """
         return update.message.text
 
-    async def validate_before(self, response: Any) -> Any:  # noqa: ANN401
+    async def validate_before(
+        self,
+        response: Any,
+        update: Update | None = None,
+        context: CallbackContext | None = None,
+    ) -> Any:
         """
         Validate the user's response before Kamihi's built-in validation.
 
@@ -105,6 +110,8 @@ class Question:
 
         Args:
             response (Any): The response from the user.
+            update (Update, optional): The update object. Defaults to None.
+            context (CallbackContext, optional): The callback context. Defaults to None.
 
         Returns:
             Any: The further validated response, which can be of any type.
@@ -115,7 +122,12 @@ class Question:
         """
         return response
 
-    async def _validate_internal(self, response: Any) -> Any:  # noqa: ANN401
+    async def _validate_internal(
+        self,
+        response: Any,
+        update: Update | None = None,
+        context: CallbackContext | None = None,
+    ) -> Any:
         """
         Validate the user's response using Kamihi's built-in validation.
 
@@ -123,6 +135,8 @@ class Question:
 
         Args:
             response (Any): The response from the user.
+            update (Update, optional): The update object. Defaults to None.
+            context (CallbackContext, optional): The callback context. Defaults to None.
 
         Returns:
             Any: The validated response, which can be of any type.
@@ -133,7 +147,12 @@ class Question:
         """
         return response
 
-    async def validate_after(self, response: Any) -> Any:  # noqa: ANN401
+    async def validate_after(
+        self,
+        response: Any,
+        update: Update | None = None,
+        context: CallbackContext | None = None,
+    ) -> Any:
         """
         Validate the user's response after Kamihi's built-in validation.
 
@@ -142,6 +161,8 @@ class Question:
 
         Args:
             response (Any): The response from the user.
+            update (Update, optional): The update object. Defaults to None.
+            context (CallbackContext, optional): The callback context. Defaults to None.
 
         Returns:
             Any: The further validated response, which can be of any type.
@@ -152,7 +173,12 @@ class Question:
         """
         return response
 
-    async def validate(self, response: Any) -> Any:  # noqa: ANN401
+    async def validate(
+        self,
+        response: Any,
+        update: Update | None = None,
+        context: CallbackContext | None = None,
+    ) -> Any:
         """
         Validate the user's response.
 
@@ -162,6 +188,8 @@ class Question:
 
         Args:
             response (Any): The response from the user.
+            update (Update, optional): The update object. Defaults to None.
+            context (CallbackContext, optional): The callback context. Defaults to None.
 
         Returns:
             Any: The validated response, which can be of any type.
@@ -170,11 +198,11 @@ class Question:
             ValueError: If the response is invalid.
 
         """
-        response = await self.validate_before(response)
-        response = await self._validate_internal(response)
-        return await self.validate_after(response)
+        response = await self.validate_before(response, update, context)
+        response = await self._validate_internal(response, update, context)
+        return await self.validate_after(response, update, context)
 
-    async def _save(self, response: Any, context: CallbackContext) -> None:  # noqa: ANN401
+    async def _save(self, response: Any, context: CallbackContext) -> None:
         """
         Save the response from the user.
 
@@ -228,7 +256,7 @@ class Question:
             res = await self.get_response(update, context)
 
             try:
-                res = await self.validate(res)
+                res = await self.validate(res, update, context)
             except ValueError as e:
                 await send(str(e), update, context)
                 return False

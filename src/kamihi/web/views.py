@@ -49,32 +49,32 @@ class HooksView(ExcludeIDModelView):
         super().__init__(*args, **kwargs)
         self.hooks = hooks or {}
 
-    async def before_create(self, request: Request, data: dict[str, Any], obj: Any) -> None:  # noqa: ANN401
+    async def before_create(self, request: Request, data: dict[str, Any], obj: Any) -> None:
         """Run before creating an object."""
         for hook in self.hooks.get("before_create", []):
             await hook(request, data, obj)
 
-    async def after_create(self, request: Request, obj: Any) -> None:  # noqa: ANN401
+    async def after_create(self, request: Request, obj: Any) -> None:
         """Run after creating an object."""
         for hook in self.hooks.get("after_create", []):
             await hook(request, obj)
 
-    async def before_edit(self, request: Request, data: dict[str, Any], obj: Any) -> None:  # noqa: ANN401
+    async def before_edit(self, request: Request, data: dict[str, Any], obj: Any) -> None:
         """Run before editing an object."""
         for hook in self.hooks.get("before_edit", []):
             await hook(request, data, obj)
 
-    async def after_edit(self, request: Request, obj: Any) -> None:  # noqa: ANN401
+    async def after_edit(self, request: Request, obj: Any) -> None:
         """Run after editing an object."""
         for hook in self.hooks.get("after_edit", []):
             await hook(request, obj)
 
-    async def before_delete(self, request: Request, obj: Any) -> None:  # noqa: ANN401
+    async def before_delete(self, request: Request, obj: Any) -> None:
         """Run before deleting an object."""
         for hook in self.hooks.get("before_delete", []):
             await hook(request, obj)
 
-    async def after_delete(self, request: Request, obj: Any) -> None:  # noqa: ANN401
+    async def after_delete(self, request: Request, obj: Any) -> None:
         """Run after deleting an object."""
         for hook in self.hooks.get("after_delete", []):
             await hook(request, obj)

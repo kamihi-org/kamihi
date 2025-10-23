@@ -147,6 +147,10 @@ class QuestionSettings(BaseModel):
 
     choice_error_text: str = Field(default="Please select a valid option.")
 
+    dynamic_choice_error_text: str = Field(default="Please select a valid option.")
+
+    remove_keyboard_text: str = Field(default="Removing keyboard...")
+
 
 class WebSettings(BaseModel):
     """

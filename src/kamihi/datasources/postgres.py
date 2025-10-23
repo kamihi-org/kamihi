@@ -83,7 +83,7 @@ class PostgresDataSource(DataSource):
             access (e.g., record['field_name']).
             """
 
-            def __getattr__(self, name: str) -> Any:  # noqa: ANN401
+            def __getattr__(self, name: str) -> Any:
                 """
                 Get an attribute by name.
 
