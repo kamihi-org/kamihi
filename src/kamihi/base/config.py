@@ -132,8 +132,8 @@ class QuestionSettings(BaseModel):
     timeout: int = Field(default=300)
 
     bool_error_text: str = Field(default="Please answer with yes or no.")
-    bool_true_values: list[str] = Field(default_factory=lambda: ["yes", "y", "true", "t", "1"])
-    bool_false_values: list[str] = Field(default_factory=lambda: ["no", "n", "false", "f", "0"])
+    bool_true_values: set[str] = Field(default_factory=lambda: {"yes", "y", "true", "t", "1"})
+    bool_false_values: set[str] = Field(default_factory=lambda: {"no", "n", "false", "f", "0"})
 
     integer_error_text: str = Field(default="Please enter a valid integer.")
 
