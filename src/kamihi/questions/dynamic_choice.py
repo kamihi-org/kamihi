@@ -54,9 +54,9 @@ class DynamicChoice(Question):
         if error_text is not None:
             self.error_text = error_text
 
-        if not self.request and request:
+        if not hasattr(self, "request") and request:
             self.request = request if isinstance(request, Path) else Path(request)
-        elif not self.request:
+        elif not hasattr(self, "request"):
             raise ValueError("A request file must be provided for DynamicChoice questions.")
 
         if not self.request.is_absolute():
