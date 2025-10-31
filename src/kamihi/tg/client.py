@@ -48,6 +48,7 @@ class TelegramClient:
 
     app: Application
     _base_url: str = "https://api.telegram.org/bot"
+    _base_file_url: str = "https://api.telegram.org/file/bot"
     _builder: ApplicationBuilder
     _testing: bool = False
 
@@ -65,11 +66,13 @@ class TelegramClient:
 
         if settings.testing:
             self._base_url = "https://api.telegram.org/bot{token}/test"
+            self._base_file_url = "https://api.telegram.org/file/bot{token}/test"
             self._testing = True
 
         # Set up the application with all the settings
         self._builder = Application.builder()
         self._builder.base_url(self._base_url)
+        self._builder.base_file_url(self._base_file_url)
         self._builder.token(settings.token)
         self._builder.defaults(
             Defaults(
