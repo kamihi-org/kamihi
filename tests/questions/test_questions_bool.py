@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 import pytest
 from telethon.tl.custom import Conversation
 
@@ -13,6 +14,7 @@ from telethon.tl.custom import Conversation
 def question_args() -> str:
     """Fixture to provide extra question arguments as a string."""
     return ""
+
 
 @pytest.fixture
 def actions_folder(question_args) -> dict:

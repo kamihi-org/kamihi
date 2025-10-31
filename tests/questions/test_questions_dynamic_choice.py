@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 from pathlib import Path
 
 import pytest
@@ -63,6 +64,7 @@ def config_file() -> dict:
                 path: sample_sqlite.db
         """
     }
+
 
 @pytest.fixture
 def extra_files() -> dict:

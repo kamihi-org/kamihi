@@ -62,6 +62,7 @@ def models_folder() -> dict:
         """
     }
 
+
 @pytest.fixture
 def questions_folder() -> dict:
     """Fixture to provide the contents of the questions folder."""
@@ -86,7 +87,9 @@ def extra_files_bytes() -> dict[str, bytes]:
 
 
 @pytest.fixture
-def app_folder(pyproject, config_file, actions_folder, models_folder, questions_folder, migrations_folder, extra_files_bytes) -> dict:
+def app_folder(
+    pyproject, config_file, actions_folder, models_folder, questions_folder, migrations_folder, extra_files_bytes
+) -> dict:
     """Fixture to provide the path to the app folder."""
     res = {}
     res.update({key: dedent(value) for key, value in pyproject.items()})

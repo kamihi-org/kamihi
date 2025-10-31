@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 import pytest
 from telethon.tl.custom import Conversation
 
@@ -115,14 +116,14 @@ async def test_inline(user, add_permission_for_user, chat: Conversation, questio
     ],
 )
 async def test_validation(
-        user,
-        add_permission_for_user,
-        chat: Conversation,
-        choices_expr,
-        question_args,
-        valid_input,
-        expected_value,
-        invalid_input,
+    user,
+    add_permission_for_user,
+    chat: Conversation,
+    choices_expr,
+    question_args,
+    valid_input,
+    expected_value,
+    invalid_input,
 ):
     """Validation: wrong input yields error_text; valid input maps to the configured return value."""
     add_permission_for_user(user["telegram_id"], "start")
@@ -142,6 +143,7 @@ async def test_validation(
 
 
 # New tests for cols on keyboard and inline reply types
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("question_args", ['reply_type="keyboard", cols=2'])
@@ -183,4 +185,3 @@ async def test_inline_cols(user, add_permission_for_user, chat: Conversation, qu
     assert len(rows[0]) == 3
     assert len(rows[1]) == 3
     assert len(rows[2]) == 1
-

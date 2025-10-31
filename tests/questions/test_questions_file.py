@@ -161,7 +161,9 @@ async def test_max_size(user, add_permission_for_user, chat: Conversation, actio
         )
     ],
 )
-async def test_mime_and_extension_restrictions(user, add_permission_for_user, chat: Conversation, actions_folder, random_text_bytes):
+async def test_mime_and_extension_restrictions(
+    user, add_permission_for_user, chat: Conversation, actions_folder, random_text_bytes
+):
     """
     If a file with a disallowed extension/mime is sent, bot should ignore it (no error) and wait.
     Only after a valid file is sent the action should complete.
