@@ -34,6 +34,8 @@ nav:
           - Send media and files: guides/actions/send-media.md
           - Use templates: guides/actions/use-templates.md
           - Use datasources: guides/actions/use-datasources.md
+          - Ask questions: guides/actions/ask-questions.md
+          - Create custom questions: guides/actions/custom-questions.md
       - Users:
           - Extend the user model: guides/users/extend.md
       - Logging:
