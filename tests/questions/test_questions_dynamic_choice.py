@@ -139,8 +139,11 @@ async def test_inline(user, add_permission_for_user, chat: Conversation, questio
 
     # Find the "Yes" button and click it
     buttons = [btn for row in (response.buttons or []) for btn in row]
-    yes_button = next(b for b in buttons if getattr(b, "text", "") == "Yes")
-    await yes_button.click()
+    try:
+        yes_button = next(b for b in buttons if getattr(b, "text", "") == "Yes")
+        await yes_button.click()
+    except StopIteration:
+        pytest.fail("Could not find 'Yes' button in inline keyboard.")
 
     final_response = await chat.get_response()
     assert "Your choice is True." in final_response.text
