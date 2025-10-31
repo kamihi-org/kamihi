@@ -25,17 +25,9 @@ def pytest_runtest_makereport(item: Item, call: CallInfo):
         reporter: TerminalReporter = item.config.pluginmanager.get_plugin("terminalreporter")
         if kamihi_container:
             reporter.write_sep("=", f" Command logs for {item.name} ")
-            for line in kamihi_container.command_logs:
-                if line.startswith("$ "):
-                    reporter.write_sep("-", line)
-                elif line.startswith("Waiting for log:"):
-                    reporter.write_sep(" ", line)
-                    reporter.write_line("")
-                else:
-                    try:
-                        reporter.write_line(kamihi_container.parse_log_json(line)["text"].strip())
-                    except (json.JSONDecodeError, AssertionError):
-                        reporter.write_line(line.strip())
+            logs = kamihi_container.get_text("/app/kamihi.log")["kamihi.log"]
+            for line in logs.splitlines():
+                reporter.write_line(line)
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):

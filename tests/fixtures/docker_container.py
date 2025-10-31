@@ -252,6 +252,8 @@ kamihi_container = container(
         "KAMIHI_TOKEN": "{test_settings.bot_token}",
         "KAMIHI_LOG__STDOUT_LEVEL": "TRACE",
         "KAMIHI_LOG__STDOUT_SERIALIZE": "True",
+        "KAMIHI_LOG__FILE_ENABLE": "True",
+        "KAMIHI_LOG__FILE_LEVEL": "TRACE",
         "KAMIHI_WEB__HOST": "0.0.0.0",
         "KAMIHI_DB__URL": "{db_url}",
     },
