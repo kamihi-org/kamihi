@@ -53,7 +53,7 @@ def test_run_log_level_invalid(kamihi: KamihiContainer, level: str):
 def test_run_web_host(kamihi: KamihiContainer, host):
     """Test the run command with various valid web host options."""
     kamihi.run_command_and_wait_for_log(
-        f"kamihi run --host={host}", "Web server started on", "INFO", {"host": host, "port": 4242}
+        f"kamihi run --host={host}", "Admin interface started on", "INFO", {"host": host, "port": 4242}
     )
 
 
@@ -77,7 +77,7 @@ def test_run_web_port(kamihi: KamihiContainer, port):
     """Test the run command with various valid web port options."""
     kamihi.run_command_and_wait_for_log(
         f"kamihi run --port={port}",
-        "Web server started on",
+        "Admin interface started on",
         "INFO",
         {"host": "0.0.0.0", "port": port},
     )

@@ -106,6 +106,7 @@ def configure_logging(logger: loguru.Logger) -> None:
             level=settings.stdout_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
+            "{module: <16} | "
             "{message} "
             "<dim>{extra[compact]}</dim>",
             serialize=settings.stdout_serialize,
@@ -118,6 +119,7 @@ def configure_logging(logger: loguru.Logger) -> None:
             level=settings.stderr_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
+            "{module: <16} | "
             "{message} "
             "<dim>{extra[compact]}</dim>",
             serialize=settings.stderr_serialize,
@@ -130,6 +132,7 @@ def configure_logging(logger: loguru.Logger) -> None:
             level=settings.file_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
+            "{module: <16} | "
             "{message} "
             "<dim>{extra[compact]}</dim>",
             serialize=settings.file_serialize,
@@ -145,6 +148,7 @@ def configure_logging(logger: loguru.Logger) -> None:
             level=settings.notification_level,
             format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
             "<level>{level: <8}</level> | "
+            "{module: <16} | "
             "{message} "
             "<dim>{extra[compact]}</dim>",
             filter={"apprise": False},

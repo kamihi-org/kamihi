@@ -117,6 +117,7 @@ class Action:
 
         async def _entry(update: Update, context: CallbackContext) -> int:
             """Entry function for the questions."""
+            self._logger.debug("Starting Q&A")
             context.chat_data["questions"] = {}
 
             return await self._questions[0].entry(base_state - 1)(update, context)
@@ -144,6 +145,7 @@ class Action:
             if not exited_successfully:
                 return current_state
 
+            self._logger.debug("Finished Q&A")
             await self(update, context)
             context.chat_data.pop("questions", None)
             return ConversationHandler.END
@@ -201,7 +203,7 @@ class Action:
     def _questions(self) -> list[Question]:
         """Return a list of parameters that need to be filled using questions."""
         return [
-            get_args(param.annotation)[1].with_param_name(name)
+            get_args(param.annotation)[1].with_action(name, self._logger)
             for name, param in self._parameters.items()
             if get_origin(param.annotation) is Annotated and isinstance(get_args(param.annotation)[1], Question)
         ]
@@ -387,7 +389,7 @@ class Action:
 
     async def __call__(self, update: Update, context: CallbackContext) -> int:
         """Execute the action."""
-        self._logger.debug("Executing")
+        self._logger.debug("Executing action")
 
         pos_args, keyword_args = await self._fill_parameters(update, context)
 

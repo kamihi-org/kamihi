@@ -6,9 +6,12 @@ License:
 
 """
 
+from __future__ import annotations
+
 from collections.abc import Callable, Coroutine
 from typing import Any
 
+import loguru
 from telegram import Update
 from telegram.ext import CallbackContext, MessageHandler, filters
 
@@ -22,19 +25,22 @@ class Question:
     error_text: str
 
     _param_name: str
+    _logger: loguru.Logger
 
-    def with_param_name(self, param_name: str) -> "Question":
+    def with_action(self, param_name: str, logger: loguru.Logger) -> Question:
         """
         Set the parameter name for the question.
 
         Args:
             param_name (str): The name of the parameter.
+            logger (loguru.Logger): The action's logger.
 
         Returns:
             Question: The question instance with the parameter name set.
 
         """
         self._param_name = param_name
+        self._logger = logger.bind(param=param_name, type=self.__class__.__name__)
         return self
 
     async def ask_question(self, update: Update, context: CallbackContext) -> None:
@@ -208,6 +214,7 @@ class Question:
 
         """
         context.chat_data["questions"][self._param_name] = response
+        self._logger.trace("Saved to context")
 
     def entry(
         self,
@@ -228,12 +235,16 @@ class Question:
 
         async def _enter(update: Update, context: CallbackContext) -> int:
             """Entry function for the question."""
+            self._logger.trace("Entered")
             if prev_exit:
+                self._logger.debug("Calling previous exit")
                 prev_exited_successfully = await prev_exit(update, context)
                 if not prev_exited_successfully:
                     return current_state
 
+            self._logger.debug("Asking")
             await self.ask_question(update, context)
+            self._logger.trace("Now awaiting user response")
             return current_state + 1
 
         return _enter
@@ -249,15 +260,19 @@ class Question:
 
         async def _exit(update: Update, context: CallbackContext) -> bool:
             """Exit function for the question."""
+            self._logger.trace("Starting exit")
             res = await self.get_response(update, context)
 
             try:
                 res = await self.validate(res, update, context)
+                self._logger.trace("Validation successful")
             except ValueError as e:
+                self._logger.debug("Validation failed: {}", e)
                 await send(str(e), update, context)
                 return False
 
             await self._save(res, context)
+            self._logger.debug("Exited")
             return True
 
         return _exit
