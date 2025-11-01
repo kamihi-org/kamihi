@@ -80,7 +80,7 @@ class Question:
         """
         return MessageHandler(self.filters, func)
 
-    async def get_response(self, update: Update, context: CallbackContext) -> Any:
+    async def get_response(self, update: Update, context: CallbackContext) -> Any:  # skipcq: PYL-R0201
         """
         Get the response from the user.
 
@@ -96,7 +96,7 @@ class Question:
         """
         return update.message.text
 
-    async def validate_before(
+    async def validate_before(  # skipcq: PYL-R0201
         self,
         response: Any,
         update: Update | None = None,
@@ -122,7 +122,7 @@ class Question:
         """
         return response
 
-    async def _validate_internal(
+    async def _validate_internal(  # skipcq: PYL-R0201
         self,
         response: Any,
         update: Update | None = None,
@@ -147,7 +147,7 @@ class Question:
         """
         return response
 
-    async def validate_after(
+    async def validate_after(  # skipcq: PYL-R0201
         self,
         response: Any,
         update: Update | None = None,
