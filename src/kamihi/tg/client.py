@@ -17,7 +17,6 @@ Examples:
 from __future__ import annotations
 
 from collections.abc import Callable
-from warnings import filterwarnings
 
 from loguru import logger
 from telegram import BotCommand, BotCommandScopeChat, Update
@@ -31,7 +30,6 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
-from telegram.warnings import PTBUserWarning
 
 from kamihi.base import get_settings
 

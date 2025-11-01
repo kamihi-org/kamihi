@@ -6,7 +6,6 @@ License:
 
 """
 
-from datetime import time
 from typing import Any
 
 from telegram import Update

@@ -6,8 +6,6 @@ License:
 
 """
 
-import json
-
 import pytest
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
