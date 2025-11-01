@@ -23,10 +23,6 @@ class Question:
 
     _param_name: str
 
-    def __init__(self) -> None:
-        """Initialize an instance of the Question base class."""
-        pass
-
     def with_param_name(self, param_name: str) -> "Question":
         """
         Set the parameter name for the question.
