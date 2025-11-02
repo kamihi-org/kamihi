@@ -156,11 +156,11 @@ class Bot:
 
         return scopes
 
-    async def _set_scopes(self, *_args: Any) -> None:  # noqa: ANN401
+    async def _set_scopes(self, *_args: Any) -> None:
         """Set the command scopes for the bot."""
         await self._client.set_scopes(self._scopes)
 
-    async def _reset_scopes(self, *_args: Any) -> None:  # noqa: ANN401
+    async def _reset_scopes(self, *_args: Any) -> None:
         """Reset the command scopes for the bot."""
         await self._client.reset_scopes()
 
@@ -177,6 +177,7 @@ class Bot:
 
         # Loads the Telegram client
         self._client = TelegramClient(self._handlers, self._post_init, self._post_shutdown)
+        self._client.app.bot_data["datasources"] = self.datasources
         logger.trace("Initialized Telegram client")
 
         # Loads the web server

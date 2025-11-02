@@ -101,8 +101,8 @@ class KamihiWeb(Thread):
     def _create_app(self) -> None:
         self.app = Starlette(
             on_startup=[
-                lambda: logger.info(
-                    "Web server started on http://{host}:{port}",
+                lambda: logger.success(
+                    "Admin interface started on http://{host}:{port}",
                     host=self.host,
                     port=self.port,
                 ),

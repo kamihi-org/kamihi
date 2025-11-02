@@ -40,7 +40,7 @@ class RegisteredAction(Base):
         passive_deletes=True,
     )
 
-    async def __admin_repr__(self, *args: Any, **kwargs: Any) -> str:  # noqa: ANN401
+    async def __admin_repr__(self, *args: Any, **kwargs: Any) -> str:
         """Define the representation of the action in the admin interface."""
         return "/" + self.name
 
@@ -130,7 +130,7 @@ class BaseUser(Base):
         """Dynamically set the table name for the user model."""
         return "user"
 
-    def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         """Register a custom user model."""
         super().__init_subclass__(**kwargs)
 
@@ -158,7 +158,7 @@ class BaseUser(Base):
         """Define the representation of the user in the admin interface."""
         return str(self.telegram_id)
 
-    async def __admin_repr__(self, *args: Any, **kwargs: Any) -> str:  # noqa: ANN401
+    async def __admin_repr__(self, *args: Any, **kwargs: Any) -> str:
         """Async representation for admin interface."""
         return self.admin_repr()
 
@@ -191,7 +191,7 @@ class Role(Base):
         back_populates="roles",
     )
 
-    async def __admin_repr__(self, *args: Any, **kwargs: Any) -> str:  # noqa: ANN401
+    async def __admin_repr__(self, *args: Any, **kwargs: Any) -> str:
         """Define the representation of the role in the admin interface."""
         return self.name
 
@@ -233,7 +233,7 @@ class Permission(Base):
         back_populates="permissions",
     )
 
-    async def __admin_repr__(self, *args: Any, **kwargs: Any) -> str:  # noqa: ANN401
+    async def __admin_repr__(self, *args: Any, **kwargs: Any) -> str:
         """Define the representation of the permission in the admin interface."""
         return f"Permission for /{self.action.name if self.action else 'No Action'}"
 

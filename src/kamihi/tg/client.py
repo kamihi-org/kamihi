@@ -44,9 +44,10 @@ class TelegramClient:
 
     """
 
+    app: Application
     _base_url: str = "https://api.telegram.org/bot"
+    _base_file_url: str = "https://api.telegram.org/file/bot"
     _builder: ApplicationBuilder
-    _app: Application
     _testing: bool = False
 
     def __init__(self, handlers: list[BaseHandler], _post_init: Callable, _post_shutdown: Callable) -> None:
@@ -63,11 +64,13 @@ class TelegramClient:
 
         if settings.testing:
             self._base_url = "https://api.telegram.org/bot{token}/test"
+            self._base_file_url = "https://api.telegram.org/file/bot{token}/test"
             self._testing = True
 
         # Set up the application with all the settings
         self._builder = Application.builder()
         self._builder.base_url(self._base_url)
+        self._builder.base_file_url(self._base_file_url)
         self._builder.token(settings.token)
         self._builder.defaults(
             Defaults(
@@ -79,18 +82,18 @@ class TelegramClient:
         self._builder.post_shutdown(_post_shutdown)
 
         # Build the application
-        self._app: Application = self._builder.build()
+        self.app: Application = self._builder.build()
 
         # Register the handlers
         for handler in handlers:
             with logger.catch(exception=TelegramError, level="ERROR", message="Failed to register handler"):
-                self._app.add_handler(handler)
+                self.app.add_handler(handler)
 
         # Register the default handlers
         with logger.catch(exception=TelegramError, level="ERROR", message="Failed to register default handlers"):
             if settings.responses.default_enabled:
-                self._app.add_handler(MessageHandler(filters.TEXT, default), group=1000)
-            self._app.add_error_handler(error)
+                self.app.add_handler(MessageHandler(filters.TEXT, default))
+            self.app.add_error_handler(error)
 
     async def reset_scopes(self) -> None:  # noqa: ARG002
         """
@@ -103,7 +106,7 @@ class TelegramClient:
             return
 
         with logger.catch(exception=TelegramError, message="Failed to reset scopes"):
-            await self._app.bot.delete_my_commands()
+            await self.app.bot.delete_my_commands()
             logger.debug("Scopes erased")
 
     async def set_scopes(self, scopes: dict[int, list[BotCommand]]) -> None:
@@ -124,7 +127,7 @@ class TelegramClient:
                 exception=TelegramError,
                 message="Failed to set scopes",
             ):
-                await self._app.bot.set_my_commands(
+                await self.app.bot.set_my_commands(
                     commands=commands,
                     scope=BotCommandScopeChat(user_id),
                 )
@@ -133,9 +136,9 @@ class TelegramClient:
     def run(self) -> None:
         """Run the Telegram bot."""
         logger.trace("Starting main loop...")
-        self._app.run_polling(allowed_updates=Update.ALL_TYPES)
+        self.app.run_polling(allowed_updates=Update.ALL_TYPES)
 
     async def stop(self) -> None:
         """Stop the Telegram bot."""
         logger.trace("Stopping main loop...")
-        await self._app.stop()
+        await self.app.stop()

@@ -51,3 +51,21 @@ async def error(update: object | None, context: CallbackContext) -> None:
         await send(settings.error_message, update=update, context=context)
 
     raise ApplicationHandlerStop
+
+
+async def cancel(update: Update, context: CallbackContext) -> None:
+    """
+    Cancel the current operation.
+
+    Args:
+        update (Update): Update object
+        context (CallbackContext): CallbackContext object
+
+    """
+    logger.bind(chat_id=update.effective_message.chat_id, message_id=update.effective_message.message_id).info(
+        "User requested to cancel the current operation"
+    )
+
+    text = context.bot_data["responses"]["cancel_message"]
+    await send(text, update=update, context=context)
+    raise ApplicationHandlerStop

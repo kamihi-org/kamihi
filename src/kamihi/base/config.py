@@ -108,12 +108,48 @@ class ResponseSettings(BaseModel):
         default_enabled(bool): Whether to enable the default message
         default_message(str): The message to return when no handler has been triggered
         error_message(str): The message to send to the user when an error happens
+        cancel_command(str): The command to cancel an ongoing operation
+        cancel_message(str): The message to send when an operation is cancelled
 
     """
 
     default_enabled: bool = Field(default=True)
     default_message: str = Field(default="I'm sorry, but I don't know how to respond to that")
     error_message: str = Field(default="An error occurred while processing your request, please try again later")
+    cancel_command: str = Field(default="cancel")
+    cancel_message: str = Field(default="Operation cancelled")
+
+
+class QuestionSettings(BaseModel):
+    """
+    Defines the question settings schema.
+
+    Attributes:
+        timeout (int): The timeout for questions in seconds.
+
+    """
+
+    timeout: int = Field(default=300)
+
+    bool_error_text: str = Field(default="Please answer with yes or no.")
+    bool_true_values: set[str] = Field(default_factory=lambda: {"yes", "y", "true", "t", "1"})
+    bool_false_values: set[str] = Field(default_factory=lambda: {"no", "n", "false", "f", "0"})
+
+    integer_error_text: str = Field(default="Please enter a valid integer.")
+
+    string_error_text: str = Field(default="Please enter a valid string.")
+
+    datetime_error_text: str = Field(default="Please enter a valid date and time.")
+
+    date_error_text: str = Field(default="Please enter a valid date.")
+
+    time_error_text: str = Field(default="Please enter a valid time.")
+
+    choice_error_text: str = Field(default="Please select a valid option.")
+
+    dynamic_choice_error_text: str = Field(default="Please select a valid option.")
+
+    remove_keyboard_text: str = Field(default="Removing keyboard...")
 
 
 class WebSettings(BaseModel):
@@ -172,6 +208,9 @@ class KamihiSettings(BaseSettings):
     # Telegram settings
     token: str | None = Field(default=None, pattern=r"^\d+:[0-9A-Za-z_-]{35}$", exclude=True)
     responses: ResponseSettings = Field(default_factory=ResponseSettings)
+
+    # Questions settings
+    questions: QuestionSettings = Field(default_factory=QuestionSettings)
 
     # Web settings
     web: WebSettings = Field(default_factory=WebSettings)

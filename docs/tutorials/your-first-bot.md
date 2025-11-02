@@ -134,7 +134,7 @@ We are now ready to start our bot for the first time! To do so, just run this co
 <!-- termynal -->
 ```shell
 > kamihi run
-2025-01-01 at 00:00:00 | INFO     | Web server started on http://localhost:4242 host='localhost', port=4242
+2025-01-01 at 00:00:00 | INFO     | Admin interface started on http://localhost:4242 host='localhost', port=4242
 2025-01-01 at 00:00:00 | SUCCESS  | Started!
 
 ```

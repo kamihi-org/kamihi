@@ -7,15 +7,17 @@ License:
 """
 
 from typing import Annotated
+from warnings import filterwarnings
 
 import typer
 from loguru import logger
+from telegram.warnings import PTBUserWarning
 from validators import ValidationError, hostname
 
 from kamihi import init_bot
 from kamihi.base import get_settings
 from kamihi.base.config import LogLevel
-from kamihi.cli.utils import import_actions
+from kamihi.cli.utils import import_actions, import_questions
 
 app = typer.Typer()
 
@@ -70,8 +72,13 @@ def run(
         settings.log.file_level = log_level
         settings.log.notification_level = log_level
 
+    # Ignore the "If 'per_message=False', ..." warning for CallbackQueryHandler
+    # https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do
+    filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
+
     bot = init_bot()
 
+    import_questions(ctx.obj.cwd / "questions")
     import_actions(ctx.obj.cwd / "actions")
     logger.bind(folder=str(ctx.obj.cwd / "actions")).debug("Imported actions")
 

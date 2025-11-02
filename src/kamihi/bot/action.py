@@ -10,9 +10,10 @@ from __future__ import annotations
 
 import inspect
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
 from inspect import Parameter
 from pathlib import Path
+from random import randint
 from typing import Annotated, Any, get_args, get_origin
 
 import loguru
@@ -22,12 +23,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from telegram import Update
 from telegram.constants import BotCommandLimit
-from telegram.ext import ApplicationHandlerStop, CallbackContext, CommandHandler
+from telegram.ext import BaseHandler, CallbackContext, CommandHandler, ConversationHandler
 
+from kamihi.base import get_settings
 from kamihi.base.utils import COMMAND_REGEX
 from kamihi.datasources import DataSource
 from kamihi.db import RegisteredAction, get_engine
+from kamihi.questions import Question
 from kamihi.tg import send
+from kamihi.tg.default_handlers import cancel
 from kamihi.tg.handlers import AuthHandler
 from kamihi.users import get_user_from_telegram_id
 
@@ -49,7 +53,6 @@ class Action:
     commands: list[str]
     description: str
 
-    _folder_path: Path
     _func: Callable
     _logger: loguru.Logger
     _db_object: RegisteredAction | None
@@ -79,7 +82,6 @@ class Action:
         self.commands = commands
         self.description = description
 
-        self._folder_path = Path(func.__code__.co_filename).parent
         self._func = func
         self._logger = logger.bind(action=self.name)
 
@@ -94,9 +96,132 @@ class Action:
         self._validate_function()
         self._validate_requests()
 
-        self.save_to_db()
+        self._save_to_db()
 
         self._logger.debug("Successfully registered")
+
+    def _make_first_entry(
+        self,
+        base_state: int,
+    ) -> Callable[[Update, CallbackContext], Coroutine[Any, Any, int]]:
+        """
+        Construct the entry function for the questions.
+
+        Args:
+            base_state (int): The current state of the conversation.
+
+        Returns:
+            Callable: The constructed entry function.
+
+        """
+
+        async def _entry(update: Update, context: CallbackContext) -> int:
+            """Entry function for the questions."""
+            self._logger.debug("Starting Q&A")
+            context.chat_data["questions"] = {}
+
+            return await self._questions[0].entry(base_state - 1)(update, context)
+
+        return _entry
+
+    def _make_last_entry(
+        self, current_state: int, prev_exit: Callable[[Update, CallbackContext], Coroutine[Any, Any, bool]]
+    ) -> Callable[[Update, CallbackContext], Coroutine[Any, Any, int]]:
+        """
+        Construct the exit function for the questions.
+
+        Args:
+            current_state (int): The current state of the conversation.
+            prev_exit (Callable): The exit function of the previous question.
+
+        Returns:
+            Callable: The constructed exit function.
+
+        """
+
+        async def _entry(update: Update, context: CallbackContext) -> int:
+            """Exit function for the questions."""
+            exited_successfully = await prev_exit(update, context)
+            if not exited_successfully:
+                return current_state
+
+            self._logger.debug("Finished Q&A")
+            await self(update, context)
+            context.chat_data.pop("questions", None)
+            return ConversationHandler.END
+
+        return _entry
+
+    def _construct_questions_handler(self) -> ConversationHandler:
+        """
+        Construct the handler for the action when it has questions.
+
+        Returns:
+            AuthHandler: The constructed handler.
+
+        """
+        base_state = randint(1, 2**31 - 1)
+
+        entry = AuthHandler(
+            CommandHandler(self.commands, self._make_first_entry(base_state)),
+            self.name,
+        )
+
+        states: dict[int, list[BaseHandler]] = {}
+
+        for i, question in enumerate(self._questions):
+            state_id = base_state + i
+
+            if i == len(self._questions) - 1:
+                handler = question.handler(self._make_last_entry(state_id, question.exit()))
+            else:
+                next_entry = self._questions[i + 1].entry(state_id, question.exit())
+                handler = question.handler(next_entry)
+            states[state_id] = [handler]
+
+        return ConversationHandler(
+            entry_points=[entry],
+            states=states,
+            fallbacks=[CommandHandler(get_settings().responses.cancel_command, cancel)],
+            allow_reentry=True,
+            conversation_timeout=get_settings().questions.timeout,
+        )
+
+    @property
+    def handler(self) -> AuthHandler | ConversationHandler:
+        """Construct a CommandHandler for the action."""
+        if not self._questions:
+            return AuthHandler(CommandHandler(self.commands, self.__call__), self.name)
+        return self._construct_questions_handler()
+
+    @property
+    def _parameters(self) -> dict[str, Parameter]:
+        """Return a list of parameters that need to be filled."""
+        return dict(inspect.signature(self._func).parameters)
+
+    @property
+    def _questions(self) -> list[Question]:
+        """Return a list of parameters that need to be filled using questions."""
+        return [
+            get_args(param.annotation)[1].with_action(name, self._logger)
+            for name, param in self._parameters.items()
+            if get_origin(param.annotation) is Annotated and isinstance(get_args(param.annotation)[1], Question)
+        ]
+
+    @property
+    def _message_templates(self) -> dict[str, Template]:
+        """Return a dictionary of message templates associated with the action."""
+        return {name: self._files.get_template(name) for name in self._files.list_templates(extensions=".md.jinja")}
+
+    @property
+    def _request_templates(self) -> dict[str, Template]:
+        """Return a list of request templates associated with the action."""
+        return {name: self._files.get_template(name) for name in self._files.list_templates(extensions=".sql")}
+
+    @property
+    def _folder_path(self) -> Path:
+        """Return the folder path where the action is defined."""
+        return Path(self._func.__code__.co_filename).parent
 
     def _validate_commands(self) -> None:
         """Filter valid commands and log invalid ones."""
@@ -132,10 +257,9 @@ class Action:
             raise ValueError(msg)
 
         # Check if the function has valid parameters
-        parameters = inspect.signature(self._func).parameters
         if any(
             param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-            for param in parameters.values()
+            for param in self._parameters.values()
         ):
             msg = "Function parameters '*args' and '**kwargs' are not supported"
             raise ValueError(msg)
@@ -144,7 +268,7 @@ class Action:
         """Validate the SQL requests associated with the action."""
         datasource_names = set(self._datasources.keys())
         discarded_files = []
-        for file in self._requests:
+        for file in self._request_templates:
             if not any(file.endswith(f".{ds_name}.sql") for ds_name in datasource_names):
                 self._logger.warning(
                     "Request file does not match any datasource, it will be ignored.",
@@ -153,14 +277,9 @@ class Action:
                 discarded_files.append(file)
 
         for file in discarded_files:
-            self._requests.pop(file, None)
+            self._request_templates.pop(file, None)
 
-    @property
-    def handler(self) -> AuthHandler:
-        """Construct a CommandHandler for the action."""
-        return AuthHandler(CommandHandler(self.commands, self.__call__), self.name)
-
-    def save_to_db(self) -> None:
+    def _save_to_db(self) -> None:
         """Save the action to the database."""
         with Session(get_engine()) as session:
             sta = select(RegisteredAction).where(RegisteredAction.name == self.name)
@@ -173,26 +292,6 @@ class Action:
                 session.add(RegisteredAction(name=self.name, description=self.description))
                 self._logger.trace("Added action to database")
             session.commit()
-
-    @classmethod
-    def clean_up(cls, keep: list[str]) -> None:
-        """Clean up the action from the database."""
-        with Session(get_engine()) as session:
-            statement = select(RegisteredAction).where(RegisteredAction.name.not_in(keep))
-            actions = session.execute(statement).scalars().all()
-            for action in actions:
-                session.delete(action)
-            session.commit()
-
-    @property
-    def _requests(self) -> dict[str, Template]:
-        """Return a list of request templates associated with the action."""
-        return {name: self._files.get_template(name) for name in self._files.list_templates(extensions=".sql")}
-
-    @property
-    def _message_templates(self) -> dict[str, Template]:
-        """Return a dictionary of message templates associated with the action."""
-        return {name: self._files.get_template(name) for name in self._files.list_templates(extensions=".md.jinja")}
 
     def _param_template(self, _: str, param: Parameter) -> Template:
         """Get a template for a specific parameter."""
@@ -218,20 +317,20 @@ class Action:
             args = get_args(param.annotation)
             if len(args) == 2 and isinstance(args[1], str):
                 req = args[1]
-                if req not in self._requests:
+                if req not in self._request_templates:
                     msg = "Request file specified in annotation not found"
                     raise ValueError(msg)
             else:
                 msg = "Invalid Annotated arguments"
                 raise ValueError(msg)
         else:
-            if name == "data" and len(self._requests) == 1:
-                req = next(iter(self._requests.keys()))
-            elif name == "data" and len(self._requests) > 1:
+            if name == "data" and len(self._request_templates) == 1:
+                req = next(iter(self._request_templates.keys()))
+            elif name == "data" and len(self._request_templates) > 1:
                 raise ValueError("Multiple requests found, specify one using annotated pattern")
             elif name.startswith("data_"):
                 name = name.replace("data_", "")
-                req = [r for r in self._requests if r.startswith(f"{name}.")]
+                req = [r for r in self._request_templates if r.startswith(f"{name}.")]
                 if not req:
                     msg = f"No request found matching '{name}'"
                     raise ValueError(msg)
@@ -249,36 +348,37 @@ class Action:
         if ds_name is None:
             msg = f"Request name '{req}' does not match expected pattern '.<ds_name>.'"
             raise ValueError(msg)
-        return await self._datasources[ds_name.group(1)].fetch(self._requests[req].render())
+        return await self._datasources[ds_name.group(1)].fetch(self._request_templates[req].render())
 
-    async def _fill_parameters(self, update: Update, context: CallbackContext) -> tuple[list[Any], dict[str, Any]]:
+    async def _fill_parameters(self, update: Update, context: CallbackContext) -> tuple[list[Any], dict[str, Any]]:  # noqa: C901
         """Fill parameters for the action call."""
         pos_args = []
         keyword_args = {}
 
-        for name, param in inspect.signature(self._func).parameters.items():
+        for name, param in self._parameters.items():
             value: Any = None
-            with self._logger.bind(param=name).catch(
-                ValueError, level="WARNING", message="Failed to fill parameter, it will be set to None"
-            ):
-                match name:
-                    case "update":
-                        value = update
-                    case "context":
-                        value = context
-                    case "logger":
-                        value = self._logger
-                    case "user":
-                        value = get_user_from_telegram_id(update.effective_user.id)
-                    case "templates":
-                        value = self._message_templates
-                    case s if s.startswith("template"):
-                        value = self._param_template(name, param)
-                    case s if s == "data" or s.startswith("data_"):
-                        value = await self._param_data(name, param)
-                    case _:
-                        msg = "Parameter is not supported"
-                        raise ValueError(msg)
+            match name:
+                case "update":
+                    value = update
+                case "context":
+                    value = context
+                case "logger":
+                    value = self._logger
+                case "user":
+                    value = get_user_from_telegram_id(update.effective_user.id)
+                case "templates":
+                    value = self._message_templates
+                case s if s.startswith("template"):
+                    value = self._param_template(name, param)
+                case s if s == "data" or s.startswith("data_"):
+                    value = await self._param_data(name, param)
+                case _ if get_origin(param.annotation) is Annotated and isinstance(
+                    get_args(param.annotation)[1],
+                    Question,
+                ):
+                    value = context.chat_data["questions"].pop(name, None)
+                case _:
+                    self._logger.bind(param=name).warning("Failed to fill parameter, it will be set to None")
 
             if param.kind == inspect.Parameter.POSITIONAL_ONLY:
                 pos_args.append(value)
@@ -287,9 +387,9 @@ class Action:
 
         return pos_args, keyword_args
 
-    async def __call__(self, update: Update, context: CallbackContext) -> None:
+    async def __call__(self, update: Update, context: CallbackContext) -> int:
         """Execute the action."""
-        self._logger.debug("Executing")
+        self._logger.debug("Executing action")
 
         pos_args, keyword_args = await self._fill_parameters(update, context)
 
@@ -298,8 +398,18 @@ class Action:
         await send(result, update, context)
 
         self._logger.debug("Finished execution")
-        raise ApplicationHandlerStop
+        return ConversationHandler.END
 
     def __repr__(self) -> str:
         """Return a string representation of the Action object."""
         return f"Action '{self.name}' ({', '.join(f'/{cmd}' for cmd in self.commands)}) [-> {self._func.__name__}]"
+
+    @classmethod
+    def clean_up(cls, keep: list[str]) -> None:
+        """Clean up the action from the database."""
+        with Session(get_engine()) as session:
+            statement = select(RegisteredAction).where(RegisteredAction.name.not_in(keep))
+            actions = session.execute(statement).scalars().all()
+            for action in actions:
+                session.delete(action)
+            session.commit()
