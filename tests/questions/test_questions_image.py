@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 import io
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -117,9 +118,7 @@ def small_image_path_png(small_image_bytes) -> Path:
         }
     ],
 )
-async def test_bytes_return(
-    user, add_permission_for_user, chat: Conversation, actions_folder, small_image_path_jpeg
-):
+async def test_bytes_return(user, add_permission_for_user, chat: Conversation, actions_folder, small_image_path_jpeg):
     """Image returned as bytes: action should report dimensions."""
     add_permission_for_user(user["telegram_id"], "start")
     w, h = PILImage.open(small_image_path_jpeg).size
@@ -155,9 +154,7 @@ async def test_bytes_return(
         }
     ],
 )
-async def test_path_return(
-    user, add_permission_for_user, chat: Conversation, actions_folder, small_image_path_jpeg
-):
+async def test_path_return(user, add_permission_for_user, chat: Conversation, actions_folder, small_image_path_jpeg):
     """Image returned as path: action should report dimensions."""
     add_permission_for_user(user["telegram_id"], "start")
     w, h = PILImage.open(small_image_path_jpeg).size
@@ -190,9 +187,7 @@ async def test_path_return(
         }
     ],
 )
-async def test_pil_return(
-    user, add_permission_for_user, chat: Conversation, actions_folder, small_image_path_jpeg
-):
+async def test_pil_return(user, add_permission_for_user, chat: Conversation, actions_folder, small_image_path_jpeg):
     """Image returned as PIL: action should report dimensions."""
     add_permission_for_user(user["telegram_id"], "start")
     w, h = PILImage.open(small_image_path_jpeg).size
