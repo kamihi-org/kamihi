@@ -78,7 +78,7 @@ def test_run_web_port(kamihi: KamihiContainer, port):
     kamihi.run_command_and_wait_for_log(
         f"kamihi run --port={port}",
         "Admin interface started on",
-        "INFO",
+        "SUCCESS",
         {"host": "0.0.0.0", "port": port},
     )
 
