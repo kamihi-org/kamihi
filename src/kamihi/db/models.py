@@ -39,6 +39,12 @@ class RegisteredAction(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
+    jobs: Mapped[list[Job]] = relationship(
+        "Job",
+        back_populates="action",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
     async def __admin_repr__(self, *args: Any, **kwargs: Any) -> str:
         """Define the representation of the action in the admin interface."""
@@ -251,3 +257,36 @@ class Permission(Base):
         if user in self.users:
             return True
         return any(role in self.roles for role in user.roles)
+
+
+class Job(Base):
+    """
+    Model for scheduled jobs.
+
+    Attributes:
+        id (int): Primary key.
+        action_id (int): Foreign key to the registered action.
+        action (RegisteredAction): The registered action associated with the job.
+        cron_expression (str): Cron expression defining the job schedule.
+        is_active (bool): Whether the job is active.
+
+    """
+
+    __tablename__ = "job"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    action_id: Mapped[int] = mapped_column(
+        ForeignKey("registeredaction.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    action: Mapped[RegisteredAction] = relationship("RegisteredAction")
+
+    cron_expression: Mapped[str] = mapped_column(String, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    async def __admin_repr__(self, *args: Any, **kwargs: Any) -> str:
+        """Define the representation of the job in the admin interface."""
+        status = "Active" if self.is_active else "Inactive"
+        return f"Job for /{self.action.name} ({status})"

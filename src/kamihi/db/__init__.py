@@ -7,7 +7,7 @@ License:
 """
 
 from .db import get_engine, init_engine
-from .models import Base, BaseUser, Permission, RegisteredAction, Role
+from .models import Base, BaseUser, Job, Permission, RegisteredAction, Role
 
 __all__ = [
     "init_engine",
@@ -17,4 +17,5 @@ __all__ = [
     "BaseUser",
     "Role",
     "Permission",
+    "Job",
 ]
