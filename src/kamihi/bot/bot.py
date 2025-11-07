@@ -174,6 +174,10 @@ class Bot:
         """Load the jobs for the bot."""
         self._client.add_jobs(self._jobs)
 
+    async def _run_job(self, job_id: str) -> None:
+        """Run a job by its ID."""
+        await self._client.run_job(job_id)
+
     # skipcq: TCV-001
     def start(self) -> None:
         """Start the bot."""
@@ -199,6 +203,7 @@ class Bot:
                 "after_create": [self._set_scopes, self._load_jobs],
                 "after_edit": [self._set_scopes, self._load_jobs],
                 "after_delete": [self._set_scopes, self._load_jobs],
+                "run_job": [self._run_job],
             },
         )
         logger.trace("Initialized web server")

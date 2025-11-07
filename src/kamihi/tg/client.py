@@ -144,6 +144,23 @@ class TelegramClient:
                     lg.debug("Job registered")
         logger.info("All jobs registered")
 
+    async def run_job(self, job_id: str) -> None:
+        """
+        Run a job by its ID.
+
+        Args:
+            job_id (str): The ID of the job to run.
+
+        """
+        job = self.app.job_queue.get_jobs_by_name(job_id)
+        if not job:
+            logger.warning(f"Job with ID {job_id} not found")
+            return
+        lg = logger.bind(job_id=job_id)
+        lg.debug(f"Running job manually")
+        await job[0].run(self.app)
+        lg.debug(f"Job run completed")
+
     async def reset_scopes(self) -> None:  # noqa: ARG002
         """
         Reset the command scopes for the bot.

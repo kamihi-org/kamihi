@@ -56,12 +56,7 @@ class KamihiWeb(Thread):
 
     hooks: dict[
         Literal[
-            "before_create",
-            "after_create",
-            "before_edit",
-            "after_edit",
-            "before_delete",
-            "after_delete",
+            "before_create", "after_create", "before_edit", "after_edit", "before_delete", "after_delete", "run_job"
         ],
         list[Callable],
     ]
@@ -75,12 +70,7 @@ class KamihiWeb(Thread):
         self,
         hooks: dict[
             Literal[
-                "before_create",
-                "after_create",
-                "before_edit",
-                "after_edit",
-                "before_delete",
-                "after_delete",
+                "before_create", "after_create", "before_edit", "after_edit", "before_delete", "after_delete", "run_job"
             ],
             list[Callable],
         ] = None,
@@ -124,7 +114,9 @@ class KamihiWeb(Thread):
         admin.add_view(UserView(BaseUser.cls(), label="Users", icon="fas fa-user", hooks=self.hooks))
         admin.add_view(BaseView(Role, icon="fas fa-tags", hooks=self.hooks))
         admin.add_view(BaseView(Permission, icon="fas fa-check", hooks=self.hooks))
-        admin.add_view(JobView(Job, icon="fas fa-clock", hooks=self.hooks))
+        admin.add_view(
+            JobView(Job, icon="fas fa-clock", hooks=self.hooks, run_job_callback=self.hooks.get("run_job")[0])
+        )
         admin.add_view(Link(label="Documentation", icon="fa fa-book", url="https://kamihi-org.github.io/kamihi/"))
 
         admin.mount_to(self.app)
