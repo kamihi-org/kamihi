@@ -116,6 +116,8 @@ class TelegramClient:
     def add_jobs(self, jobs: list[tuple[Job, Callable[[CallbackContext], Coroutine[Any, Any, None]]]]) -> None:
         """Add jobs to the Telegram client."""
         logger.trace("Registering jobs...")
+        self.app.job_queue.scheduler.remove_all_jobs()
+        logger.trace("Removed all existing jobs")
         with Session(get_engine()) as session:
             for job, callback in jobs:
                 session.add(job)
