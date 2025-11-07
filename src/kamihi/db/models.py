@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
-from sqlalchemy import BigInteger, Boolean, ForeignKey, Integer, String
+from sqlalchemy import JSON, BigInteger, Boolean, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, declarative_base, declared_attr, mapped_column, relationship
 
 Base = declarative_base()
@@ -285,6 +285,7 @@ class Job(Base):
 
     cron_expression: Mapped[str] = mapped_column(String, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    args: Mapped[JSON] = mapped_column(JSON, default={})
 
     async def __admin_repr__(self, *args: Any, **kwargs: Any) -> str:
         """Define the representation of the job in the admin interface."""
