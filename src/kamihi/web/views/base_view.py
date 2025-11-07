@@ -11,6 +11,7 @@ from collections.abc import Callable
 from typing import Any, Literal
 
 from starlette.requests import Request
+from starlette_admin import RowActionsDisplayType
 from starlette_admin.contrib.sqla import ModelView
 
 
@@ -21,6 +22,10 @@ class BaseView(ModelView):
     exclude_fields_from_detail = ["id"]
     exclude_fields_from_create = ["id"]
     exclude_fields_from_edit = ["id"]
+    row_actions_display_type = RowActionsDisplayType.DROPDOWN
+    datatables_options = {
+        "dom": "r<'table't><'card-footer d-flex align-items-center'<'m-0'i><'m-0 ms-auto'p>>"
+    }  # https://github.com/jowilf/starlette-admin/issues/386
 
     hooks: dict[
         Literal[
