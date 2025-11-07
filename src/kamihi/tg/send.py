@@ -74,7 +74,7 @@ def guess_media_type(file: Path | bytes | BufferedReader, lg: Logger) -> Media:
 # skipcq: PY-R1000
 async def send(  # noqa: C901
     obj: Any,
-    update: Update,
+    chat_id: int,
     context: CallbackContext,
     reply_markup: TelegramObject = None,
 ) -> Message | list[Message]:
@@ -83,7 +83,7 @@ async def send(  # noqa: C901
 
     Args:
         obj (Any): The object to send.
-        update (Update): The Telegram update object containing the chat information.
+        chat_id (int): The chat ID to send the message to.
         context (CallbackContext): The callback context containing the bot instance.
         reply_markup (TelegramObject, optional): Additional interface options to be sent with the message. Defaults to None. Only supported for text messages.
 
@@ -95,7 +95,7 @@ async def send(  # noqa: C901
         TypeError: If the object type is not supported for sending.
 
     """
-    lg = logger.bind(chat_id=update.effective_chat.id)
+    lg = logger.bind(chat_id=chat_id)
 
     if isinstance(obj, str):
         lg = lg.bind(text=obj)
@@ -103,7 +103,7 @@ async def send(  # noqa: C901
         kwargs = {"text": md(obj), "reply_markup": reply_markup}
         lg.debug("Sending as text message")
     elif isinstance(obj, (Path, bytes, BufferedReader)):
-        return await send(guess_media_type(obj, lg), update, context)
+        return await send(guess_media_type(obj, lg), chat_id, context)
     elif isinstance(obj, Media):
         caption = md(obj.caption) if obj.caption else None
         lg = lg.bind(path=obj.file, caption=caption)
@@ -160,19 +160,19 @@ async def send(  # noqa: C901
         lg.debug("Received list of file paths, guessing media types and trying to send as media group")
         return await send(
             [guess_media_type(item, lg) for item in obj],
-            update,
+            chat_id,
             context,
         )
     elif isinstance(obj, collections.abc.Sequence):
         lg.debug("Sending as list of items")
-        return [await send(item, update, context) for item in obj]
+        return [await send(item, chat_id, context) for item in obj]
     else:
         mes = f"Object of type {type(obj)} cannot be sent"
         raise TypeError(mes)
 
     with lg.catch(exception=TelegramError, message="Failed to send"):
         res = await method(
-            chat_id=update.effective_chat.id,
+            chat_id=chat_id,
             **kwargs,
         )
         lg.bind(

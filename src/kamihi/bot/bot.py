@@ -20,17 +20,18 @@ Examples:
 """
 
 import functools
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
 from functools import partial
 from typing import Any
 
 from loguru import logger
 from multipledispatch import dispatch
 from telegram import BotCommand
-from telegram.ext import Application
+from telegram.ext import Application, CallbackContext
 
 from kamihi.base import get_settings
 from kamihi.datasources import DataSource
+from kamihi.db import Job
 from kamihi.tg import TelegramClient
 from kamihi.tg.handlers import AuthHandler
 from kamihi.tg.media import Audio, Document, Location, Photo, Video, Voice
@@ -140,6 +141,11 @@ class Bot:
         return [action.handler for action in self._actions]
 
     @property
+    def _jobs(self) -> list[tuple[Job, Callable[[CallbackContext], Coroutine[Any, Any, None]]]]:
+        """Return the jobs for the bot."""
+        return [job for action in self._actions for job in action.jobs]
+
+    @property
     def _scopes(self) -> dict[int, list[BotCommand]]:
         """Return the current scopes for the bot."""
         scopes = {}
@@ -164,6 +170,10 @@ class Bot:
         """Reset the command scopes for the bot."""
         await self._client.reset_scopes()
 
+    def _load_jobs(self, *_args: Any) -> None:
+        """Load the jobs for the bot."""
+        self._client.add_jobs(self._jobs)
+
     # skipcq: TCV-001
     def start(self) -> None:
         """Start the bot."""
@@ -176,16 +186,19 @@ class Bot:
             logger.warning("No valid actions were registered. The bot will not respond to any commands.")
 
         # Loads the Telegram client
-        self._client = TelegramClient(self._handlers, self._post_init, self._post_shutdown)
-        self._client.app.bot_data["datasources"] = self.datasources
+        self._client = TelegramClient(self._post_init, self._post_shutdown)
+        self._client.add_datasources(self.datasources)
+        self._client.add_handlers(self._handlers)
+        self._load_jobs()
+        self._client.add_default_handlers()
         logger.trace("Initialized Telegram client")
 
         # Loads the web server
         self._web = KamihiWeb(
             {
-                "after_create": [self._set_scopes],
-                "after_edit": [self._set_scopes],
-                "after_delete": [self._set_scopes],
+                "after_create": [self._set_scopes, self._load_jobs],
+                "after_edit": [self._set_scopes, self._load_jobs],
+                "after_delete": [self._set_scopes, self._load_jobs],
             },
         )
         logger.trace("Initialized web server")
