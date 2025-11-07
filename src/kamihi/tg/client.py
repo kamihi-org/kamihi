@@ -123,6 +123,9 @@ class TelegramClient:
                 session.add(job)
                 with logger.catch(exception=TelegramError, level="ERROR", message="Failed to register job"):
                     lg = logger.bind(job_id=job.id, action="/" + job.action.name, cron_expression=job.cron_expression)
+                    if not job.enabled:
+                        lg.info(f"Disabled, skipping")
+                        continue
                     lg.trace("Registering job")
                     self.app.job_queue.run_custom(
                         callback,
