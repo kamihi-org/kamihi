@@ -10,6 +10,9 @@ from typing import Any, Literal
 
 from starlette.requests import Request
 from starlette_admin.contrib.sqla import ModelView
+from starlette_admin.exceptions import FormValidationError
+
+from kamihi.base.utils import is_valid_cron_expression
 
 
 class ExcludeIDModelView(ModelView):
@@ -94,3 +97,18 @@ class ReadOnlyView(HooksView):
     def can_delete(self, request: Request) -> bool:  # noqa: ARG002
         """Check if the user can edit an instance of the model."""
         return False
+
+
+class JobView(HooksView):
+    """JobView is a custom view for managing jobs in the admin interface."""
+
+    async def validate(self, request: Request, data: dict[str, Any]) -> None:
+        """Validate the job data before creating or editing."""
+        errors: dict[str, str] = {}
+
+        if not is_valid_cron_expression(data["cron_expression"]):
+            errors["cron_expression"] = "Invalid cron expression."
+
+        if len(errors) > 0:
+            raise FormValidationError(errors)
+        return await super().validate(request, data)

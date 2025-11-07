@@ -20,9 +20,9 @@ from starlette_admin import CustomView
 from starlette_admin.contrib.sqla import Admin
 
 from kamihi.base import get_settings
-from kamihi.db import BaseUser, Permission, RegisteredAction, Role, get_engine
+from kamihi.db import BaseUser, Job, Permission, RegisteredAction, Role, get_engine
 
-from .views import HooksView, ReadOnlyView
+from .views import HooksView, JobView, ReadOnlyView
 
 WEB_PATH = Path(__file__).parent
 
@@ -123,6 +123,7 @@ class KamihiWeb(Thread):
         admin.add_view(HooksView(BaseUser.cls(), label="Users", icon="fas fa-user", hooks=self.hooks))
         admin.add_view(HooksView(Role, icon="fas fa-tags", hooks=self.hooks))
         admin.add_view(HooksView(Permission, icon="fas fa-check", hooks=self.hooks))
+        admin.add_view(JobView(Job, icon="fas fa-clock", hooks=self.hooks))
 
         admin.mount_to(self.app)
 
