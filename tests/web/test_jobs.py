@@ -18,6 +18,7 @@ async def job_page(kamihi: KamihiContainer, page) -> Page:
     await page.goto(f"http://{kamihi.ips.primary}:4242/job/list")
     return page
 
+
 @pytest.fixture
 def actions_folder():
     return {
@@ -49,6 +50,7 @@ async def test_job_create(user, job_page: Page):
     await expect(job_page.locator("tbody")).to_contain_text("-empty-")
     await expect(job_page.locator("tbody")).to_contain_text("* * * */5 *")
 
+
 @pytest.mark.asyncio
 async def test_job_create_invalid_cron(user, job_page: Page):
     """Test the creation of a job with an invalid cron expression through the web interface."""
@@ -63,10 +65,10 @@ async def test_job_create_invalid_cron(user, job_page: Page):
     await job_page.get_by_role("button", name="Save", exact=True).click()
     await expect(job_page.locator("form")).to_contain_text("Invalid cron expression.")
 
+
 @pytest.mark.asyncio
 async def test_job_run_manually(user, job_page: Page, chat: Conversation):
     """Test running a job manually through the web interface."""
-
 
     await job_page.get_by_role("link", name="+ New Job").click()
     await job_page.get_by_role("textbox", name="Select action").click()
@@ -82,7 +84,7 @@ async def test_job_run_manually(user, job_page: Page, chat: Conversation):
     await expect(job_page.locator("tbody")).to_contain_text("-empty-")
     await expect(job_page.locator("tbody")).to_contain_text("* * * */5 *")
 
-    await chat.send_message("dummy") # To ensure the conversation exists
+    await chat.send_message("dummy")  # To ensure the conversation exists
 
     await job_page.get_by_role("button", name="Actions").click()
     await job_page.get_by_role("link", name=" Run job manually").click()
