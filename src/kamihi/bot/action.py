@@ -362,7 +362,9 @@ class Action:
     ) -> tuple[list[Any], dict[str, Any]]:
         """Fill parameters for the action call."""
         pos_args = []
-        keyword_args = context.job.data.get("args", {}) if context.job else {}
+        keyword_args = {}
+        if context.job and context.job.data and context.job.data.get("args"):
+            keyword_args.update(context.job.data["args"])
 
         for name, param in self._parameters.items():
             value: Any = None
