@@ -19,7 +19,7 @@ Jobs are defined through the Kamihi admin interface. To create a scheduled job, 
     - **Users**: Select the users that the job will target.
     - **Roles**: Select the roles that the job will target.
     - **Cron expression**: Define the schedule using a cron expression. You can use online tools like [crontab.guru](https://crontab.guru/) to help you create valid expressions.
-    - **Args**: Provide any necessary arguments for the action in JSON format. This field only needs to be filled if the action uses reusable questions, and you only need to provide values for those parameters. This is because the job has to run without user interaction, so it cannot prompt for input.
+    - **Args**: Provide any necessary arguments for the action in JSON format. This field only needs to be filled if the action uses reusable questions, and you only need to provide values for those parameters. This is because the job has to run without user interaction, so it cannot prompt for input. **If the action requires parameters that are not provided in the Args field, they will be set to `None` during execution, which may lead to unexpected behavior.** Ensure all required parameters are included.
 4. Click "Save" to create the job.
 
 ## Run jobs manually
