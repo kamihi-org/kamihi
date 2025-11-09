@@ -5,7 +5,6 @@ License:
     MIT
 """
 
-
 import pytest
 from playwright.async_api import Page, expect
 from telethon.tl.custom import Conversation
