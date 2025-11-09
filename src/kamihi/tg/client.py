@@ -139,12 +139,8 @@ class TelegramClient:
                         },
                         data={
                             "args": job.args,
-                            "users": list(
-                                set(
-                                    [user.telegram_id for user in job.users]
-                                    + [user.telegram_id for role in job.roles for user in role.users]
-                                )
-                            ),
+                            "per_user": job.per_user,
+                            "users": [user.telegram_id for user in job.effective_users],
                         },
                         name=job.id,
                     )

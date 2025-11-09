@@ -26,6 +26,7 @@ class JobView(BaseView):
         "enabled",
         "users",
         "roles",
+        "per_user",
         StringField(
             "cron_expression",
             help_text="Cron expression for scheduling the job. E.g., '*/5 * * * *' for every 5 minutes. "

@@ -286,6 +286,20 @@ class Permission(Base):
         """Define the representation of the permission in the admin interface."""
         return f"Permission for /{self.action.name if self.action else 'No Action'}"
 
+    @property
+    def effective_users(self) -> list[BaseUser]:
+        """
+        Get the list of users who have this permission, either directly or through roles.
+
+        Returns:
+            list[User]: List of users with this permission.
+
+        """
+        users_set = set(self.users)
+        for role in self.roles:
+            users_set.update(role.users)
+        return list(users_set)
+
     def is_user_allowed(self, user: BaseUser) -> bool:
         """
         Check if a user has this permission.
@@ -297,9 +311,7 @@ class Permission(Base):
             bool: True if the user has this permission, False otherwise.
 
         """
-        if user in self.users:
-            return True
-        return any(role in self.roles for role in user.roles)
+        return user in self.effective_users
 
 
 class Job(Base):
@@ -330,6 +342,7 @@ class Job(Base):
 
     cron_expression: Mapped[str] = mapped_column(String, nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    per_user: Mapped[bool] = mapped_column(Boolean, default=False)
     args: Mapped[JSON] = mapped_column(JSON, default={})
 
     users: Mapped[list["User"]] = relationship(  # noqa: UP037
@@ -343,6 +356,20 @@ class Job(Base):
         secondary="jobrolelink",
         back_populates="jobs",
     )
+
+    @property
+    def effective_users(self) -> list[BaseUser]:
+        """
+        Get the list of users associated with this job, either directly or through roles.
+
+        Returns:
+            list[User]: List of users associated with this job.
+
+        """
+        users_set = set(self.users)
+        for role in self.roles:
+            users_set.update(role.users)
+        return list(users_set)
 
     async def __admin_repr__(self, *args: Any, **kwargs: Any) -> str:
         """Define the representation of the job in the admin interface."""

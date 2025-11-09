@@ -77,7 +77,7 @@ async def send(  # noqa: C901
     chat_id: int,
     context: CallbackContext,
     reply_markup: TelegramObject = None,
-) -> Message | list[Message]:
+) -> Message | list[Message] | None:
     """
     Send a message based on the provided object and annotation.
 
@@ -96,6 +96,10 @@ async def send(  # noqa: C901
 
     """
     lg = logger.bind(chat_id=chat_id)
+
+    if obj is None:
+        lg.debug("Nothing to send")
+        return None
 
     if isinstance(obj, str):
         lg = lg.bind(text=obj)
