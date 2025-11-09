@@ -52,7 +52,8 @@ class BaseView(ModelView):
         super().__init__(*args, **kwargs)
         self.hooks = hooks or {}
 
-    async def _run_hooks(self, hook_list: list[Callable], *args: Any) -> None:
+    @staticmethod
+    async def _run_hooks(hook_list: list[Callable], *args: Any) -> None:
         """Run a list of hooks with the given arguments."""
         for hook in hook_list:
             if inspect.iscoroutinefunction(hook):
