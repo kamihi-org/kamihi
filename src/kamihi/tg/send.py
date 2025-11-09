@@ -16,7 +16,7 @@ from typing import Any
 
 import magic
 from loguru import logger
-from telegram import Message, TelegramObject, Update
+from telegram import Message, TelegramObject
 from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
