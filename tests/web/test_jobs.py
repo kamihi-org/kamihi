@@ -35,10 +35,12 @@ def actions_folder():
 
 @pytest.fixture
 def config_file():
-    return {"kamihi.yaml": """\
+    return {
+        "kamihi.yaml": """\
         jobs:
             enabled: true
-    """}
+    """
+    }
 
 
 @pytest.mark.asyncio
