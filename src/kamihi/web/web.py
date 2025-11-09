@@ -118,7 +118,9 @@ class KamihiWeb(Thread):
             admin.add_view(
                 JobView(Job, icon="fas fa-clock", hooks=self.hooks, run_job_callback=self.hooks.get("run_job")[0])
             )
-        admin.add_view(Link(label="Documentation", icon="fa fa-book", url="https://kamihi-org.github.io/kamihi/"))
+        admin.add_view(
+            Link(label="Documentation", icon="fa fa-book", url="https://kamihi-org.github.io/kamihi/", target="_blank")
+        )
 
         admin.mount_to(self.app)
 
