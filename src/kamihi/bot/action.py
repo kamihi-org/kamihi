@@ -357,7 +357,7 @@ class Action:
             raise ValueError(msg)
         return await self._datasources[ds_name.group(1)].fetch(self._request_templates[req].render())
 
-    async def _fill_parameters(  # noqa: C901
+    async def _fill_parameters(  # noqa: C901 # skipcq: PY-R1000
         self, context: CallbackContext, update: Update = None
     ) -> tuple[list[Any], dict[str, Any]]:
         """Fill parameters for the action call."""
