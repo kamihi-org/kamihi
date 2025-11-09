@@ -115,6 +115,10 @@ class TelegramClient:
 
     def add_jobs(self, jobs: list[tuple[Job, Callable[[CallbackContext], Coroutine[Any, Any, None]]]]) -> None:
         """Add jobs to the Telegram client."""
+        if not get_settings().jobs.enabled:
+            logger.debug("Jobs are disabled, skipping job registration")
+            return
+
         logger.trace("Registering jobs...")
         self.app.job_queue.scheduler.remove_all_jobs()
         logger.trace("Removed all existing jobs")
@@ -145,7 +149,7 @@ class TelegramClient:
                         name=job.id,
                     )
                     lg.debug("Job registered")
-        logger.info("All jobs registered")
+        logger.info("All jobs registered", jobs=len(jobs))
 
     async def run_job(self, job_id: str) -> None:
         """

@@ -7,9 +7,26 @@ Kamihi allows you to schedule actions to be executed at specified times or inter
 !!! tip
     An action does not have to return anything, so you can use scheduled actions for any kind of task, not just sending messages.
 
+## Enabling jobs
+
+Jobs are disabled by default in Kamihi. To enable job scheduling, you need to set the `jobs.enabled` configuration option to `true`.
+
+=== "kamihi.yaml"
+
+    ```yaml
+    jobs:
+        enabled: true
+    ```
+
+=== "`.env` file"
+
+    ```env
+    KAMIHI_JOBS__ENABLED=true
+    ```
+
 ## Creating a scheduled job
 
-Jobs are defined through the Kamihi admin interface. To create a scheduled job, follow these steps:
+Jobs, once enabled, are defined through the Kamihi admin interface. To create a scheduled job, follow these steps:
 
 1. Navigate to the "Jobs" section in the Kamihi admin interface.
 2. Click on "New Job".

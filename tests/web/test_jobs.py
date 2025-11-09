@@ -6,7 +6,7 @@ License:
 """
 
 import pytest
-from playwright.async_api import expect, Page
+from playwright.async_api import Page, expect
 from telethon.tl.custom import Conversation
 
 from tests.fixtures.docker_container import KamihiContainer
@@ -31,6 +31,22 @@ def actions_folder():
                 return f"Hello there!"
         """,
     }
+
+
+@pytest.fixture
+def config_file():
+    return {"kamihi.yaml": """\
+        jobs:
+            enabled: true
+    """}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("config_file", [{"kamihi.yaml": ""}])
+async def test_job_disabled(job_page: Page, config_file):
+    """Test that the job page is not accessible when jobs are disabled."""
+    await expect(job_page.locator("body")).to_contain_text("404")
+    await expect(job_page.locator("body")).to_contain_text("Oops… You just found an error page")
 
 
 @pytest.mark.asyncio
