@@ -128,7 +128,7 @@ class TelegramClient:
                 with logger.catch(exception=TelegramError, level="ERROR", message="Failed to register job"):
                     lg = logger.bind(job_id=job.id, action="/" + job.action.name, cron_expression=job.cron_expression)
                     if not job.enabled:
-                        lg.info(f"Disabled, skipping")
+                        lg.info("Disabled, skipping")
                         continue
                     lg.trace("Registering job")
                     self.app.job_queue.run_custom(
@@ -160,9 +160,9 @@ class TelegramClient:
             logger.warning(f"Job with ID {job_id} not found")
             return
         lg = logger.bind(job_id=job_id)
-        lg.debug(f"Running job manually")
+        lg.debug("Running job manually")
         await job[0].run(self.app)
-        lg.debug(f"Job run completed")
+        lg.debug("Job run completed")
 
     async def reset_scopes(self) -> None:  # noqa: ARG002
         """
