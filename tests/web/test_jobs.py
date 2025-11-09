@@ -4,7 +4,6 @@ Functional tests for job management.
 License:
     MIT
 """
-import re
 
 import pytest
 from playwright.async_api import Page, expect
@@ -180,7 +179,7 @@ async def test_job_run_manually(user, job_page: Page, chat: Conversation):
             },
             True,
             "My users are {telegram_id}",
-        )
+        ),
     ],
 )
 async def test_job_per_user(user, job_page: Page, chat: Conversation, actions_folder, per_user, expected_response):

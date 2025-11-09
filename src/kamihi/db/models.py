@@ -343,7 +343,7 @@ class Job(Base):
     cron_expression: Mapped[str] = mapped_column(String, nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     per_user: Mapped[bool] = mapped_column(Boolean, default=False)
-    args: Mapped[JSON] = mapped_column(JSON, default={})
+    args: Mapped[JSON] = mapped_column(JSON, default=lambda: {})
 
     users: Mapped[list["User"]] = relationship(  # noqa: UP037
         "User",
