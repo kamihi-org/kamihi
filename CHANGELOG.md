@@ -1,3 +1,9 @@
+## 5.2.0 (2025-11-16)
+
+### Feat
+
+- **bot**: added scheduled actions (#79)
+
 ## 5.1.0 (2025-11-02)
 
 ### Feat
