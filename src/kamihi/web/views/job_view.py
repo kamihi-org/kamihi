@@ -35,18 +35,26 @@ class JobView(BaseView):
         "args",
     ]
     run_job_callback: Callable
+    enabled: bool
 
-    def __init__(self, *args, run_job_callback: Callable, **kwargs) -> None:  # noqa: ANN002, ANN003
+    def __init__(self, *args, enabled: bool, run_job_callback: Callable, **kwargs) -> None:  # noqa: ANN002, ANN003
         """
         Initialize the JobView with optional run_job_callback.
 
         Args:
             *args: Positional arguments.
+            enabled (bool): Flag indicating if jobs are enabled.
             run_job_callback (list): A list of callables to run when a job is executed.
             **kwargs: Keyword arguments.
 
         """
         super().__init__(*args, **kwargs)
+        self.enabled = enabled
+        if not self.enabled:
+            self.list_template = "job/disabled.html"
+            self.detail_template = "job/disabled.html"
+            self.create_template = "job/disabled.html"
+            self.edit_template = "job/disabled.html"
         self.run_job_callback = run_job_callback
 
     async def validate(self, request: Request, data: dict[str, Any]) -> None:

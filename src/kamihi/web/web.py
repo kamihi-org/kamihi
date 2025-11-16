@@ -114,10 +114,15 @@ class KamihiWeb(Thread):
         admin.add_view(UserView(BaseUser.cls(), label="Users", icon="fas fa-user", hooks=self.hooks))
         admin.add_view(BaseView(Role, icon="fas fa-tags", hooks=self.hooks))
         admin.add_view(BaseView(Permission, icon="fas fa-check", hooks=self.hooks))
-        if get_settings().jobs.enabled:
-            admin.add_view(
-                JobView(Job, icon="fas fa-clock", hooks=self.hooks, run_job_callback=self.hooks.get("run_job")[0])
+        admin.add_view(
+            JobView(
+                Job,
+                icon="fas fa-clock",
+                hooks=self.hooks,
+                enabled=get_settings().jobs.enabled,
+                run_job_callback=self.hooks.get("run_job")[0],
             )
+        )
         admin.add_view(
             Link(label="Documentation", icon="fa fa-book", url="https://kamihi-org.github.io/kamihi/", target="_blank")
         )
