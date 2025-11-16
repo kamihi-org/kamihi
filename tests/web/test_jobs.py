@@ -47,8 +47,8 @@ def config_file():
 @pytest.mark.parametrize("config_file", [{"kamihi.yaml": ""}])
 async def test_job_disabled(job_page: Page, config_file):
     """Test that the job page is not accessible when jobs are disabled."""
-    await expect(job_page.locator("body")).to_contain_text("404")
-    await expect(job_page.locator("body")).to_contain_text("Oops… You just found an error page")
+    await expect(job_page.locator("body")).to_contain_text("Jobs are disabled")
+    await expect(job_page.locator("body")).to_contain_text("Please consult the documentation on how to enable jobs.")
 
 
 @pytest.mark.asyncio
