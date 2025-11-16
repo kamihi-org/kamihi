@@ -83,7 +83,7 @@ class SQLiteDataSource(DataSource):
 
         try:
             self._db = await aiosqlite.connect(self.settings.path)
-            self._logger.info("Connected")
+            self._logger.info("Connected to {datasource}", datasource=self.settings.name)
         except aiosqlite.Error as e:
             raise RuntimeError("Failed to connect") from e
 

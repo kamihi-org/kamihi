@@ -141,7 +141,7 @@ class PostgresDataSource(DataSource):
                 timeout=self.settings.timeout,
                 record_class=self.NamedRecord,
             )
-            self._logger.info("Connected")
+            self._logger.info("Connected to {datasource}", datasource=self.settings.name)
         except asyncpg.PostgresError as e:
             raise ConnectionError("Failed to initialize connection pool") from e
 

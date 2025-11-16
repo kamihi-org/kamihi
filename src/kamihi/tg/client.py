@@ -145,7 +145,7 @@ class TelegramClient:
                         name=job.id,
                     )
                     lg.debug("Job registered")
-        logger.info("All jobs registered", jobs=len(jobs))
+        logger.debug("All jobs registered", jobs=len(jobs))
 
     async def run_job(self, job_id: str) -> None:
         """
