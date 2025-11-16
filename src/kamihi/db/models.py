@@ -7,9 +7,10 @@ License:
 
 from __future__ import annotations
 
+import uuid
 from typing import Any, ClassVar
 
-from sqlalchemy import BigInteger, Boolean, ForeignKey, Integer, String
+from sqlalchemy import JSON, BigInteger, Boolean, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, declarative_base, declared_attr, mapped_column, relationship
 
 Base = declarative_base()
@@ -35,6 +36,12 @@ class RegisteredAction(Base):
 
     permissions: Mapped[list[Permission]] = relationship(
         "Permission",
+        back_populates="action",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    jobs: Mapped[list[Job]] = relationship(
+        "Job",
         back_populates="action",
         cascade="all, delete-orphan",
         passive_deletes=True,
@@ -93,6 +100,38 @@ class PermissionRoleLink(Base):
     role_id: Mapped[int] = mapped_column(ForeignKey("role.id"), primary_key=True)
 
 
+class JobUserLink(Base):
+    """
+    Association table for many-to-many relationship between jobs and users.
+
+    Attributes:
+        job_id (str): Foreign key to the job.
+        user_id (int): Foreign key to the user.
+
+    """
+
+    __tablename__ = "jobuserlink"
+
+    job_id: Mapped[str] = mapped_column(ForeignKey("job.id"), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), primary_key=True)
+
+
+class JobRoleLink(Base):
+    """
+    Association table for many-to-many relationship between jobs and roles.
+
+    Attributes:
+        job_id (str): Foreign key to the job.
+        role_id (int): Foreign key to the role.
+
+    """
+
+    __tablename__ = "jobrolelink"
+
+    job_id: Mapped[str] = mapped_column(ForeignKey("job.id"), primary_key=True)
+    role_id: Mapped[int] = mapped_column(ForeignKey("role.id"), primary_key=True)
+
+
 class BaseUser(Base):
     """
     Base class for user models.
@@ -120,6 +159,11 @@ class BaseUser(Base):
     permissions: Mapped[list[Permission]] = relationship(
         "Permission",
         secondary="permissionuserlink",
+        back_populates="users",
+    )
+    jobs: Mapped[list[Job]] = relationship(
+        "Job",
+        secondary="jobuserlink",
         back_populates="users",
     )
 
@@ -190,6 +234,11 @@ class Role(Base):
         secondary="permissionrolelink",
         back_populates="roles",
     )
+    jobs: Mapped[list[Job]] = relationship(
+        "Job",
+        secondary="jobrolelink",
+        back_populates="roles",
+    )
 
     async def __admin_repr__(self, *args: Any, **kwargs: Any) -> str:
         """Define the representation of the role in the admin interface."""
@@ -237,6 +286,20 @@ class Permission(Base):
         """Define the representation of the permission in the admin interface."""
         return f"Permission for /{self.action.name if self.action else 'No Action'}"
 
+    @property
+    def effective_users(self) -> list[BaseUser]:
+        """
+        Get the list of users who have this permission, either directly or through roles.
+
+        Returns:
+            list[User]: List of users with this permission.
+
+        """
+        users_set = set(self.users)
+        for role in self.roles:
+            users_set.update(role.users)
+        return list(users_set)
+
     def is_user_allowed(self, user: BaseUser) -> bool:
         """
         Check if a user has this permission.
@@ -248,6 +311,67 @@ class Permission(Base):
             bool: True if the user has this permission, False otherwise.
 
         """
-        if user in self.users:
-            return True
-        return any(role in self.roles for role in user.roles)
+        return user in self.effective_users
+
+
+class Job(Base):
+    """
+    Model for scheduled jobs.
+
+    Attributes:
+        id (int): Primary key.
+        action_id (int): Foreign key to the registered action.
+        action (RegisteredAction): The registered action associated with the job.
+        cron_expression (str): Cron expression defining the job schedule.
+        enabled (bool): Whether the job is active.
+        args (dict): Arguments to pass to the job when executed.
+        users (list[User]): List of users associated with the job.
+
+    """
+
+    __tablename__ = "job"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+
+    action_id: Mapped[int] = mapped_column(
+        ForeignKey("registeredaction.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    action: Mapped[RegisteredAction] = relationship("RegisteredAction")
+
+    cron_expression: Mapped[str] = mapped_column(String, nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    per_user: Mapped[bool] = mapped_column(Boolean, default=False)
+    args: Mapped[JSON] = mapped_column(JSON, default=lambda: {})
+
+    users: Mapped[list["User"]] = relationship(  # noqa: UP037
+        "User",
+        secondary="jobuserlink",
+        back_populates="jobs",
+    )
+
+    roles: Mapped[list[Role]] = relationship(
+        "Role",
+        secondary="jobrolelink",
+        back_populates="jobs",
+    )
+
+    @property
+    def effective_users(self) -> list[BaseUser]:
+        """
+        Get the list of users associated with this job, either directly or through roles.
+
+        Returns:
+            list[User]: List of users associated with this job.
+
+        """
+        users_set = set(self.users)
+        for role in self.roles:
+            users_set.update(role.users)
+        return list(users_set)
+
+    async def __admin_repr__(self, *args: Any, **kwargs: Any) -> str:
+        """Define the representation of the job in the admin interface."""
+        status = "Enabled" if self.enabled else "Disabled"
+        return f"Job for /{self.action.name} ({status})"

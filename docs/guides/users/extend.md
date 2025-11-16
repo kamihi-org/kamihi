@@ -11,11 +11,12 @@ The base project defines a `User` class in `kamihi/models/user.py` that extends 
 
 ```python
 from kamihi.db import BaseUser
-from sqlalchemy import Column, String
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column
 
 class User(BaseUser):
     __table_args__ = {'extend_existing': True}
-    name = Column(String, nullable=True)
+    name: Mapped[str | None] = mapped_column(String(100), nullable=True)
 ```
 
 !!! warning

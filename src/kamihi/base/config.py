@@ -178,6 +178,18 @@ class DatabaseSettings(BaseModel):
     url: str = Field(default="sqlite:///kamihi.db")
 
 
+class JobSettings(BaseModel):
+    """
+    Defines the job settings schema.
+
+    Attributes:
+        enabled (bool): Whether to enable job scheduling.
+
+    """
+
+    enabled: bool = Field(default=False)
+
+
 class KamihiSettings(BaseSettings):
     """
     Defines the configuration schema for the Kamihi framework.
@@ -214,6 +226,9 @@ class KamihiSettings(BaseSettings):
 
     # Web settings
     web: WebSettings = Field(default_factory=WebSettings)
+
+    # Job settings
+    jobs: JobSettings = Field(default_factory=JobSettings)
 
     @property
     def timezone_obj(self) -> DstTzInfo:

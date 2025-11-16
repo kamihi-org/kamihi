@@ -38,6 +38,8 @@ nav:
           - Create custom questions: guides/actions/custom-questions.md
       - Users:
           - Extend the user model: guides/users/extend.md
+      - Jobs:
+          - Schedule jobs: guides/jobs/schedule.md
       - Logging:
           - Set up basic logging: guides/logging/setup-basic.md
           - Configure notifications: guides/logging/configure-notifications.md
