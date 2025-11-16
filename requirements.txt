@@ -27,6 +27,10 @@ argcomplete==3.6.3 \
     --hash=sha256:62e8ed4fd6a45864acc8235409461b72c9a28ee785a2011cc5eb78318786c89c \
     --hash=sha256:f5007b3a600ccac5d25bbce33089211dfd49eab4a7718da3f10e3082525a92ce
     # via commitizen
+cachetools==6.2.2 \
+    --hash=sha256:6c09c98183bf58560c97b2abfcedcbaf6a896a490f534b031b661d3723b45ace \
+    --hash=sha256:8e6d266b25e539df852251cfd6f990b4bc3a141db73b939058d809ebd2590fc6
+    # via python-telegram-bot
 certifi==2025.10.5 \
     --hash=sha256:0f212c2744a9bb6de0c56639a6f68afe01ecd92d91f14ae897c4fe7bbeeef0de \
     --hash=sha256:47c09d31ccf2acf0be3f701ea53595ee7e0b8fa08801c6624be771df09ae7b43
@@ -396,15 +400,19 @@ plumbum==1.10.0 \
     --hash=sha256:9583d737ac901c474d99d030e4d5eec4c4e6d2d7417b1cf49728cf3be34f6dc8 \
     --hash=sha256:f8cbf0ecec0b73ff4e349398b65112a9e3f9300e7dc019001217dcc148d5c97c
     # via copier
-pre-commit==4.3.0 \
-    --hash=sha256:2b0747ad7e6e967169136edffee14c16e148a778a54e4f967921aa1ebf2308d8 \
-    --hash=sha256:499fe450cc9d42e9d58e606262795ecb64dd05438943c62b66f6a8673da30b16
+pre-commit==4.4.0 \
+    --hash=sha256:b35ea52957cbf83dcc5d8ee636cbead8624e3a15fbfa61a370e42158ac8a5813 \
+    --hash=sha256:f0233ebab440e9f17cabbb558706eb173d19ace965c68cdce2c081042b4fab15
 prompt-toolkit==3.0.51 \
     --hash=sha256:52742911fde84e2d423e2f9a4cf1de7d7ac4e51958f648d9540e0fb8db077b07 \
     --hash=sha256:931a162e3b27fc90c86f1b48bb1fb2c528c2761475e57c9c06de13311c7b54ed
     # via
     #   commitizen
     #   questionary
+ptb-pagination==0.0.5 \
+    --hash=sha256:ca7a53768b924edd0bc1e378aaf380eebc1eea7771f51a95e695d259112010db \
+    --hash=sha256:d741380fd5eddf674154113c77c20558bd3e93f57726d6a884a5c108238ea409
+    # via kamihi
 pydantic==2.12.4 \
     --hash=sha256:0f8cb9555000a4b5b617f66bfd2566264c4984b27589d3b845685983e8ea85ac \
     --hash=sha256:92d3d202a745d46f9be6df459ac5a064fdaa3c1c4cd8adcfa332ccf3c05f871e
@@ -509,7 +517,9 @@ python-multipart==0.0.20 \
 python-telegram-bot==22.5 \
     --hash=sha256:4b7cd365344a7dce54312cc4520d7fa898b44d1a0e5f8c74b5bd9b540d035d16 \
     --hash=sha256:82d4efd891d04132f308f0369f5b5929e0b96957901f58bcef43911c5f6f92f8
-    # via kamihi
+    # via
+    #   kamihi
+    #   ptb-pagination
 pytz==2025.2 \
     --hash=sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3 \
     --hash=sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00

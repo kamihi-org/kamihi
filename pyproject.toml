@@ -35,6 +35,7 @@ dependencies = [
     "loguru>=0.7.3",
     "multipledispatch>=1.0.0",
     "pillow>=11.3.0",
+    "ptb-pagination>=0.0.5",
     "pydantic>=2.10.6",
     "pydantic-extra-types>=2.10.5",
     "pydantic-settings>=2.8.1",

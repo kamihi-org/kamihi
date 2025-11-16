@@ -34,7 +34,7 @@ from kamihi.datasources import DataSource
 from kamihi.db import Job
 from kamihi.tg import TelegramClient
 from kamihi.tg.handlers import AuthHandler
-from kamihi.tg.media import Audio, Document, Location, Photo, Video, Voice
+from kamihi.tg.media import Audio, Document, Location, Pages, Photo, Video, Voice
 from kamihi.users import get_users, is_user_authorized
 from kamihi.web import KamihiWeb
 
@@ -60,6 +60,7 @@ class Bot:
     Audio: Audio = Audio
     Location: Location = Location
     Voice: Voice = Voice
+    Pages: Pages = Pages
 
     _client: TelegramClient
     _web: KamihiWeb
@@ -189,12 +190,17 @@ class Bot:
         if not self._actions:
             logger.warning("No valid actions were registered. The bot will not respond to any commands.")
 
+        # Cleans up the database of old pages
+        Pages.clean_up(get_settings().db.pages_expiration_days)
+        logger.debug("Removed actions not present in code from database")
+
         # Loads the Telegram client
         self._client = TelegramClient(self._post_init, self._post_shutdown)
         self._client.add_datasources(self.datasources)
         self._client.add_handlers(self._handlers)
         self._load_jobs()
         self._client.add_default_handlers()
+        self._client.add_pages_handler()
         logger.trace("Initialized Telegram client")
 
         # Loads the web server

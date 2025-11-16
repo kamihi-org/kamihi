@@ -21,7 +21,7 @@ from telegram.error import TelegramError
 from telegram.ext import CallbackContext
 from telegramify_markdown import markdownify as md
 
-from .media import Audio, Document, Location, Media, Photo, Video, Voice
+from .media import Audio, Document, Location, Media, Pages, Photo, Video, Voice
 
 if typing.TYPE_CHECKING:
     from loguru import Logger  # skipcq: TCV-001
@@ -145,6 +145,11 @@ async def send(  # noqa: C901
         method = context.bot.send_location
         kwargs = {"latitude": obj.latitude, "longitude": obj.longitude, "horizontal_accuracy": obj.horizontal_accuracy}
         lg.debug("Sending as location")
+    elif isinstance(obj, Pages):
+        lg = lg.bind(pages_id=obj.id)
+        lg.debug("Sending as paginated message")
+        page, keyboard = obj.get_page(0)
+        return await send(page, dest, context, reply_markup=keyboard)
     elif (
         isinstance(obj, collections.abc.Sequence)
         and 2 <= len(obj) <= 10

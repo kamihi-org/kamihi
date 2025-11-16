@@ -6,14 +6,25 @@ License:
 
 """
 
+from __future__ import annotations
+
+import datetime
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import IO
+from typing import IO, Any
 
-from telegram import InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo
+from jinja2 import Template
+from ptb_pagination import InlineKeyboardPaginator
+from sqlalchemy import delete
+from sqlalchemy.orm import Session
+from sqlalchemy.sql.coercions import cls
+from telegram import InlineKeyboardMarkup, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo
 from telegram.constants import FileSizeLimit, LocationLimit
 from telegramify_markdown import markdownify as md
+
+from kamihi.db import Pages as DbPages
+from kamihi.db import get_engine
 
 
 @dataclass
@@ -210,3 +221,122 @@ class Location:
         self.latitude = latitude
         self.longitude = longitude
         self.horizontal_accuracy = horizontal_accuracy
+
+
+class Pages:
+    """
+    Represents a paginated media type.
+
+    Attributes:
+        id (str): The ID of the Pages instance.
+
+    """
+
+    id: str
+
+    def __init__(
+        self,
+        data: list,
+        page_template: Template,
+        items_per_page: int = 5,
+        first_page_template: Template = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Initialize a Pages instance.
+
+        Args:
+            data (list): List of data items to be paginated.
+            page_template (str): Template for rendering each page.
+            items_per_page (int): Number of items per page.
+            first_page_template (str | None): Optional template for the first page. This page will not get elements from the `data` list passed to it.
+            **kwargs: Additional keyword arguments to be passed to the template rendering, including to the first page template if provided.
+
+        """
+        pages = [
+            md(page_template.render(data=dl, **kwargs))
+            for dl in [data[i : i + items_per_page] for i in range(0, len(data), items_per_page)]
+        ]
+        if first_page_template:
+            first_page = md(first_page_template.render(**kwargs))
+            pages.insert(0, first_page)
+
+        with Session(get_engine()) as session:
+            pages = DbPages(pages=pages)
+            session.add(pages)
+            session.commit()
+
+            self.id = pages.id
+
+    @staticmethod
+    def from_id(pages_id: str) -> Pages:
+        """
+        Retrieve a Pages instance from the database by its ID.
+
+        Args:
+            pages_id (str): The ID of the Pages instance.
+
+        Returns:
+            Pages: The Pages instance.
+
+        """
+        pages = Pages.__new__(Pages)
+        pages.id = pages_id
+        return pages
+
+    def _db_pages(self, session: Session) -> type[DbPages]:
+        """Retrieve the DbPages instance from the database."""
+        db_pages = session.get(DbPages, self.id)
+        if not db_pages:
+            msg = f"No Pages found with ID {self.id}"
+            raise ValueError(msg)
+        return db_pages
+
+    def __len__(self) -> int:
+        """
+        Get the number of pages.
+
+        Returns:
+            int: The number of pages.
+
+        """
+        with Session(get_engine()) as session:
+            return len(self._db_pages(session).pages)
+
+    def get_page(self, page_number: int) -> tuple[str, InlineKeyboardMarkup]:
+        """
+        Retrieve a specific page by its number.
+
+        Args:
+            page_number (int): The page number to retrieve.
+
+        Returns:
+            str: The content of the specified page.
+
+        """
+        with Session(get_engine()) as session:
+            db_pages = self._db_pages(session)
+            if 0 > page_number > len(self):
+                msg = f"Page number {page_number} is out of range. Valid range is 0 to {len(self)}"
+                raise ValueError(msg)
+
+            return str(db_pages.pages[page_number]), InlineKeyboardPaginator(
+                page_count=len(self),
+                current_page=page_number + 1,
+                data_pattern=self.id + "#{page}",
+            ).markup
+
+    @staticmethod
+    def clean_up(expire_days: int) -> None:
+        """
+        Clean up old pages from the database.
+
+        Args:
+            expire_days (int): Number of days after which pages are considered expired.
+
+        """
+        with Session(get_engine()) as session:
+            expire_cutoff = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=expire_days)
+            stmt = delete(DbPages).where(DbPages.created_at < expire_cutoff)
+            session.execute(stmt)
+            session.commit()
