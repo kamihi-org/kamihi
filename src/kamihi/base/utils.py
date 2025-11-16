@@ -82,3 +82,54 @@ def timer(logger: "Logger", message: str, level: str = "DEBUG") -> Generator[Non
     yield
     end_time = time.perf_counter()
     logger.bind(ms=round((end_time - start_time) * 1000)).log(level, message)
+
+
+@functools.lru_cache(maxsize=1)
+def cron_regex() -> re.Pattern:
+    """
+    Get the compiled regex pattern for validating cron expressions.
+
+    Returns:
+        re.Pattern: The compiled regex pattern.
+
+    """
+    # Month and weekday names
+    month_name = r"(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)"
+    weekday_name = r"(?:mon|tue|wed|thu|fri|sat|sun)"
+    name = rf"(?:{month_name}|{weekday_name})"
+
+    # Basic building blocks
+    number = r"\d+"
+    star = r"\*"
+    step = rf"(?:\*/{number})"
+    rng = rf"(?:{number}|{name})-(?:{number}|{name})"
+    rng_step = rf"{rng}/{number}"
+    xth_y = rf"{number}th\s+(?:{number}|{weekday_name})"
+    last_x = rf"last\s+(?:{number}|{weekday_name})"
+    last = r"last"
+
+    # Single field expression
+    single_expr = rf"(?:{star}|{step}|{rng_step}|{rng}|{number}|{name}|{xth_y}|{last_x}|{last})"
+
+    # Comma-separated list
+    field = rf"{single_expr}(?:,{single_expr})*"
+
+    # Full crontab line (5–7 fields)
+    return re.compile(
+        rf"^(?:{field}\s+){{4,6}}{field}$",  # 5–7 fields
+        re.IGNORECASE,
+    )
+
+
+def is_valid_cron_expression(expression: str) -> bool:
+    """
+    Validate if a given string is a valid cron expression.
+
+    Args:
+        expression (str): The cron expression to validate.
+
+    Returns:
+        bool: True if the expression is valid, False otherwise.
+
+    """
+    return bool(cron_regex().match(expression.strip()))

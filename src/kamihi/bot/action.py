@@ -28,12 +28,12 @@ from telegram.ext import BaseHandler, CallbackContext, CommandHandler, Conversat
 from kamihi.base import get_settings
 from kamihi.base.utils import COMMAND_REGEX
 from kamihi.datasources import DataSource
-from kamihi.db import RegisteredAction, get_engine
+from kamihi.db import Job, RegisteredAction, get_engine
 from kamihi.questions import Question
 from kamihi.tg import send
 from kamihi.tg.default_handlers import cancel
 from kamihi.tg.handlers import AuthHandler
-from kamihi.users import get_user_from_telegram_id
+from kamihi.users import get_user_from_telegram_id, get_users_of_action
 
 
 class Action:
@@ -195,6 +195,13 @@ class Action:
         return self._construct_questions_handler()
 
     @property
+    def jobs(self) -> list[tuple[Job, Callable[[CallbackContext], Coroutine[Any, Any, None]]]]:
+        """Return a list of jobs associated with the action."""
+        with Session(get_engine()) as session:
+            sta = select(Job).where(Job.action.has(RegisteredAction.name == self.name))
+            return [(job, self.run_scheduled) for job in session.execute(sta).scalars().all()]
+
+    @property
     def _parameters(self) -> dict[str, Parameter]:
         """Return a list of parameters that need to be filled."""
         return dict(inspect.signature(self._func).parameters)
@@ -350,31 +357,49 @@ class Action:
             raise ValueError(msg)
         return await self._datasources[ds_name.group(1)].fetch(self._request_templates[req].render())
 
-    async def _fill_parameters(self, update: Update, context: CallbackContext) -> tuple[list[Any], dict[str, Any]]:  # noqa: C901
+    async def _fill_parameters(  # noqa: C901 # skipcq: PY-R1000
+        self, context: CallbackContext, update: Update = None
+    ) -> tuple[list[Any], dict[str, Any]]:
         """Fill parameters for the action call."""
         pos_args = []
         keyword_args = {}
+        if context.job and context.job.data and context.job.data.get("args"):
+            keyword_args.update(context.job.data["args"])
 
         for name, param in self._parameters.items():
             value: Any = None
+
+            if keyword_args.get(name):
+                continue
+
             match name:
-                case "update":
+                case "update" if update:
                     value = update
                 case "context":
                     value = context
                 case "logger":
                     value = self._logger
-                case "user":
+                case "user" if update:
                     value = get_user_from_telegram_id(update.effective_user.id)
+                case "user" if context.job and context.job.data.get("user"):
+                    value = get_user_from_telegram_id(context.job.data.get("user"))
+                case "users" if update:
+                    value = get_users_of_action(self.name)
+                case "users" if context.job and context.job.data.get("users"):
+                    value = [get_user_from_telegram_id(tg_id) for tg_id in context.job.data.get("users", [])]
                 case "templates":
                     value = self._message_templates
                 case s if s.startswith("template"):
                     value = self._param_template(name, param)
                 case s if s == "data" or s.startswith("data_"):
                     value = await self._param_data(name, param)
-                case _ if get_origin(param.annotation) is Annotated and isinstance(
-                    get_args(param.annotation)[1],
-                    Question,
+                case _ if (
+                    update
+                    and get_origin(param.annotation) is Annotated
+                    and isinstance(
+                        get_args(param.annotation)[1],
+                        Question,
+                    )
                 ):
                     value = context.chat_data["questions"].pop(name, None)
                 case _:
@@ -391,14 +416,38 @@ class Action:
         """Execute the action."""
         self._logger.debug("Executing action")
 
-        pos_args, keyword_args = await self._fill_parameters(update, context)
+        pos_args, keyword_args = await self._fill_parameters(context, update)
 
         result: Any = await self._func(*pos_args, **keyword_args)
 
-        await send(result, update, context)
+        await send(result, update.effective_chat.id, context)
 
         self._logger.debug("Finished execution")
         return ConversationHandler.END
+
+    async def run_scheduled(self, context: CallbackContext) -> None:
+        """Execute the action in a job context."""
+        per_user = context.job.data.get("per_user", False)
+
+        self._logger.debug("Executing scheduled action", per_user=per_user)
+
+        if per_user:
+            for telegram_id in context.job.data.get("users", []):
+                context.job.data["user"] = telegram_id
+                pos_args, keyword_args = await self._fill_parameters(context)
+
+                result: Any = await self._func(*pos_args, **keyword_args)
+
+                await send(result, telegram_id, context)
+        else:
+            pos_args, keyword_args = await self._fill_parameters(context)
+
+            result: Any = await self._func(*pos_args, **keyword_args)
+
+            for telegram_id in context.job.data.get("users", []):
+                await send(result, telegram_id, context)
+
+            self._logger.debug("Finished scheduled execution")
 
     def __repr__(self) -> str:
         """Return a string representation of the Action object."""

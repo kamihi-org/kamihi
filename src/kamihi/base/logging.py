@@ -24,16 +24,16 @@ import sys
 
 import loguru
 
-from .config import get_settings
+from .config import LogLevel, get_settings
 from .manual_send import ManualSender
 
 
 def _extra_formatter(record: loguru.Record) -> None:
     """
-    Add a compact representation of the extra fields to the log record.
+    Add representations of the extra fields to the log record.
 
-    This function takes a log record and adds the extra fields in a compact
-    way and only if there are any.
+    This function takes a log record and adds the extra fields in different formats
+    to the record for easier logging.
 
     Args:
         record: The log record to format.
@@ -41,7 +41,12 @@ def _extra_formatter(record: loguru.Record) -> None:
     """
     if record.get("extra"):
         record["extra"]["compact"] = ", ".join(
-            f"{key}={repr(value)}" for key, value in record["extra"].items() if key != "compact"
+            f"{key}={repr(value)}" for key, value in record["extra"].items() if key not in ["pretty", "compact"]
+        )
+        record["extra"]["pretty"] = "\n".join(
+            f"{key.replace('_', ' ').capitalize()}: `{repr(value)}`"
+            for key, value in record["extra"].items()
+            if key not in ["pretty", "compact"]
         )
 
 
@@ -70,20 +75,16 @@ class _InterceptHandler(logging.Handler):
         if self.include and not any(logger_name.startswith(mod) for mod in self.include):
             return
 
-        try:
-            level = self.logger.level(record.levelname).name
-        except ValueError:
-            level = record.levelno
-
         frame, depth = inspect.currentframe(), 0
         while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
             frame = frame.f_back
             depth += 1
 
-        self.logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+        self.logger.opt(depth=depth, exception=record.exc_info).debug(record.getMessage())
 
 
-def configure_logging(logger: loguru.Logger) -> None:
+# noqa: C901
+def configure_logging(logger: loguru.Logger) -> None:  # noqa: C901 # skipcq: PY-R1000
     """
     Configure logging for the module.
 
@@ -92,7 +93,6 @@ def configure_logging(logger: loguru.Logger) -> None:
 
     Args:
         logger: The logger instance to configure.
-        settings: The logging settings to configure.
 
     """
     settings = get_settings().log
@@ -101,40 +101,52 @@ def configure_logging(logger: loguru.Logger) -> None:
     logger.configure(patcher=_extra_formatter, extra={"compact": ""})
 
     if settings.stdout_enable:
+        fmt = "<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
+        fmt += "<level>{level: <8}</level> | "
+        if settings.stdout_level in [LogLevel.TRACE, LogLevel.DEBUG]:
+            fmt += "{module: <16} | "
+        fmt += "{message} "
+        if settings.stdout_level in [LogLevel.TRACE, LogLevel.DEBUG]:
+            fmt += "<dim>{extra[compact]}</dim>"
+
         logger.add(
             sys.__stdout__,
             level=settings.stdout_level,
-            format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
-            "<level>{level: <8}</level> | "
-            "{module: <16} | "
-            "{message} "
-            "<dim>{extra[compact]}</dim>",
+            format=fmt,
             serialize=settings.stdout_serialize,
             enqueue=True,
         )
 
     if settings.stderr_enable:
+        fmt = "<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
+        fmt += "<level>{level: <8}</level> | "
+        if settings.stderr_level in [LogLevel.TRACE, LogLevel.DEBUG]:
+            fmt += "{module: <16} | "
+        fmt += "{message} "
+        if settings.stderr_level in [LogLevel.TRACE, LogLevel.DEBUG]:
+            fmt += "<dim>{extra[compact]}</dim>"
+
         logger.add(
             sys.__stderr__,
             level=settings.stderr_level,
-            format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
-            "<level>{level: <8}</level> | "
-            "{module: <16} | "
-            "{message} "
-            "<dim>{extra[compact]}</dim>",
+            format=fmt,
             serialize=settings.stderr_serialize,
             enqueue=True,
         )
 
     if settings.file_enable:
+        fmt = "<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
+        fmt += "<level>{level: <8}</level> | "
+        if settings.file_level in [LogLevel.TRACE, LogLevel.DEBUG]:
+            fmt += "{module: <16} | "
+        fmt += "{message} "
+        if settings.file_level in [LogLevel.TRACE, LogLevel.DEBUG]:
+            fmt += "<dim>{extra[compact]}</dim>"
+
         logger.add(
             settings.file_path,
             level=settings.file_level,
-            format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
-            "<level>{level: <8}</level> | "
-            "{module: <16} | "
-            "{message} "
-            "<dim>{extra[compact]}</dim>",
+            format=fmt,
             serialize=settings.file_serialize,
             rotation=settings.file_rotation,
             retention=settings.file_retention,
@@ -143,14 +155,17 @@ def configure_logging(logger: loguru.Logger) -> None:
 
     if settings.notification_enable:
         manual_sender = ManualSender(settings.notification_urls)
+        fmt = "{level.icon} *{level.name}*"
+        if settings.notification_level in [LogLevel.TRACE, LogLevel.DEBUG]:
+            fmt += " from `{module}`"
+        fmt += "\n{message}"
+        if settings.notification_level in [LogLevel.TRACE, LogLevel.DEBUG]:
+            fmt += "\n\n{extra[pretty]}"
+
         logger.add(
             manual_sender.notify,
             level=settings.notification_level,
-            format="<green>{time:YYYY-MM-DD at HH:mm:ss}</green> | "
-            "<level>{level: <8}</level> | "
-            "{module: <16} | "
-            "{message} "
-            "<dim>{extra[compact]}</dim>",
+            format=fmt,
             filter={"apprise": False},
             enqueue=True,
         )

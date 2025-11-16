@@ -30,7 +30,7 @@ async def default(update: Update, context: CallbackContext) -> None:
         "Received message but no handler matched, so sending default response"
     )
 
-    await send(settings.default_message, update=update, context=context)
+    await send(settings.default_message, update, context)
     raise ApplicationHandlerStop
 
 
@@ -48,7 +48,7 @@ async def error(update: object | None, context: CallbackContext) -> None:
     logger.opt(exception=context.error).error("An error occurred")
 
     if isinstance(update, Update):
-        await send(settings.error_message, update=update, context=context)
+        await send(settings.error_message, update, context)
 
     raise ApplicationHandlerStop
 
@@ -67,5 +67,5 @@ async def cancel(update: Update, context: CallbackContext) -> None:
     )
 
     text = context.bot_data["responses"]["cancel_message"]
-    await send(text, update=update, context=context)
+    await send(text, update, context)
     raise ApplicationHandlerStop

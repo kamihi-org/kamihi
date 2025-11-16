@@ -6,19 +6,16 @@ This module provides a Telegram client for sending messages and handling command
 License:
     MIT
 
-Examples:
-    >>> from kamihi.tg.client import TelegramClient
-    >>> from kamihi.base.config import KamihiSettings
-    >>> client = TelegramClient(KamihiSettings(), [])
-    >>> client.run()
-
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
+from typing import Any
 
+from apscheduler.triggers.cron import CronTrigger
 from loguru import logger
+from sqlalchemy.orm import Session
 from telegram import BotCommand, BotCommandScopeChat, Update
 from telegram.constants import ParseMode
 from telegram.error import TelegramError
@@ -26,12 +23,15 @@ from telegram.ext import (
     Application,
     ApplicationBuilder,
     BaseHandler,
+    CallbackContext,
     Defaults,
     MessageHandler,
     filters,
 )
 
 from kamihi.base import get_settings
+from kamihi.datasources import DataSource
+from kamihi.db import Job, get_engine
 
 from .default_handlers import default, error
 
@@ -50,12 +50,11 @@ class TelegramClient:
     _builder: ApplicationBuilder
     _testing: bool = False
 
-    def __init__(self, handlers: list[BaseHandler], _post_init: Callable, _post_shutdown: Callable) -> None:
+    def __init__(self, _post_init: Callable, _post_shutdown: Callable) -> None:
         """
         Initialize the Telegram client.
 
         Args:
-            handlers (list[BaseHandler]): List of handlers to register.
             _post_init (callable): Function to call after the application is initialized.
             _post_shutdown (callable): Function to call after the application is shut down.
 
@@ -84,16 +83,86 @@ class TelegramClient:
         # Build the application
         self.app: Application = self._builder.build()
 
-        # Register the handlers
+    def add_datasources(self, datasources: dict[str, DataSource]) -> None:
+        """
+        Add data sources to the Telegram client.
+
+        Args:
+            datasources (dict[str, DataSource]): Dictionary of data source names and their corresponding callables.
+
+        """
+        self.app.bot_data["datasources"] = datasources
+
+    def add_handlers(self, handlers: list[BaseHandler]) -> None:
+        """
+        Add handlers to the Telegram client.
+
+        Args:
+            handlers (list[BaseHandler]): List of handlers to add.
+
+        """
         for handler in handlers:
             with logger.catch(exception=TelegramError, level="ERROR", message="Failed to register handler"):
                 self.app.add_handler(handler)
 
-        # Register the default handlers
+    def add_default_handlers(self) -> None:
+        """Add default handlers to the Telegram client."""
+        settings = get_settings()
         with logger.catch(exception=TelegramError, level="ERROR", message="Failed to register default handlers"):
             if settings.responses.default_enabled:
                 self.app.add_handler(MessageHandler(filters.TEXT, default))
             self.app.add_error_handler(error)
+
+    def add_jobs(self, jobs: list[tuple[Job, Callable[[CallbackContext], Coroutine[Any, Any, None]]]]) -> None:
+        """Add jobs to the Telegram client."""
+        if not get_settings().jobs.enabled:
+            logger.debug("Jobs are disabled, skipping job registration")
+            return
+
+        logger.trace("Registering jobs...")
+        self.app.job_queue.scheduler.remove_all_jobs()
+        logger.trace("Removed all existing jobs")
+        with Session(get_engine()) as session:
+            for job, callback in jobs:
+                session.add(job)
+                with logger.catch(exception=TelegramError, level="ERROR", message="Failed to register job"):
+                    lg = logger.bind(job_id=job.id, action="/" + job.action.name, cron_expression=job.cron_expression)
+                    if not job.enabled:
+                        lg.info("Disabled, skipping")
+                        continue
+                    lg.trace("Registering job")
+                    self.app.job_queue.run_custom(
+                        callback,
+                        job_kwargs={
+                            "trigger": CronTrigger.from_crontab(job.cron_expression),
+                            "replace_existing": True,
+                        },
+                        data={
+                            "args": job.args,
+                            "per_user": job.per_user,
+                            "users": [user.telegram_id for user in job.effective_users],
+                        },
+                        name=job.id,
+                    )
+                    lg.debug("Job registered")
+        logger.debug("All jobs registered", jobs=len(jobs))
+
+    async def run_job(self, job_id: str) -> None:
+        """
+        Run a job by its ID.
+
+        Args:
+            job_id (str): The ID of the job to run.
+
+        """
+        job = self.app.job_queue.get_jobs_by_name(job_id)
+        if not job:
+            logger.warning(f"Job with ID {job_id} not found")
+            return
+        lg = logger.bind(job_id=job_id)
+        lg.debug("Running job manually")
+        await job[0].run(self.app)
+        lg.debug("Job run completed")
 
     async def reset_scopes(self) -> None:  # noqa: ARG002
         """

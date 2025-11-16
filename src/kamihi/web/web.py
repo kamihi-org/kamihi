@@ -18,11 +18,12 @@ from loguru import logger
 from starlette.applications import Starlette
 from starlette_admin import CustomView
 from starlette_admin.contrib.sqla import Admin
+from starlette_admin.views import Link
 
 from kamihi.base import get_settings
-from kamihi.db import BaseUser, Permission, RegisteredAction, Role, get_engine
+from kamihi.db import BaseUser, Job, Permission, RegisteredAction, Role, get_engine
 
-from .views import HooksView, ReadOnlyView
+from .views import ActionView, BaseView, JobView, UserView
 
 WEB_PATH = Path(__file__).parent
 
@@ -55,12 +56,7 @@ class KamihiWeb(Thread):
 
     hooks: dict[
         Literal[
-            "before_create",
-            "after_create",
-            "before_edit",
-            "after_edit",
-            "before_delete",
-            "after_delete",
+            "before_create", "after_create", "before_edit", "after_edit", "before_delete", "after_delete", "run_job"
         ],
         list[Callable],
     ]
@@ -74,12 +70,7 @@ class KamihiWeb(Thread):
         self,
         hooks: dict[
             Literal[
-                "before_create",
-                "after_create",
-                "before_edit",
-                "after_edit",
-                "before_delete",
-                "after_delete",
+                "before_create", "after_create", "before_edit", "after_edit", "before_delete", "after_delete", "run_job"
             ],
             list[Callable],
         ] = None,
@@ -119,10 +110,22 @@ class KamihiWeb(Thread):
             favicon_url="/statics/images/favicon.ico",
         )
 
-        admin.add_view(ReadOnlyView(RegisteredAction, label="Actions", icon="fas fa-circle-play", hooks=self.hooks))
-        admin.add_view(HooksView(BaseUser.cls(), label="Users", icon="fas fa-user", hooks=self.hooks))
-        admin.add_view(HooksView(Role, icon="fas fa-tags", hooks=self.hooks))
-        admin.add_view(HooksView(Permission, icon="fas fa-check", hooks=self.hooks))
+        admin.add_view(ActionView(RegisteredAction, label="Actions", icon="fas fa-circle-play", hooks=self.hooks))
+        admin.add_view(UserView(BaseUser.cls(), label="Users", icon="fas fa-user", hooks=self.hooks))
+        admin.add_view(BaseView(Role, icon="fas fa-tags", hooks=self.hooks))
+        admin.add_view(BaseView(Permission, icon="fas fa-check", hooks=self.hooks))
+        admin.add_view(
+            JobView(
+                Job,
+                icon="fas fa-clock",
+                hooks=self.hooks,
+                enabled=get_settings().jobs.enabled,
+                run_job_callback=self.hooks.get("run_job")[0],
+            )
+        )
+        admin.add_view(
+            Link(label="Documentation", icon="fa fa-book", url="https://kamihi-org.github.io/kamihi/", target="_blank")
+        )
 
         admin.mount_to(self.app)
 

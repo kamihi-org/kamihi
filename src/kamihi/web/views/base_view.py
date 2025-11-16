@@ -1,28 +1,31 @@
 """
-Custom views for the admin interface.
+BaseView for Starlette-Admin with hooks for CRUD operations.
 
 License:
     MIT
 
 """
 
+import inspect
+from collections.abc import Callable
 from typing import Any, Literal
 
 from starlette.requests import Request
+from starlette_admin import RowActionsDisplayType
 from starlette_admin.contrib.sqla import ModelView
 
 
-class ExcludeIDModelView(ModelView):
-    """ExcludeIDModelView is a custom view that excludes the ID field from forms."""
+class BaseView(ModelView):
+    """HooksView is a custom view that accepts a dictionary of hooks on different events."""
 
     exclude_fields_from_list = ["id"]
     exclude_fields_from_detail = ["id"]
     exclude_fields_from_create = ["id"]
     exclude_fields_from_edit = ["id"]
-
-
-class HooksView(ExcludeIDModelView):
-    """HooksView is a custom view that accepts a dictionary of hooks on different events."""
+    row_actions_display_type = RowActionsDisplayType.DROPDOWN
+    datatables_options = {
+        "dom": "r<'table't><'card-footer d-flex align-items-center'<'m-0'i><'m-0 ms-auto'p>>"
+    }  # https://github.com/jowilf/starlette-admin/issues/386
 
     hooks: dict[
         Literal[
@@ -33,7 +36,7 @@ class HooksView(ExcludeIDModelView):
             "before_delete",
             "after_delete",
         ],
-        list[callable],
+        list[Callable],
     ]
 
     def __init__(self, *args, hooks: dict = None, **kwargs) -> None:  # noqa: ANN002, ANN003
@@ -49,48 +52,35 @@ class HooksView(ExcludeIDModelView):
         super().__init__(*args, **kwargs)
         self.hooks = hooks or {}
 
+    @staticmethod
+    async def _run_hooks(hook_list: list[Callable], *args: Any) -> None:
+        """Run a list of hooks with the given arguments."""
+        for hook in hook_list:
+            if inspect.iscoroutinefunction(hook):
+                await hook(*args)
+            else:
+                hook(*args)
+
     async def before_create(self, request: Request, data: dict[str, Any], obj: Any) -> None:
         """Run before creating an object."""
-        for hook in self.hooks.get("before_create", []):
-            await hook(request, data, obj)
+        await self._run_hooks(self.hooks.get("before_create", []), request, data, obj)
 
     async def after_create(self, request: Request, obj: Any) -> None:
         """Run after creating an object."""
-        for hook in self.hooks.get("after_create", []):
-            await hook(request, obj)
+        await self._run_hooks(self.hooks.get("after_create", []), request, obj)
 
     async def before_edit(self, request: Request, data: dict[str, Any], obj: Any) -> None:
         """Run before editing an object."""
-        for hook in self.hooks.get("before_edit", []):
-            await hook(request, data, obj)
+        await self._run_hooks(self.hooks.get("before_edit", []), request, data, obj)
 
     async def after_edit(self, request: Request, obj: Any) -> None:
         """Run after editing an object."""
-        for hook in self.hooks.get("after_edit", []):
-            await hook(request, obj)
+        await self._run_hooks(self.hooks.get("after_edit", []), request, obj)
 
     async def before_delete(self, request: Request, obj: Any) -> None:
         """Run before deleting an object."""
-        for hook in self.hooks.get("before_delete", []):
-            await hook(request, obj)
+        await self._run_hooks(self.hooks.get("before_delete", []), request, obj)
 
     async def after_delete(self, request: Request, obj: Any) -> None:
         """Run after deleting an object."""
-        for hook in self.hooks.get("after_delete", []):
-            await hook(request, obj)
-
-
-class ReadOnlyView(HooksView):
-    """ReadOnlyView makes the model read-only in the admin interface."""
-
-    def can_create(self, request: Request) -> bool:  # noqa: ARG002
-        """Check if the user can create a new instance of the model."""
-        return False
-
-    def can_edit(self, request: Request) -> bool:  # noqa: ARG002
-        """Check if the user can edit an instance of the model."""
-        return False
-
-    def can_delete(self, request: Request) -> bool:  # noqa: ARG002
-        """Check if the user can edit an instance of the model."""
-        return False
+        await self._run_hooks(self.hooks.get("after_delete", []), request, obj)

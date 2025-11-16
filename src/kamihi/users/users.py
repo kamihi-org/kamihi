@@ -27,6 +27,34 @@ def get_users() -> Sequence[BaseUser]:
         return session.execute(sta).scalars().all()
 
 
+def get_users_of_action(action_name: str) -> Sequence[BaseUser]:
+    """
+    Get all users who have permission for a specific action.
+
+    Args:
+        action_name (str): The name of the action.
+
+    Returns:
+        Sequence[BaseUser]: A list of users who have permission for the action.
+
+    """
+    with Session(get_engine()) as session:
+        sta = select(RegisteredAction).where(RegisteredAction.name == action_name)
+        action = session.execute(sta).scalars().first()
+        if action is None:
+            mes = f"Action '{action_name}' is not registered in the database."
+            raise ValueError(mes)
+
+        sta = select(Permission).where(Permission.action == action)
+        permissions = session.execute(sta).scalars().all()
+
+        users: set[BaseUser] = set()
+        for permission in permissions:
+            users.update(permission.effective_users)
+
+        return list(users)
+
+
 def get_user_from_telegram_id(telegram_id: int) -> BaseUser | None:
     """
     Get a user from the database using their Telegram ID.
