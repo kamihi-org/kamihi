@@ -10,8 +10,16 @@ import pytest
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
 from _pytest.terminal import TerminalReporter
+from telethon.errors import FloodWaitError
 
 from tests.fixtures.docker_container import KamihiContainer
+
+
+def pytest_set_filtered_exceptions():
+    """
+    All tests will be retried unless they fail due to an AssertionError or CustomError
+    """
+    return [FloodWaitError]
 
 
 @pytest.hookimpl(tryfirst=True)
