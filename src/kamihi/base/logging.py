@@ -41,12 +41,12 @@ def _extra_formatter(record: loguru.Record) -> None:
     """
     if record.get("extra"):
         record["extra"]["compact"] = ", ".join(
-            f"{key}={repr(value)}" for key, value in record["extra"].items() if key != "pretty" and key != "compact"
+            f"{key}={repr(value)}" for key, value in record["extra"].items() if key not in ["pretty", "compact"]
         )
         record["extra"]["pretty"] = "\n".join(
             f"{key.replace('_', ' ').capitalize()}: `{repr(value)}`"
             for key, value in record["extra"].items()
-            if key != "pretty" and key != "compact"
+            if key not in ["pretty", "compact"]
         )
 
 
