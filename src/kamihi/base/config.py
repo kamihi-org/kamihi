@@ -176,7 +176,7 @@ class DatabaseSettings(BaseModel):
     """
 
     url: str = Field(default="sqlite:///kamihi.db")
-    pages_expiration_days: int = Field(default=7)
+    pages_expiration_days: int | float = Field(default=7)
 
 
 class JobSettings(BaseModel):

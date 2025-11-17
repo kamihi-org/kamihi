@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime
 from typing import Any, ClassVar
 
-from sqlalchemy import JSON, BigInteger, Boolean, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import JSON, BigInteger, Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, declarative_base, declared_attr, mapped_column, relationship
 
 Base = declarative_base()

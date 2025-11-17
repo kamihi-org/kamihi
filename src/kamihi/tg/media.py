@@ -15,14 +15,15 @@ from pathlib import Path
 from typing import IO, Any
 
 from jinja2 import Template
+from loguru import logger
 from ptb_pagination import InlineKeyboardPaginator
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.coercions import cls
 from telegram import InlineKeyboardMarkup, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo
 from telegram.constants import FileSizeLimit, LocationLimit
 from telegramify_markdown import markdownify as md
 
+from kamihi.base import get_settings
 from kamihi.db import Pages as DbPages
 from kamihi.db import get_engine
 
@@ -314,6 +315,8 @@ class Pages:
             str: The content of the specified page.
 
         """
+        self.clean_up(get_settings().db.pages_expiration_days)
+
         with Session(get_engine()) as session:
             db_pages = self._db_pages(session)
             if 0 > page_number > len(self):
@@ -340,3 +343,4 @@ class Pages:
             stmt = delete(DbPages).where(DbPages.created_at < expire_cutoff)
             session.execute(stmt)
             session.commit()
+            logger.trace("Cleaned up old pages")
