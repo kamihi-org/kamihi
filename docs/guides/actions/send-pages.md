@@ -19,8 +19,8 @@ To do this, you will need two things: a list of items to paginate, and a templat
         template: Template
     ):
         return bot.Pages(
-            items=data,
-            template=template,
+            data=data,
+            page_template=template,
             items_per_page=5  # Number of items per page
         )
     ```
