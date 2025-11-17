@@ -24,16 +24,19 @@ from telegram.ext import (
     ApplicationBuilder,
     BaseHandler,
     CallbackContext,
+    CallbackQueryHandler,
     Defaults,
     MessageHandler,
     filters,
 )
 
 from kamihi.base import get_settings
+from kamihi.base.utils import UUID4_REGEX
 from kamihi.datasources import DataSource
 from kamihi.db import Job, get_engine
 
 from .default_handlers import default, error
+from .handlers.page_handler import page_callback
 
 
 class TelegramClient:
@@ -104,6 +107,11 @@ class TelegramClient:
         for handler in handlers:
             with logger.catch(exception=TelegramError, level="ERROR", message="Failed to register handler"):
                 self.app.add_handler(handler)
+
+    def add_pages_handler(self) -> None:
+        """Add the pages handler to the Telegram client."""
+        with logger.catch(exception=TelegramError, level="ERROR", message="Failed to register pages handler"):
+            self.app.add_handler(CallbackQueryHandler(page_callback, pattern=rf"^{UUID4_REGEX.pattern}#[0-9]+$"))
 
     def add_default_handlers(self) -> None:
         """Add default handlers to the Telegram client."""

@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from loguru import Logger  # skipcq: TCV-001
 
 COMMAND_REGEX = re.compile(rf"^[a-z0-9_]{{{BotCommandLimit.MIN_COMMAND},{BotCommandLimit.MAX_COMMAND}}}$")
+UUID4_REGEX = re.compile(r"[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}")
 
 
 @functools.cache

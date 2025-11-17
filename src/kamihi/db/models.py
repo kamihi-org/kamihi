@@ -8,15 +8,53 @@ License:
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import Any, ClassVar
 
-from sqlalchemy import JSON, BigInteger, Boolean, ForeignKey, Integer, String
+from sqlalchemy import JSON, BigInteger, Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, declarative_base, declared_attr, mapped_column, relationship
 
 Base = declarative_base()
 
 
-class RegisteredAction(Base):
+class BaseModel(Base):
+    """
+    Base model with common attributes.
+
+    Attributes:
+        id (int): Primary key.
+        created_at (datetime): Timestamp of creation.
+        updated_at (datetime): Timestamp of last update.
+
+    """
+
+    __abstract__ = True
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
+class BaseUuidModel(BaseModel):
+    """
+    Base model with UUID primary key.
+
+    Attributes:
+        id (str): Primary key (UUID).
+
+    """
+
+    __abstract__ = True
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+
+
+class RegisteredAction(BaseModel):
     """
     Model for registered actions.
 
@@ -30,7 +68,6 @@ class RegisteredAction(Base):
 
     __tablename__ = "registeredaction"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, index=True, unique=True, nullable=False)
     description: Mapped[str | None] = mapped_column(String, nullable=True)
 
@@ -132,7 +169,7 @@ class JobRoleLink(Base):
     role_id: Mapped[int] = mapped_column(ForeignKey("role.id"), primary_key=True)
 
 
-class BaseUser(Base):
+class BaseUser(BaseModel):
     """
     Base class for user models.
 
@@ -147,7 +184,6 @@ class BaseUser(Base):
 
     """
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
 
@@ -207,7 +243,7 @@ class BaseUser(Base):
         return self.admin_repr()
 
 
-class Role(Base):
+class Role(BaseModel):
     """
     Model for roles.
 
@@ -221,7 +257,6 @@ class Role(Base):
 
     __tablename__ = "role"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, index=True, unique=True)
 
     users: Mapped[list["User"]] = relationship(  # noqa: UP037
@@ -245,7 +280,7 @@ class Role(Base):
         return self.name
 
 
-class Permission(Base):
+class Permission(BaseModel):
     """
     Model for permissions.
 
@@ -260,7 +295,6 @@ class Permission(Base):
 
     __tablename__ = "permission"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     action_id: Mapped[int | None] = mapped_column(
         ForeignKey("registeredaction.id", ondelete="CASCADE"),
         index=True,
@@ -314,7 +348,7 @@ class Permission(Base):
         return user in self.effective_users
 
 
-class Job(Base):
+class Job(BaseUuidModel):
     """
     Model for scheduled jobs.
 
@@ -330,8 +364,6 @@ class Job(Base):
     """
 
     __tablename__ = "job"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
 
     action_id: Mapped[int] = mapped_column(
         ForeignKey("registeredaction.id", ondelete="CASCADE"),
@@ -375,3 +407,17 @@ class Job(Base):
         """Define the representation of the job in the admin interface."""
         status = "Enabled" if self.enabled else "Disabled"
         return f"Job for /{self.action.name} ({status})"
+
+
+class Pages(BaseUuidModel):
+    """
+    Model for pages in a paginated media type.
+
+    Attributes:
+        id (int): Primary key.
+
+    """
+
+    __tablename__ = "page"
+
+    pages: Mapped[list[str]] = mapped_column(JSON, default=lambda: [])  # skipcq: PTC-W0052
