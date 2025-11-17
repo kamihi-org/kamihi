@@ -13,10 +13,6 @@ managed by the framework.
 License:
     MIT
 
-Examples:
-    >>> from kamihi import bot
-    >>> bot.start()
-
 """
 
 import functools
