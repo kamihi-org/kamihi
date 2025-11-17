@@ -708,9 +708,7 @@ async def test_action_returns_group_media(
         },
     ],
 )
-async def test_action_returns_pages(
-    user, add_permission_for_user, chat: Conversation, actions_folder
-):
+async def test_action_returns_pages(user, add_permission_for_user, chat: Conversation, actions_folder):
     """Test actions that return paginated messages."""
     add_permission_for_user(user["telegram_id"], "start")
 
@@ -759,9 +757,7 @@ async def test_action_returns_pages(
         },
     ],
 )
-async def test_action_returns_pages_with_first_page(
-    user, add_permission_for_user, chat: Conversation, actions_folder
-):
+async def test_action_returns_pages_with_first_page(user, add_permission_for_user, chat: Conversation, actions_folder):
     """Test actions that return paginated messages with a first page."""
     add_permission_for_user(user["telegram_id"], "start")
 
@@ -814,7 +810,7 @@ async def test_action_returns_pages_with_first_page(
                     pages_expiration_days: 0.00002
             """,
         },
-    ]
+    ],
 )
 async def test_action_returns_pages_expired(
     user, add_permission_for_user, chat: Conversation, actions_folder, config_file
