@@ -343,4 +343,3 @@ class Pages:
             stmt = delete(DbPages).where(DbPages.created_at < expire_cutoff)
             session.execute(stmt)
             session.commit()
-            logger.trace("Cleaned up old pages")

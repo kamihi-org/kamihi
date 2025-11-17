@@ -192,7 +192,7 @@ class Bot:
 
         # Cleans up the database of old pages
         Pages.clean_up(get_settings().db.pages_expiration_days)
-        logger.debug("Removed actions not present in code from database")
+        logger.trace("Cleaned up old pages")
 
         # Loads the Telegram client
         self._client = TelegramClient(self._post_init, self._post_shutdown)
