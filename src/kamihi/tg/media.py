@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import IO, Any
 
 from jinja2 import Template
-from loguru import logger
 from ptb_pagination import InlineKeyboardPaginator
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
