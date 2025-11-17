@@ -248,7 +248,7 @@ class Pages:
 
         Args:
             data (list): List of data items to be paginated.
-            page_template (str): Template for rendering each page.
+            page_template (Template): Template for rendering each page.
             items_per_page (int): Number of items per page.
             first_page_template (Template | None): Optional template for the first page. This page will not get elements from the `data` list passed to it.
             **kwargs: Additional keyword arguments to be passed to the template rendering, including to the first page template if provided.
