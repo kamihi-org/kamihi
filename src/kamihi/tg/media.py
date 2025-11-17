@@ -22,7 +22,6 @@ from telegram import InlineKeyboardMarkup, InputMediaAudio, InputMediaDocument, 
 from telegram.constants import FileSizeLimit, LocationLimit
 from telegramify_markdown import markdownify as md
 
-from kamihi.base import get_settings
 from kamihi.db import Pages as DbPages
 from kamihi.db import get_engine
 
@@ -314,15 +313,15 @@ class Pages:
             tuple[str, InlineKeyboardMarkup]: A tuple containing the page content and the pagination markup.
 
         """
-        self.clean_up(get_settings().db.pages_expiration_days)
-
         with Session(get_engine()) as session:
             db_pages = self._db_pages(session)
-            if 0 < page_number < len(self):
-                msg = f"Page number {page_number} is out of range. Valid range is 0 to {len(self)}"
-                raise ValueError(msg)
+            try:
+                page = db_pages.pages[page_number]
+            except IndexError as e:
+                msg = f"Page number {page_number} is out of range. Valid range is 0 to {len(self) - 1}."
+                raise ValueError(msg) from e
 
-            return str(db_pages.pages[page_number]), InlineKeyboardPaginator(
+            return str(page), InlineKeyboardPaginator(
                 page_count=len(self),
                 current_page=page_number + 1,
                 data_pattern=self.id + "#{page}",

@@ -740,6 +740,7 @@ async def test_action_returns_pages(user, add_permission_for_user, chat: Convers
             "start/start.py": """\
                 from jinja2 import Template
                 from kamihi import bot
+                from typing import Annotated
                              
                 @bot.action
                 async def start(template: Template, template_first_page: Annotated[Template, "first_page.md.jinja"]) -> bot.Pages:
@@ -751,7 +752,7 @@ async def test_action_returns_pages(user, add_permission_for_user, chat: Convers
                 - {{ num }}
                 {% endfor %}
             """,
-            "start/first-page.md.jinja": """\
+            "start/first_page.md.jinja": """\
                 This is a wonderful list of them numbers. Use the buttons below to navigate.
             """,
         },
@@ -807,7 +808,7 @@ async def test_action_returns_pages_with_first_page(user, add_permission_for_use
         {
             "kamihi.yaml": """\
                 db:
-                    pages_expiration_days: 0.00002
+                    pages_expiration_days: 0.000001
             """,
         },
     ],
@@ -827,7 +828,7 @@ async def test_action_returns_pages_expired(
 
     await sleep(2)
 
-    # Press the Page 2 button
+    # Trigger expiration by going forward and back a page
     await response.click(1)
 
     # Get the edited message

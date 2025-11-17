@@ -10,6 +10,7 @@ from telegram import Update
 from telegram.ext import CallbackContext, ConversationHandler
 from telegramify_markdown import markdownify as md
 
+from kamihi.base import get_settings
 from kamihi.tg.media import Pages
 
 
@@ -22,6 +23,9 @@ async def page_callback(update: Update, context: CallbackContext) -> int:
         context (CallbackContext): CallbackContext object
 
     """
+    Pages.clean_up(get_settings().db.pages_expiration_days)
+    logger.debug("Cleaned up expired pages")
+
     query = update.callback_query
     pages_id = query.data.split("#")[0]
     page_num = int(query.data.split("#")[1]) - 1
