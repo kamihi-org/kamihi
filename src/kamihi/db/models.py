@@ -420,4 +420,4 @@ class Pages(BaseUuidModel):
 
     __tablename__ = "page"
 
-    pages: Mapped[list[str]] = mapped_column(JSON, default=lambda: [])
+    pages: Mapped[list[str]] = mapped_column(JSON, default=lambda: [])  # skipcq: PTC-W0052
