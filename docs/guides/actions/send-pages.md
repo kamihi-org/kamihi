@@ -42,3 +42,7 @@ When the action is called, Kamihi will render the template for each page using t
 ## The first page
 
 You can optionally provide a `first_page_template` argument to the `bot.Pages` constructor. This template will be used to render the first page of the paginated message, allowing you to customize its appearance or content. This is useful for help pages or introductions. The first page template will not be passed any items.
+
+## Page expiration
+
+Pages are stored in the database. To prevent a build-up of old pages, a customizable default of 7 days expiration is applied to each page set. You can change this by providing the `db.pages_expiration_days` configuration option in your configuration.
