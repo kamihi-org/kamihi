@@ -421,8 +421,3 @@ class Pages(BaseUuidModel):
     __tablename__ = "page"
 
     pages: Mapped[list[str]] = mapped_column(JSON, default=lambda: [])
-
-    @property
-    def len(self) -> int:
-        """Get the number of pages."""
-        return len(self.pages)
