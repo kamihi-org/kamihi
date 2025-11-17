@@ -312,7 +312,7 @@ class Pages:
             page_number (int): The page number to retrieve.
 
         Returns:
-            str: The content of the specified page.
+            tuple[str, InlineKeyboardMarkup]: A tuple containing the page content and the pagination markup.
 
         """
         self.clean_up(get_settings().db.pages_expiration_days)
