@@ -319,7 +319,7 @@ class Pages:
 
         with Session(get_engine()) as session:
             db_pages = self._db_pages(session)
-            if 0 > page_number > len(self):
+            if 0 < page_number < len(self):
                 msg = f"Page number {page_number} is out of range. Valid range is 0 to {len(self)}"
                 raise ValueError(msg)
 
