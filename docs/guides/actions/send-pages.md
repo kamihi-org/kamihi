@@ -28,12 +28,12 @@ To do this, you will need two things: a list of items to paginate, and a templat
 === "send_paginated_items/send_paginated_items.md.jinja"
 
     ```md
-    {% for item in page_items %}
+    {% for item in data %}
     - {{ item }}
     {% endfor %}
     ```
 
-Since data items are passed directly to the template, they can be of any type that the template can handle. In this example, we are using a list of strings, but you can use more complex data structures as needed.
+Internally, `bot.Pages` splits the list of items into pages based on the `items_per_page` argument and renders each page using the provided template and passing the corresponding slice of items to it as the `data` variable.
 
 When the action is called, Kamihi will render the template for each page using the corresponding items and send the paginated message to the user. Users will be able to navigate through the pages using inline buttons.
 
