@@ -33,7 +33,7 @@ async def page_callback(update: Update, context: CallbackContext) -> int:
 
     try:
         page, keyboard = Pages.from_id(pages_id).get_page(page_num)
-    except ValueError as e:
+    except ValueError:
         lg.debug("Query refers to non-existing pages, possibly because they expired")
         page = md("⚠️ *This paginated message has expired.*")
         keyboard = None
