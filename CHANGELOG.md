@@ -1,3 +1,9 @@
+## 5.3.0 (2025-11-17)
+
+### Feat
+
+- **tg**: added paginated messages (#87)
+
 ## 5.2.0 (2025-11-16)
 
 ### Feat
