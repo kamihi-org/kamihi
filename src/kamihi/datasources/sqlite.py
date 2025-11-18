@@ -56,7 +56,7 @@ class SQLiteDataSource(DataSource):
     @cached_property
     @requires("sqlite")
     def NamedRecord(self) -> type:  # noqa: N802, A003
-        """Create a named record class for asyncpg records."""
+        """Create a named record class for aiosqlite rows."""
         import aiosqlite
 
         class NamedRecord(aiosqlite.Row):
