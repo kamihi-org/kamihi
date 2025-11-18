@@ -8,7 +8,6 @@ License:
 
 from functools import cached_property
 from pathlib import Path
-from sqlite3 import Row
 from typing import Any, Literal
 
 import anyio
