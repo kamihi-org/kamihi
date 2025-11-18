@@ -7,6 +7,7 @@ License:
 """
 
 from collections.abc import Iterable
+from functools import cached_property
 from pathlib import Path
 from sqlite3 import Row
 from typing import Any, Literal
@@ -54,6 +55,36 @@ class SQLiteDataSource(DataSource):
 
     _db: Any = None  # Placeholder for the database connection
 
+    @cached_property
+    @requires("sqlite")
+    def NamedRecord(self) -> type:  # noqa: N802, A003
+        """Create a named record class for asyncpg records."""
+        import aiosqlite
+
+        class NamedRecord(aiosqlite.Row):
+            """
+            A named record class that allows attribute access by name.
+
+            This class extends asyncpg.Record to provide a way to access record fields
+            using attribute-style access (e.g., record.field_name) instead of dictionary-style
+            access (e.g., record['field_name']).
+            """
+
+            def __getattr__(self, name: str) -> Any:
+                """
+                Get an attribute by name.
+
+                Args:
+                    name (str): The name of the attribute to retrieve.
+
+                Returns:
+                    Any: The value of the attribute.
+
+                """
+                return self[name]  # skipcq: TCV-001
+
+        return NamedRecord
+
     @requires("sqlite")
     def __init__(self, settings: SQLiteDataSourceConfig) -> None:
         """
@@ -83,11 +114,12 @@ class SQLiteDataSource(DataSource):
 
         try:
             self._db = await aiosqlite.connect(self.settings.path)
+            self._db.row_factory = self.NamedRecord
             self._logger.info("Connected to {datasource}", datasource=self.settings.name)
         except aiosqlite.Error as e:
             raise RuntimeError("Failed to connect") from e
 
-    async def fetch(self, request: Path | str) -> Iterable[Row]:
+    async def fetch(self, request: Path | str) -> list[NamedRecord]:
         """
         Fetch data from the SQLite database.
 
