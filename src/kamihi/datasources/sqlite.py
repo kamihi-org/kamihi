@@ -63,7 +63,7 @@ class SQLiteDataSource(DataSource):
             """
             A named record class that allows attribute access by name.
 
-            This class extends asyncpg.Record to provide a way to access record fields
+            This class extends aiosqlite.Row to provide a way to access record fields
             using attribute-style access (e.g., record.field_name) instead of dictionary-style
             access (e.g., record['field_name']).
             """
