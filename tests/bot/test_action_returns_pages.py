@@ -133,9 +133,7 @@ async def test_first_page(user, add_permission_for_user, chat: Conversation, act
         },
     ],
 )
-async def test_expired(
-    user, add_permission_for_user, chat: Conversation, actions_folder, config_file
-):
+async def test_expired(user, add_permission_for_user, chat: Conversation, actions_folder, config_file):
     """Test actions that return paginated messages that have expired."""
     add_permission_for_user(user["telegram_id"], "start")
 

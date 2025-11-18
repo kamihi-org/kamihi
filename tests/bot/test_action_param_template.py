@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 import pytest
 from telethon.tl.custom import Conversation
 
@@ -106,9 +107,7 @@ from telethon.tl.custom import Conversation
         "explicit_multiple",
     ],
 )
-async def test_template(
-    user, add_permission_for_user, chat: Conversation, actions_folder, expected_response
-):
+async def test_template(user, add_permission_for_user, chat: Conversation, actions_folder, expected_response):
     """Test the action decorator without parentheses."""
     add_permission_for_user(user["telegram_id"], "start")
 

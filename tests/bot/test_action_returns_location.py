@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 import random
 
 import pytest

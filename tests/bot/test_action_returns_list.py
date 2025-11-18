@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 import pytest
 from telethon.tl.custom import Conversation, Message
 

@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 import pytest
 from telethon.tl.custom import Conversation, Message
 
@@ -96,9 +97,7 @@ from tests.utils.media import random_image, random_video_path, random_audio_path
         ),
     ],
 )
-async def test_group_media(
-    user, add_permission_for_user, chat: Conversation, actions_folder, number_of_messages
-):
+async def test_group_media(user, add_permission_for_user, chat: Conversation, actions_folder, number_of_messages):
     """Test actions that return multiple messages."""
     add_permission_for_user(user["telegram_id"], "start")
 
