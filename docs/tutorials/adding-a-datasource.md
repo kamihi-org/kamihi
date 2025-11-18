@@ -63,8 +63,10 @@ The command will create a new folder `actions/catalog` with the necessary files 
     SELECT film_id, title, description, length, rating
     FROM film
     ORDER BY title
-    LIMIT 20;
+    LIMIT 10; -- (1)!
     ```
+
+    1. We will select only the first 10 films for now. In the next tutorial we will learn how to implement pagination to browse through the entire catalog.
 
 ??? info "Naming convention for datasource query files"
     The naming convention for datasource query files is `<action_name>.<datasource_name>.sql`. This allows Kamihi to associate the SQL file with the correct action and datasource.
