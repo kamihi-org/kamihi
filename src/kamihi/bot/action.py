@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import inspect
 import re
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Sequence
 from inspect import Parameter
 from pathlib import Path
 from random import randint
@@ -28,7 +28,7 @@ from telegram.ext import BaseHandler, CallbackContext, CommandHandler, Conversat
 from kamihi.base import get_settings
 from kamihi.base.utils import COMMAND_REGEX
 from kamihi.datasources import DataSource
-from kamihi.db import Job, RegisteredAction, get_engine
+from kamihi.db import BaseUser, Job, RegisteredAction, get_engine
 from kamihi.questions import Question
 from kamihi.tg import send
 from kamihi.tg.default_handlers import cancel
@@ -202,6 +202,11 @@ class Action:
             return [(job, self.run_scheduled) for job in session.execute(sta).scalars().all()]
 
     @property
+    def users(self) -> Sequence[BaseUser]:
+        """Return a list of telegram IDs of users authorized to use the action."""
+        return get_users_of_action(self.name)
+
+    @property
     def _parameters(self) -> dict[str, Parameter]:
         """Return a list of parameters that need to be filled."""
         return dict(inspect.signature(self._func).parameters)
@@ -223,7 +228,10 @@ class Action:
     @property
     def _request_templates(self) -> dict[str, Template]:
         """Return a list of request templates associated with the action."""
-        return {name: self._files.get_template(name) for name in self._files.list_templates(extensions=".sql")}
+        return {
+            name: self._files.get_template(name)
+            for name in self._files.list_templates(filter_func=lambda x: x.endswith((".sql", ".sql.jinja")))
+        }
 
     @property
     def _folder_path(self) -> Path:
@@ -276,12 +284,23 @@ class Action:
         datasource_names = set(self._datasources.keys())
         discarded_files = []
         for file in self._request_templates:
-            if not any(file.endswith(f".{ds_name}.sql") for ds_name in datasource_names):
+            ds_name = re.search(r"\.(.*?)\.", file)
+            if ds_name is None:
                 self._logger.warning(
-                    "Request file does not match any datasource, it will be ignored.",
+                    "Request file does not specify a datasource, it will be ignored.",
                     file=file,
                 )
                 discarded_files.append(file)
+                continue
+            ds_name = ds_name.group(1)
+            if ds_name not in datasource_names:
+                self._logger.warning(
+                    "Request file specifies an unknown datasource '{ds_name}', it will be ignored.",
+                    file=file,
+                    ds_name=ds_name,
+                )
+                discarded_files.append(file)
+                continue
 
         for file in discarded_files:
             self._request_templates.pop(file, None)
@@ -299,6 +318,27 @@ class Action:
                 session.add(RegisteredAction(name=self.name, description=self.description))
                 self._logger.trace("Added action to database")
             session.commit()
+
+    def _params_dict(self, context: CallbackContext, update: Update = None) -> dict[str, Any]:
+        return {
+            "update": update if update else None,
+            "context": context,
+            "logger": self._logger,
+            "user": (
+                get_user_from_telegram_id(update.effective_user.id)
+                if update
+                else get_user_from_telegram_id(context.job.data.get("user"))
+            ),
+            "users": (
+                get_users_of_action(self.name)
+                if update
+                else [get_user_from_telegram_id(tg_id) for tg_id in context.job.data.get("users", [])]
+            ),
+            "templates": self._message_templates,
+            "action_folder": self._folder_path,
+            **context.chat_data.get("questions", {}),
+            **(context.job.data.get("args", {}) if context.job and context.job.data else {}),
+        }
 
     def _param_template(self, _: str, param: Parameter) -> Template:
         """Get a template for a specific parameter."""
@@ -318,7 +358,7 @@ class Action:
         msg = "No template found"
         raise ValueError(msg)
 
-    async def _param_data(self, name: str, param: Parameter) -> list:
+    async def _param_data(self, name: str, param: Parameter, context: dict) -> list:
         """Fill data for a specific parameter."""
         if get_origin(param.annotation) is Annotated:
             args = get_args(param.annotation)
@@ -353,57 +393,27 @@ class Action:
 
         ds_name = re.search(r"\.(.*?)\.", req)
         if ds_name is None:
-            msg = f"Request name '{req}' does not match expected pattern '.<ds_name>.'"
-            raise ValueError(msg)
-        return await self._datasources[ds_name.group(1)].fetch(self._request_templates[req].render())
+            raise ValueError("Cannot obtain datasource from request filename")
+        return await self._datasources[ds_name.group(1)].fetch(self._request_templates[req].render(context))
 
-    async def _fill_parameters(  # noqa: C901 # skipcq: PY-R1000
+    async def _fill_parameters(
         self, context: CallbackContext, update: Update = None
     ) -> tuple[list[Any], dict[str, Any]]:
         """Fill parameters for the action call."""
+        parameters = self._params_dict(context, update)
+
         pos_args = []
         keyword_args = {}
-        if context.job and context.job.data and context.job.data.get("args"):
-            keyword_args.update(context.job.data["args"])
 
-        for name, param in self._parameters.items():
-            value: Any = None
-
-            if keyword_args.get(name):
-                continue
-
-            match name:
-                case "update" if update:
-                    value = update
-                case "context":
-                    value = context
-                case "logger":
-                    value = self._logger
-                case "user" if update:
-                    value = get_user_from_telegram_id(update.effective_user.id)
-                case "user" if context.job and context.job.data.get("user"):
-                    value = get_user_from_telegram_id(context.job.data.get("user"))
-                case "users" if update:
-                    value = get_users_of_action(self.name)
-                case "users" if context.job and context.job.data.get("users"):
-                    value = [get_user_from_telegram_id(tg_id) for tg_id in context.job.data.get("users", [])]
-                case "templates":
-                    value = self._message_templates
-                case s if s.startswith("template"):
-                    value = self._param_template(name, param)
-                case s if s == "data" or s.startswith("data_"):
-                    value = await self._param_data(name, param)
-                case _ if (
-                    update
-                    and get_origin(param.annotation) is Annotated
-                    and isinstance(
-                        get_args(param.annotation)[1],
-                        Question,
-                    )
-                ):
-                    value = context.chat_data["questions"].pop(name, None)
-                case _:
-                    self._logger.bind(param=name).warning("Failed to fill parameter, it will be set to None")
+        for name, param in sorted(
+            self._parameters.items(), key=lambda x: 1 if x[0] == "data" or x[0].startswith("data_") else 0
+        ):
+            if name.startswith("template"):
+                value = self._param_template(name, param)
+            elif name == "data" or name.startswith("data_"):
+                value = await self._param_data(name, param, parameters)
+            else:
+                value = parameters.get(name)
 
             if param.kind == inspect.Parameter.POSITIONAL_ONLY:
                 pos_args.append(value)
