@@ -18,24 +18,22 @@ from telethon.tl.custom import Conversation
 @pytest.mark.parametrize(
     "config_file",
     [
-        (
-            {
-                "kamihi.yaml": lfc(
-                    """\
-                        datasources:
-                          - name: dname
-                            type: postgresql
-                            host: {host}
-                            port: 5432
-                            database: test_db
-                            user: test_user
-                            password: {password}
-                    """.format,
-                    host=lf("sample_postgres_container.ips.primary"),
-                    password=lf("sample_postgres_password"),
-                ),
-            }
-        )
+        {
+            "kamihi.yaml": lfc(
+                """\
+                    datasources:
+                      - name: dname
+                        type: postgresql
+                        host: {host}
+                        port: 5432
+                        database: test_db
+                        user: test_user
+                        password: {password}
+                """.format,
+                host=lf("sample_postgres_container.ips.primary"),
+                password=lf("sample_postgres_password"),
+            ),
+        }
     ],
 )
 @pytest.mark.parametrize(
@@ -212,6 +210,70 @@ async def test_multiple_datasources(
     add_permission_for_user(user["telegram_id"], "start")
 
     await chat.send_message("/start")
+    response = await chat.get_response()
+
+    assert response.text == expected_response
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("kamihi")
+@pytest.mark.usefixtures("sample_postgres_container")
+@pytest.mark.parametrize(
+    "config_file",
+    [
+        {
+            "kamihi.yaml": lfc(
+                """\
+                    datasources:
+                      - name: dname
+                        type: postgresql
+                        host: {host}
+                        port: 5432
+                        database: test_db
+                        user: test_user
+                        password: {password}
+                """.format,
+                host=lf("sample_postgres_container.ips.primary"),
+                password=lf("sample_postgres_password"),
+            ),
+        }
+    ],
+)
+@pytest.mark.parametrize(
+    "actions_folder,expected_response",
+    [
+        (
+            {
+                "start/__init__.py": "",
+                "start/start.py": """\
+                    from kamihi import bot
+                    from kamihi.questions import String
+                    from typing import Annotated
+                    
+                    @bot.action
+                    async def start(data: list, set_num: Annotated[str, String("Give me the set number")]):
+                        return data[0].name
+                """,
+                "start/start.dname.sql.jinja": """ \
+                    SELECT * FROM lego_sets WHERE set_num = '{{ set_num }}';
+                """,
+            },
+            "Weetabix Castle",
+        ),
+    ],
+)
+async def test_data_template(
+    actions_folder, config_file, expected_response, user, add_permission_for_user, chat: Conversation
+):
+    """Test the "data" action parameter with SQL queries using Jinja templating."""
+    add_permission_for_user(user["telegram_id"], "start")
+
+    await chat.send_message("/start")
+    response = await chat.get_response()
+
+    assert response.text == "Give me the set number"
+
+    await chat.send_message("00-1")
     response = await chat.get_response()
 
     assert response.text == expected_response
