@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 from pathlib import Path
 
 import pytest
@@ -142,9 +143,7 @@ from telethon.tl.custom import Conversation
         "multiple_custom_arg_name",
     ],
 )
-async def test_data(
-    actions_folder, config_file, expected_response, user, add_permission_for_user, chat: Conversation
-):
+async def test_data(actions_folder, config_file, expected_response, user, add_permission_for_user, chat: Conversation):
     """Test the "data" action parameter with SQL queries."""
     add_permission_for_user(user["telegram_id"], "start")
 
