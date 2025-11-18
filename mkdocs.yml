@@ -14,8 +14,15 @@ nav:
   - Home: index.md
   - Tutorials:
       - tutorials/index.md
-      - Your first bot: tutorials/your-first-bot.md
-      - Adding actions: tutorials/adding-actions.md
+      - Creating the bot: tutorials/creating-the-bot.md
+      - Your first action: tutorials/your-first-action.md
+      - Adding a datasource: tutorials/adding-a-datasource.md
+      - Working with users and stores: tutorials/working-with-users-and-stores.md
+      - Modeling domain data: tutorials/modeling-domain-data.md
+      - Mutating domain data: tutorials/mutating-domain-data.md
+      - Sending media: tutorials/sending-media.md
+      - Scheduling actions: tutorials/scheduling-actions.md
+      - Preparing for production: tutorials/preparing-for-production.md
   - Guides:
       - guides/index.md
       - Key concepts: guides/key-concepts.md
@@ -106,11 +113,11 @@ plugins:
             summary: true
             find_stubs_package: true
             show_bases: true
-  - api-autonav:
-      modules: [ 'src/kamihi' ]
-      nav_section_title: "API reference"
-  - mkdocs-typer2:
-      pretty: true
+#  - api-autonav:
+#      modules: [ 'src/kamihi' ]
+#      nav_section_title: "API reference"
+#  - mkdocs-typer2:
+#      pretty: true
   - termynal:
       prompt_literal_start:
         - "$"

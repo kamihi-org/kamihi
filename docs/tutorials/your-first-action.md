@@ -1,6 +1,6 @@
-In the [previous tutorial](your-first-bot.md), we got our first bot up and running, but at the moment it doesn't do much.
+In this tutorial, you will create your first real action for the movie rentals bot. We will focus on understanding how actions work and how to see your action in the admin web interface.
 
-We can easily add functionality to our bot by adding new actions.
+By the end of this tutorial, you will have a new action that tells the current time when you send the `/time` command to your bot.
 
 ## What are actions?
 
@@ -38,7 +38,7 @@ async def start() -> str: # (3)!
 
 ## Creating a new action
 
-The default action is OK, but really basic. It's all right, though, because we can easily add new actions with a simple command:
+The default action is OK, but useless. It's all right, though, because we can easily add new actions with a simple command:
 
 <!-- termynal -->
 ```shell
@@ -54,7 +54,10 @@ Copying from template version x.x.x
 
 This command creates a new `actions/time` folder with all the files you need to get this action up and running.
 
-## Making the action interesting
+!!! warning "Do not delete the `start` action"
+    The `start` action is required by Telegram for the bot to work properly. You can modify it as you like, but do not delete it.
+
+## Making the action do something
 
 If you start the bot right now, and send the command `/time`, it will answer with a simple "Hello, world!". I think we can do better. Since the command is `/time`, we can make our bot return the time. For that, edit the file `actions/time/time.py` with the following content:
 
@@ -62,8 +65,6 @@ If you start the bot right now, and send the command `/time`, it will answer wit
 """
 time action.
 """
-
-
 from datetime import datetime # (1)!
 
 from kamihi import bot
@@ -79,15 +80,11 @@ async def time() -> str:
 
     """
     # Your action logic here
-    return (datetime
-            .now(bot.settings.timezone_obj) # (2)!
-            .strftime("It's %H:%M:%S on %A, %B %d, %Y") # (3)!
-            )
+    return datetime.now().strftime("It's %H:%M:%S on %A, %B %d, %Y") # (2)!
 ```
 
 1. `datetime` is the Python standard library time utility.
-2. We can access all the settings of the bot with the `bot.settings` attribute. The `timezone_obj` property gives us a timezone object from the string we set in `kamihi.yml`.
-3. To get a nice message, we use this expression to format the date and time.
+2. To get a nice message, we use this expression to format the date and time.
 
 ## Using our new command
 
@@ -97,18 +94,19 @@ We can restart the bot and our new action will automatically get picked up, its 
 
 And we can use it in the same way as the other one, by sending `/time` to our bot.
 
-## Configuring the timezone
+## Seeing the action in the admin web interface
 
-If you live around the Greenwich Meridian, you are all set! Continue to the next section. 
+One of the great features of Kamihi is the admin web interface, that allows us to see and manage our bot's data. If you open your browser and go to `http://localhost:4242`, you will see the admin interface. By clicking on "Actions" in the sidebar, you will see a list of all the actions registered in your bot, including the new `time` action we just created.
 
-If not, the bot will have told you the wrong time. That is OK, the bot thinks itself in England, but we can easily change that. Refer to [this guide](../guides/config/configure-timezone.md) for information on how to do so, and then come back.
+While you are there, you can also check out the "Users", "Roles" and "Permissions" sections, that will help you manage your bot's users and their access levels. We will cover these topics in more detail in later tutorials.
 
-## Recap
+## TL;DR
 
-We have learned how to create new actions for the bot by using the `kamihi action new <name>` command. We have also learned how to access the bot's settings.
-
-In the actions you create, you can return any Markdown content. You can also integrate it with any other library, as seen with the `time` action, so go wild!
+- Actions are the building blocks of a Kamihi bot.
+- You can create new actions using the `kamihi action new <action_name>` command.
+- Actions are defined as `async` functions decorated with `@bot.action`.
+- You can see and manage your bot's actions in the admin web interface.
 
 ## What's next?
 
-Now that you have a basic bot up and running, and you know how to add actions to it, you can customize it to your heart's content. We have just scratched the surface of what you can do with Kamihi. Check out all the [guides](../guides/index.md) for more in-depth information on how to use Kamihi to the fullest.
+The `/time` action we just created is a simple example, but has little to do with movie rentals. In the [next tutorial](adding-a-datasource.md), we will create an action that allows users to browse and rent movies from our bot by connecting to a database.
