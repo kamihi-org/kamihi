@@ -295,7 +295,7 @@ class Action:
             ds_name = ds_name.group(1)
             if ds_name not in datasource_names:
                 self._logger.warning(
-                    "Request file specifies an unknown datasource '{ds_name}', it will be ignored.",
+                    "Request file specifies an unknown datasource, it will be ignored.",
                     file=file,
                     ds_name=ds_name,
                 )
