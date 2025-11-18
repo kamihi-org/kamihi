@@ -48,6 +48,8 @@ nav:
           - Configure file log rotation and retention: guides/logging/configure-rotation-retention.md
       - Projects:
           - Using other package managers: guides/projects/other-package-managers.md
+      - Reference:
+          - Action parameters: guides/reference/action-parameters.md
   #  - "Explanation":
   - CLI reference: reference/cli.md
   - API reference
