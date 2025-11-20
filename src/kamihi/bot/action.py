@@ -320,25 +320,27 @@ class Action:
             session.commit()
 
     def _params_dict(self, context: CallbackContext, update: Update = None) -> dict[str, Any]:
-        return {
-            "update": update if update else None,
-            "context": context,
-            "logger": self._logger,
-            "user": (
-                get_user_from_telegram_id(update.effective_user.id)
-                if update
-                else get_user_from_telegram_id(context.job.data.get("user"))
-            ),
-            "users": (
-                get_users_of_action(self.name)
-                if update
-                else [get_user_from_telegram_id(tg_id) for tg_id in context.job.data.get("users", [])]
-            ),
-            "templates": self._message_templates,
-            "action_folder": self._folder_path,
-            **(context.chat_data.get("questions", {}) if type(context.chat_data) is dict else {}),
-            **(context.job.data.get("args", {}) if context.job and context.job.data else {}),
-        }
+        params = {}
+        params["update"] = update if update else None
+        params["context"] = context
+        params["logger"] = self._logger
+        params["user"] = (
+            get_user_from_telegram_id(update.effective_user.id)
+            if update
+            else get_user_from_telegram_id(context.job.data.get("user"))
+        )
+        params["users"] = (
+            get_users_of_action(self.name)
+            if update
+            else [get_user_from_telegram_id(tg_id) for tg_id in context.job.data.get("users", [])]
+        )
+        params["templates"] = self._message_templates
+        params["action_folder"] = self._folder_path
+        if type(context.chat_data) is dict:
+            params.update(context.chat_data.get("questions", {}))
+        if context.job and type(context.job.data) is dict and context.job.data.get("args"):
+            params.update(context.job.data.get("args", {}))
+        return params
 
     def _param_template(self, _: str, param: Parameter) -> Template:
         """Get a template for a specific parameter."""
