@@ -387,7 +387,7 @@ async def test_action_parameter_data(
                     
                     @bot.action
                     async def start(data_set: list, data_actor: list):
-                        return f"{data_actor[0][1]} {data_actor[0][2]} bought one set of Legos called {data_set[0].name}"
+                        return f"{data_actor[0].first_name} {data_actor[0].last_name} bought one set of Legos called {data_set[0].name}"
                 """,
                 "start/set.lego.sql": """\
                     SELECT * FROM lego_sets WHERE set_num = '00-1';
