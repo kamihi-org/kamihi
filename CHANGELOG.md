@@ -1,3 +1,9 @@
+## 5.4.0 (2025-11-20)
+
+### Feat
+
+- **datasources**: column values can now be accessed using dot notation for sqlite datasources (#91)
+
 ## 5.3.0 (2025-11-17)
 
 ### Feat

@@ -17,7 +17,7 @@ import typing
 if typing.TYPE_CHECKING:
     from .bot import Bot
 
-__version__ = "5.3.0"
+__version__ = "5.4.0"
 
 
 bot: "Bot"
