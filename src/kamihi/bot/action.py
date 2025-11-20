@@ -408,7 +408,7 @@ class Action:
         for name, param in sorted(
             self._parameters.items(), key=lambda x: 1 if x[0] == "data" or x[0].startswith("data_") else 0
         ):
-            if name.startswith("template"):
+            if name == "template" or name.startswith("template_"):
                 value = self._param_template(name, param)
             elif name == "data" or name.startswith("data_"):
                 value = await self._param_data(name, param, parameters)
