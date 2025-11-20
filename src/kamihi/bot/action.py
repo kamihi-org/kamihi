@@ -336,7 +336,7 @@ class Action:
             ),
             "templates": self._message_templates,
             "action_folder": self._folder_path,
-            **context.chat_data.get("questions", {}),
+            **(context.chat_data.get("questions", {}) if context.chat_data else {}),
             **(context.job.data.get("args", {}) if context.job and context.job.data else {}),
         }
 
