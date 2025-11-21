@@ -104,4 +104,4 @@ With this change, when the `catalog` action is invoked, it will return a paginat
 
 ## What's next?
 
-You can now send the `/catalog` command to your bot and see the formatted and paginated list of movies from the Sakila database. In the next tutorial, we will learn how to get data from users through questions. Stay tuned!
+You can now send the `/catalog` command to your bot and see the formatted and paginated list of movies from the Sakila database. In the next tutorial, we will learn how to get data from users through questions and use it in our actions, queries and templates. Stay tuned!
