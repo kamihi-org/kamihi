@@ -1,3 +1,9 @@
+## 5.5.0 (2025-11-21)
+
+### Feat
+
+- **bot**: datasource requests as templates (#94)
+
 ## 5.4.0 (2025-11-20)
 
 ### Feat
