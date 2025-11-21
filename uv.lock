@@ -588,7 +588,7 @@ wheels = [
 
 [[package]]
 name = "kamihi"
-version = "5.3.0"
+version = "5.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },

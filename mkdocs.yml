@@ -19,7 +19,7 @@ nav:
       - Adding a datasource: tutorials/adding-a-datasource.md
       - Using templates and pages: tutorials/using-templates-and-pages.md
       - Asking questions: tutorials/asking-questions.md
-      - Working with users and stores: tutorials/working-with-users-and-stores.md
+      - Working with users: tutorials/working-with-users.md
       - Modeling domain data: tutorials/modeling-domain-data.md
       - Mutating domain data: tutorials/mutating-domain-data.md
       - Sending media: tutorials/sending-media.md

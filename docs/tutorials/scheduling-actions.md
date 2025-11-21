@@ -7,7 +7,7 @@ By the end of this tutorial, you will have scheduled jobs that invoke your actio
 - You have completed the [Creating the bot](creating-the-bot.md) tutorial.
 - You have completed the [Your first action](your-first-action.md) tutorial.
 - You have completed the [Adding a datasource](adding-a-datasource.md) tutorial.
-- You have completed the [Working with users and stores](working-with-users-and-stores.md) tutorial.
+- You have completed the [Working with users and stores](working-with-users.md) tutorial.
 - You have completed the [Modeling domain data](modeling-domain-data.md) tutorial.
 - You have completed the [Mutating domain data](mutating-domain-data.md) tutorial.
 - You have completed the [Sending media](sending-media.md) tutorial.
