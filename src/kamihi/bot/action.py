@@ -337,7 +337,8 @@ class Action:
             context.chat_data.pop("db_session", None)
             self._logger.trace("Closed database session")
 
-    def _get_db_session(self, context: CallbackContext) -> Session:
+    @staticmethod
+    def _get_db_session(context: CallbackContext) -> Session:
         """Get the database session from the context."""
         return context.chat_data.get("db_session")
 
