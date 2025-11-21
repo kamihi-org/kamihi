@@ -375,11 +375,13 @@ class Action:
         else:
             users = [get_user_from_telegram_id(tg_id) for tg_id in context.job.data.get("users", [])]
 
+        merged_users = []
         for user in users:
-            user = self._get_db_session(context).merge(user)
-            self._get_db_session(context).refresh(user)
+            merged_user = self._get_db_session(context).merge(user)
+            self._get_db_session(context).refresh(merged_user)
+            merged_users.append(merged_user)
 
-        return users
+        return merged_users
 
     def _param_template(self, _: str, param: Parameter) -> Template:
         """Get a template for a specific parameter."""
