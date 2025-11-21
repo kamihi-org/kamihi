@@ -321,13 +321,13 @@ class Action:
             session.commit()
 
     @asynccontextmanager
-    async def _db_session(self, context: CallbackContext) -> AsyncGenerator[None, Any]:
+    async def _db_session(self, context: CallbackContext) -> AsyncGenerator[Session, Any]:
         """Async context manager for database session."""
         session = Session(get_engine())
         context.chat_data["db_session"] = session
         self._logger.trace("Opened new database session")
         try:
-            yield
+            yield session
             session.commit()
         except Exception:
             session.rollback()
@@ -337,17 +337,12 @@ class Action:
             context.chat_data.pop("db_session", None)
             self._logger.trace("Closed database session")
 
-    @staticmethod
-    def _get_db_session(context: CallbackContext) -> Session:
-        """Get the database session from the context."""
-        return context.chat_data.get("db_session")
-
-    def _params_dict(self, context: CallbackContext, update: Update = None) -> dict[str, Any]:
+    def _params_dict(self, session: Session, context: CallbackContext, update: Update = None) -> dict[str, Any]:
         params = {
             "update": update if update else None,
             "context": context,
-            "user": self._param_user(context, update),
-            "users": self._param_users(context, update),
+            "user": self._param_user(session, context, update),
+            "users": self._param_users(session, context, update),
             "templates": self._message_templates,
             "action_folder": self._folder_path,
         }
@@ -360,19 +355,20 @@ class Action:
 
         return params
 
-    def _param_user(self, context: CallbackContext, update: Update = None) -> BaseUser:
+    @staticmethod
+    def _param_user(session: Session, context: CallbackContext, update: Update = None) -> BaseUser:
         """Get the user parameter."""
         if update:
             user = get_user_from_telegram_id(update.effective_user.id)
         else:
             user = get_user_from_telegram_id(context.job.data.get("user"))
 
-        user = self._get_db_session(context).merge(user)
-        self._get_db_session(context).refresh(user)
+        user = session.merge(user)
+        session.refresh(user)
 
         return user
 
-    def _param_users(self, context: CallbackContext, update: Update = None) -> list[BaseUser]:
+    def _param_users(self, session: Session, context: CallbackContext, update: Update = None) -> list[BaseUser]:
         """Get the users parameter."""
         if update:
             users = get_users_of_action(self.name)
@@ -381,8 +377,8 @@ class Action:
 
         merged_users = []
         for user in users:
-            merged_user = self._get_db_session(context).merge(user)
-            self._get_db_session(context).refresh(merged_user)
+            merged_user = session.merge(user)
+            session.refresh(merged_user)
             merged_users.append(merged_user)
 
         return merged_users
@@ -444,10 +440,10 @@ class Action:
         return await self._datasources[ds_name.group(1)].fetch(self._request_templates[req].render(context))
 
     async def _fill_parameters(
-        self, context: CallbackContext, update: Update = None
+        self, session: Session, context: CallbackContext, update: Update = None
     ) -> tuple[list[Any], dict[str, Any]]:
         """Fill parameters for the action call."""
-        parameters = self._params_dict(context, update)
+        parameters = self._params_dict(session, context, update)
 
         pos_args = []
         keyword_args = {}
@@ -473,8 +469,8 @@ class Action:
         """Execute the action."""
         self._logger.debug("Executing action")
 
-        async with self._db_session(context):
-            pos_args, keyword_args = await self._fill_parameters(context, update)
+        async with self._db_session(context) as session:
+            pos_args, keyword_args = await self._fill_parameters(session, context, update)
             result: Any = await self._func(*pos_args, **keyword_args)
             await send(result, update.effective_chat.id, context)
 
@@ -489,14 +485,14 @@ class Action:
 
         if per_user:
             for telegram_id in context.job.data.get("users", []):
-                async with self._db_session(context):
+                async with self._db_session(context) as session:
                     context.job.data["user"] = telegram_id
-                    pos_args, keyword_args = await self._fill_parameters(context)
+                    pos_args, keyword_args = await self._fill_parameters(session, context)
                     result: Any = await self._func(*pos_args, **keyword_args)
                     await send(result, telegram_id, context)
         else:
-            async with self._db_session(context):
-                pos_args, keyword_args = await self._fill_parameters(context)
+            async with self._db_session(context) as session:
+                pos_args, keyword_args = await self._fill_parameters(session, context)
                 result: Any = await self._func(*pos_args, **keyword_args)
                 for telegram_id in context.job.data.get("users", []):
                     await send(result, telegram_id, context)
