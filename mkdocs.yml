@@ -46,6 +46,7 @@ nav:
           - Use datasources: guides/actions/use-datasources.md
           - Ask questions: guides/actions/ask-questions.md
           - Create custom questions: guides/actions/custom-questions.md
+          - All action parameters: guides/actions/parameters.md
       - Users:
           - Extend the user model: guides/users/extend.md
       - Jobs:
