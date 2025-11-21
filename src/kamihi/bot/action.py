@@ -328,8 +328,11 @@ class Action:
         self._logger.trace("Opened new database session")
         try:
             yield
-        finally:
             session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
             session.close()
             context.chat_data.pop("db_session", None)
             self._logger.trace("Closed database session")
