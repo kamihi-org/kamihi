@@ -87,6 +87,7 @@ async def test_custom_user(
     assert response.text == f"Hello, {user['name']}!"
 
 
+
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("kamihi")
 @pytest.mark.parametrize(
