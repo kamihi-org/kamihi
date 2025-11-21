@@ -363,7 +363,8 @@ class Action:
         else:
             user = get_user_from_telegram_id(context.job.data.get("user"))
 
-        self._get_db_session(context).add(user)
+        user = self._get_db_session(context).merge(user)
+        self._get_db_session(context).refresh(user)
 
         return user
 
@@ -375,7 +376,8 @@ class Action:
             users = [get_user_from_telegram_id(tg_id) for tg_id in context.job.data.get("users", [])]
 
         for user in users:
-            self._get_db_session(context).add(user)
+            user = self._get_db_session(context).merge(user)
+            self._get_db_session(context).refresh(user)
 
         return users
 
