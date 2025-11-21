@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import inspect
 import re
-from collections.abc import Callable, Coroutine, Sequence
+from collections.abc import AsyncGenerator, Callable, Coroutine, Sequence
+from contextlib import asynccontextmanager
 from inspect import Parameter
 from pathlib import Path
 from random import randint
@@ -319,29 +320,64 @@ class Action:
                 self._logger.trace("Added action to database")
             session.commit()
 
+    @asynccontextmanager
+    async def _db_session(self, context: CallbackContext) -> AsyncGenerator[None, Any]:
+        """Async context manager for database session."""
+        session = Session(get_engine())
+        context.chat_data["db_session"] = session
+        self._logger.trace("Opened new database session")
+        try:
+            yield
+        finally:
+            session.commit()
+            session.close()
+            context.chat_data.pop("db_session", None)
+            self._logger.trace("Closed database session")
+
+    def _get_db_session(self, context: CallbackContext) -> Session:
+        """Get the database session from the context."""
+        return context.chat_data.get("db_session")
+
     def _params_dict(self, context: CallbackContext, update: Update = None) -> dict[str, Any]:
         params = {
             "update": update if update else None,
             "context": context,
-            "logger": self._logger,
-            "user": (
-                get_user_from_telegram_id(update.effective_user.id)
-                if update
-                else get_user_from_telegram_id(context.job.data.get("user"))
-            ),
-            "users": (
-                get_users_of_action(self.name)
-                if update
-                else [get_user_from_telegram_id(tg_id) for tg_id in context.job.data.get("users", [])]
-            ),
+            "user": self._param_user(context, update),
+            "users": self._param_users(context, update),
             "templates": self._message_templates,
             "action_folder": self._folder_path,
         }
+
         if type(context.chat_data) is dict:
             params.update(context.chat_data.get("questions", {}))
+
         if context.job and type(context.job.data) is dict and context.job.data.get("args"):
             params.update(context.job.data.get("args", {}))
+
         return params
+
+    def _param_user(self, context: CallbackContext, update: Update = None) -> BaseUser:
+        """Get the user parameter."""
+        if update:
+            user = get_user_from_telegram_id(update.effective_user.id)
+        else:
+            user = get_user_from_telegram_id(context.job.data.get("user"))
+
+        self._get_db_session(context).add(user)
+
+        return user
+
+    def _param_users(self, context: CallbackContext, update: Update = None) -> list[BaseUser]:
+        """Get the users parameter."""
+        if update:
+            users = get_users_of_action(self.name)
+        else:
+            users = [get_user_from_telegram_id(tg_id) for tg_id in context.job.data.get("users", [])]
+
+        for user in users:
+            self._get_db_session(context).add(user)
+
+        return users
 
     def _param_template(self, _: str, param: Parameter) -> Template:
         """Get a template for a specific parameter."""
@@ -429,11 +465,10 @@ class Action:
         """Execute the action."""
         self._logger.debug("Executing action")
 
-        pos_args, keyword_args = await self._fill_parameters(context, update)
-
-        result: Any = await self._func(*pos_args, **keyword_args)
-
-        await send(result, update.effective_chat.id, context)
+        async with self._db_session(context):
+            pos_args, keyword_args = await self._fill_parameters(context, update)
+            result: Any = await self._func(*pos_args, **keyword_args)
+            await send(result, update.effective_chat.id, context)
 
         self._logger.debug("Finished execution")
         return ConversationHandler.END
@@ -446,21 +481,19 @@ class Action:
 
         if per_user:
             for telegram_id in context.job.data.get("users", []):
-                context.job.data["user"] = telegram_id
-                pos_args, keyword_args = await self._fill_parameters(context)
-
-                result: Any = await self._func(*pos_args, **keyword_args)
-
-                await send(result, telegram_id, context)
+                async with self._db_session(context):
+                    context.job.data["user"] = telegram_id
+                    pos_args, keyword_args = await self._fill_parameters(context)
+                    result: Any = await self._func(*pos_args, **keyword_args)
+                    await send(result, telegram_id, context)
         else:
-            pos_args, keyword_args = await self._fill_parameters(context)
+            async with self._db_session(context):
+                pos_args, keyword_args = await self._fill_parameters(context)
+                result: Any = await self._func(*pos_args, **keyword_args)
+                for telegram_id in context.job.data.get("users", []):
+                    await send(result, telegram_id, context)
 
-            result: Any = await self._func(*pos_args, **keyword_args)
-
-            for telegram_id in context.job.data.get("users", []):
-                await send(result, telegram_id, context)
-
-            self._logger.debug("Finished scheduled execution")
+        self._logger.debug("Finished scheduled execution")
 
     def __repr__(self) -> str:
         """Return a string representation of the Action object."""
