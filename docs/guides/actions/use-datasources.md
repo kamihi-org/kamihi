@@ -14,6 +14,16 @@ After writing your query in the appropriate SQL dialect for the datasource, save
 
 For actions that have one query, it is recommended that the query name be the same as the action name. For example, for an action named `get_users` that uses a datasource named `my_sqlite_db`, you should name the file `get_users.my_sqlite_db.sql`.
 
+## Parametrizing queries
+
+You can parameterize your query files using Jinja2 templating syntax. This allows you to dynamically insert values into your queries based on the action's input arguments. Any value valid in the action parameters can be used in the query template (except `template` and `template_*`), and that includes [reusable questions](ask-questions.md). 
+
+In this case, the name of the file must follow the same convention as before, but suffixed with `.jinja` to indicate that it is a Jinja2 template:
+
+```
+<query_name>.<datasource_name>.sql.jinja
+```
+
 ## Using the data in your action
 
 There are three main patterns for using data from data sources in your actions:
