@@ -324,7 +324,6 @@ class Action:
     async def _db_session(self, context: CallbackContext) -> AsyncGenerator[Session, Any]:
         """Async context manager for database session."""
         session = Session(get_engine())
-        context.chat_data["db_session"] = session
         self._logger.trace("Opened new database session")
         try:
             yield session
@@ -334,7 +333,6 @@ class Action:
             raise
         finally:
             session.close()
-            context.chat_data.pop("db_session", None)
             self._logger.trace("Closed database session")
 
     def _params_dict(self, session: Session, context: CallbackContext, update: Update = None) -> dict[str, Any]:
