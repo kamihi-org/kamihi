@@ -361,9 +361,9 @@ class Action:
         else:
             user = get_user_from_telegram_id(context.job.data.get("user"))
 
-        user = session.merge(user)
-        session.refresh(user)
-
+        if user is not None:
+            user = session.merge(user)
+            session.refresh(user)
         return user
 
     def _param_users(self, session: Session, context: CallbackContext, update: Update = None) -> list[BaseUser]:
