@@ -1,3 +1,9 @@
+## 5.5.1 (2025-11-25)
+
+### Fix
+
+- **bot**: execute action inside db session (#101)
+
 ## 5.5.0 (2025-11-21)
 
 ### Feat
