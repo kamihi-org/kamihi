@@ -164,7 +164,9 @@ class PostgresDataSource(DataSource):
         with self._logger.contextualize(request=str(request)), timer(self._logger, "Executed command"):
             async with self._pool.acquire() as conn:
                 self._logger.trace("Acquired connection from pool")
-                results = await conn.fetch(anyio.read_text() if isinstance(request, Path) else request)
+                results = await conn.fetch(
+                    request if isinstance(request, str) else await anyio.Path(request).read_text()
+                )
                 self._logger.trace("Fetched {results} results from datasource", results=len(results))
         return results
 
