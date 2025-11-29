@@ -40,6 +40,7 @@ async def test_permission_add_user(
     )
 
     await admin_page.get_by_role("link", name=" Permissions").click()
+    await admin_page.reload()
     await expect(admin_page.locator('[id="\\31 "]')).to_contain_text("/start")
     await expect(admin_page.locator('[id="\\31 "]')).to_contain_text(str(user["telegram_id"]))
     await expect(admin_page.locator('[id="\\31 "]')).to_contain_text("-empty-")

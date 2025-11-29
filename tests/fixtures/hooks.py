@@ -10,30 +10,39 @@ import pytest
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
 from _pytest.terminal import TerminalReporter
+from pluggy import Result
 from telethon.errors import FloodWaitError
 
 from tests.fixtures.docker_container import KamihiContainer
+from tests.fixtures.settings import TestingSettings
 
 
 def pytest_set_filtered_exceptions():
     """
-    All tests will be retried unless they fail due to an AssertionError or CustomError
+    All tests will fail unless they raise one of the exceptions listed here.
     """
     return [FloodWaitError]
 
 
-@pytest.hookimpl(tryfirst=True)
-def pytest_runtest_makereport(item: Item, call: CallInfo):
-    # Let's ensure we are dealing with a test report
-    if call.when == "call" and call.excinfo:
-        # Get the fixture instance from the item
+def pytest_xdist_auto_num_workers(config):
+    """
+    Automatically determine the number of workers for xdist based on credentials available.
+    """
+    setts = TestingSettings()
+
+    return max(1, len(setts.credentials))
+
+
+@pytest.hookimpl(hookwrapper=True, tryfirst=True)
+def pytest_runtest_makereport(item: Item):
+    outcome = yield
+    rep: Result = outcome.get_result()
+
+    if rep.when == "call" and rep.failed:
         kamihi_container: KamihiContainer = item.funcargs.get("kamihi_container")
-        reporter: TerminalReporter = item.config.pluginmanager.get_plugin("terminalreporter")
         if kamihi_container:
-            reporter.write_sep("=", f" Command logs for {item.name} ")
             logs = kamihi_container.get_text("/app/kamihi.log")["kamihi.log"]
-            for line in logs.splitlines():
-                reporter.write_line(line)
+            rep.sections.append(("Command logs", logs))
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):

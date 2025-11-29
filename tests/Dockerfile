@@ -13,9 +13,18 @@ RUN apt-get update && \
 COPY . /lib/kamihi
 
 # Add environment variables for future dependencies installation.
+ENV UV_PROJECT_ENVIRONMENT=/venv
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
-ENV PATH="/app/.venv/bin:$PATH"
 
 # Sets the working directory to /app.
 WORKDIR /app
+
+# Copies the pyproject.toml file for the test project.
+COPY ./tests/utils/pyproject.toml .
+
+# Installs the dependencies with uv
+RUN uv sync --no-install-project
+
+# Set the PATH to include the virtual environment's bin directory.
+ENV PATH="/venv/bin:$PATH"

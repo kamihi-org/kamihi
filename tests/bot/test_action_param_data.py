@@ -20,20 +20,17 @@ from telethon.tl.custom import Conversation
     "config_file",
     [
         {
-            "kamihi.yaml": lfc(
-                """\
-                    datasources:
-                      - name: dname
-                        type: postgresql
-                        host: {host}
-                        port: 5432
-                        database: test_db
-                        user: test_user
-                        password: {password}
-                """.format,
-                host=lf("sample_postgres_container.ips.primary"),
-                password=lf("sample_postgres_password"),
-            ),
+            "datasources": [
+                {
+                    "name": "dname",
+                    "type": "postgresql",
+                    "host": lfc("{host}".format, host=lf("sample_postgres_container.ips.primary")),
+                    "port": 5432,
+                    "database": "test_db",
+                    "user": "test_user",
+                    "password": lfc("{pwd}".format, pwd=lf("sample_postgres_password")),
+                }
+            ],
         }
     ],
 )
@@ -177,23 +174,22 @@ async def test_data(actions_folder, config_file, expected_response, user, add_pe
                 """,
             },
             {
-                "kamihi.yaml": lfc(
-                    """\
-                        datasources:
-                          - name: lego
-                            type: postgresql
-                            host: {host}
-                            port: 5432
-                            database: test_db
-                            user: test_user
-                            password: {password}
-                          - name: sakila
-                            type: sqlite
-                            path: sample_sqlite.db
-                    """.format,
-                    host=lf("sample_postgres_container.ips.primary"),
-                    password=lf("sample_postgres_password"),
-                ),
+                "datasources": [
+                    {
+                        "name": "lego",
+                        "type": "postgresql",
+                        "host": lfc("{host}".format, host=lf("sample_postgres_container.ips.primary")),
+                        "port": 5432,
+                        "database": "test_db",
+                        "user": "test_user",
+                        "password": lfc("{pwd}".format, pwd=lf("sample_postgres_password")),
+                    },
+                    {
+                        "name": "sakila",
+                        "type": "sqlite",
+                        "path": "sample_sqlite.db",
+                    },
+                ],
             },
             {
                 "sample_sqlite.db": Path("tests/static/sample_data/sqlite.db").read_bytes(),
@@ -221,20 +217,17 @@ async def test_multiple_datasources(
     "config_file",
     [
         {
-            "kamihi.yaml": lfc(
-                """\
-                    datasources:
-                      - name: dname
-                        type: postgresql
-                        host: {host}
-                        port: 5432
-                        database: test_db
-                        user: test_user
-                        password: {password}
-                """.format,
-                host=lf("sample_postgres_container.ips.primary"),
-                password=lf("sample_postgres_password"),
-            ),
+            "datasources": [
+                {
+                    "name": "dname",
+                    "type": "postgresql",
+                    "host": lfc("{host}".format, host=lf("sample_postgres_container.ips.primary")),
+                    "port": 5432,
+                    "database": "test_db",
+                    "user": "test_user",
+                    "password": lfc("{pwd}".format, pwd=lf("sample_postgres_password")),
+                }
+            ],
         }
     ],
 )

@@ -17,7 +17,6 @@ from tests.fixtures.docker_container import KamihiContainer
 @pytest.fixture
 def kamihi(kamihi_container: KamihiContainer, request) -> Generator[Container, None, None]:
     """Fixture that ensures the Kamihi container is started and ready."""
-    kamihi_container.uv_sync()
     kamihi_container.db_migrate()
     kamihi_container.db_upgrade()
 

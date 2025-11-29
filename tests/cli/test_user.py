@@ -22,6 +22,7 @@ async def test_user_add(kamihi: KamihiContainer, admin_page: Page):
         {"telegram_id": 123456789, "is_admin": False},
     )
     await admin_page.get_by_role("link", name=" Users").click()
+    await admin_page.reload()
     await expect(admin_page.locator("#dt_info")).to_contain_text("Showing 1 to 1 of 1 entries")
     await expect(admin_page.locator("tbody")).to_contain_text("123456789")
 
@@ -33,6 +34,7 @@ async def test_user_add_admin(kamihi: KamihiContainer, admin_page: Page):
         "kamihi user add 123456789 --admin", "User added", "SUCCESS", {"telegram_id": 123456789, "is_admin": True}
     )
     await admin_page.get_by_role("link", name=" Users").click()
+    await admin_page.reload()
     await expect(admin_page.locator("#dt_info")).to_contain_text("Showing 1 to 1 of 1 entries")
     await expect(admin_page.locator("tbody")).to_contain_text("123456789")
     await expect(admin_page.get_by_role("cell", name="").locator("i")).to_be_visible()
@@ -54,6 +56,7 @@ async def test_user_add_invalid_telegram_id(kamihi: KamihiContainer, admin_page:
         "Invalid value for 'TELEGRAM_ID'",
     )
     await admin_page.get_by_role("link", name=" Users").click()
+    await admin_page.reload()
     await expect(admin_page.locator("#dt_info")).to_contain_text("Showing 0 to 0 of 0 entries")
     await expect(admin_page.locator("tbody")).to_have_count(1)
     await expect(admin_page.locator("tbody")).to_contain_text("No matching records found")

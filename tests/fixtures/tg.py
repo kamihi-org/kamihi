@@ -21,18 +21,18 @@ async def tg_client(test_settings):
     load_dotenv()
 
     client = TelegramClient(
-        StringSession(test_settings.tg_session),
-        test_settings.tg_api_id,
-        test_settings.tg_api_hash,
+        StringSession(test_settings.credentials.session),
+        test_settings.api_id,
+        test_settings.api_hash,
         sequential_updates=True,
     )
     client.session.set_dc(
-        test_settings.tg_dc_id,
-        test_settings.tg_dc_ip,
+        test_settings.dc_id,
+        str(test_settings.dc_ip),
         443,
     )
     await client.connect()
-    await client.sign_in(phone=test_settings.tg_phone_number)
+    await client.sign_in(phone=test_settings.credentials.phone_number)
 
     yield client
 
@@ -43,5 +43,5 @@ async def tg_client(test_settings):
 @pytest.fixture(scope="session")
 async def chat(test_settings, tg_client) -> AsyncGenerator[Conversation, Any]:
     """Open conversation with the bot."""
-    async with tg_client.conversation(test_settings.bot_username, timeout=60, max_messages=10000) as conv:
+    async with tg_client.conversation(test_settings.credentials.bot_username, timeout=60, max_messages=10000) as conv:
         yield conv

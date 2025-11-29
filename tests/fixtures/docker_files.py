@@ -10,38 +10,25 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
-import toml
+import yaml
 
 
 @pytest.fixture
-def pyproject_extra_dependencies() -> list[str]:
-    """Fixture to provide extra dependencies for the pyproject.toml file."""
-    return []
+def db_url() -> str:
+    """Fixture to provide the database URL."""
+    return "sqlite:///./kamihi.db"
 
 
 @pytest.fixture
-def pyproject(pyproject_extra_dependencies: list[str]) -> dict:
-    """Fixture to provide the contents of the pyproject.toml file."""
-    data = {
-        "project": {
-            "name": "kftp",
-            "version": "0.0.0",
-            "description": "kftp",
-            "requires-python": ">=3.12",
-            "dependencies": ["kamihi[all]"] + pyproject_extra_dependencies,
-        },
-        "tool": {
-            "uv": {"sources": {"kamihi": {"path": "/lib/kamihi"}}},
-            "alembic": {"script_location": "%(here)s/migrations"},
-        },
-    }
-    return {"pyproject.toml": toml.dumps(data)}
-
-
-@pytest.fixture
-def config_file() -> dict:
+def config_file(db_url) -> dict:
     """Fixture to provide the contents of the kamihi.yaml file."""
-    return {"kamihi.yaml": ""}
+    return {"db": {"url": db_url}}
+
+
+@pytest.fixture
+def config_file_yml(config_file) -> dict:
+    """Fixture to provide the contents of the kamihi.yaml file with DB URL."""
+    return {"kamihi.yaml": yaml.dump(config_file)}
 
 
 @pytest.fixture
@@ -88,12 +75,11 @@ def extra_files_bytes() -> dict[str, bytes]:
 
 @pytest.fixture
 def app_folder(
-    pyproject, config_file, actions_folder, models_folder, questions_folder, migrations_folder, extra_files_bytes
+    config_file_yml, actions_folder, models_folder, questions_folder, migrations_folder, extra_files_bytes
 ) -> dict:
     """Fixture to provide the path to the app folder."""
     res = {}
-    res.update({key: dedent(value) for key, value in pyproject.items()})
-    res.update({key: dedent(value) for key, value in config_file.items()})
+    res.update({key: dedent(value) for key, value in config_file_yml.items()})
     res.update(
         {"actions/" + key: dedent(value) if isinstance(value, str) else value for key, value in actions_folder.items()}
     )

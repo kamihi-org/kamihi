@@ -36,10 +36,9 @@ def actions_folder():
 @pytest.fixture
 def config_file():
     return {
-        "kamihi.yaml": """\
-        jobs:
-            enabled: true
-    """
+        "jobs": {
+            "enabled": True,
+        },
     }
 
 
@@ -97,6 +96,7 @@ async def test_job_run_manually(user, job_page: Page, chat: Conversation):
     await job_page.get_by_role("textbox", name="Cron expression").click()
     await job_page.get_by_role("textbox", name="Cron expression").fill("* * * */5 *")
     await job_page.get_by_role("button", name="Save", exact=True).click()
+    await job_page.reload()
     await expect(job_page.locator("tbody")).to_contain_text("/start")
     await expect(job_page.locator("tbody")).to_contain_text(str(user["telegram_id"]))
     await expect(job_page.locator("tbody")).to_contain_text("-empty-")
