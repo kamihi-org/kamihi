@@ -140,9 +140,7 @@ def _checkout_key(test_settings: TestingSettings, redis_client: Redis) -> str | 
     return key
 
 
-def _checkin_key(
-    test_settings: TestingSettings, redis_client: Redis, key: str, cooldown_seconds: int = 0
-) -> None:
+def _checkin_key(test_settings: TestingSettings, redis_client: Redis, key: str, cooldown_seconds: int = 0) -> None:
     """
     Returns a raw key string to the pool.
 
