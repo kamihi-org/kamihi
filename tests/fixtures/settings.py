@@ -31,15 +31,12 @@ class RedisSettings(BaseSettings):
     port: int = Field(default=6379)
     password: str | None = Field(default=None)
 
-    pool_list: str = Field(default="tg")
-    in_use_list: str = Field(default="tg_lock")
+    ready_zset: str = Field(default="tg:ready")
+    lock_prefix: str = Field(default="tg:lock:")
+    meta_prefix: str = Field(default="tg:meta:")
 
-    prefix_lock: str = Field(default="lock:")
-    prefix_flood: str = Field(default="flood:")
-
-    lease_ttl: int = Field(default=3600)
-    retries: int = Field(default=40)
-    retry_delay: float = Field(default=1)
+    lease_ttl: int = Field(default=600)
+    checkout_block_seconds: int = Field(default=5)
 
 
 class TestingSettings(BaseSettings):

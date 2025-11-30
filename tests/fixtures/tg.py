@@ -10,8 +10,12 @@ from __future__ import annotations
 
 import base64
 import json
+import os
+import random
+import socket
 import time
-
+import uuid
+from dataclasses import dataclass
 from typing import AsyncGenerator, Any
 
 import pytest
@@ -25,6 +29,122 @@ from telethon.sessions import StringSession
 from telethon.tl.custom import Conversation
 
 from tests.fixtures.settings import TestingSettings
+
+
+_CHECKOUT_LUA = """
+local lock_key = KEYS[1]
+local ready_key = KEYS[2]
+local meta_key = KEYS[3]
+
+local member = ARGV[1]
+local owner = ARGV[2]
+local ttl = tonumber(ARGV[3])
+local score = tonumber(ARGV[4])
+local now = tonumber(ARGV[5])
+
+local ok = redis.call('SET', lock_key, owner, 'NX', 'EX', ttl)
+if not ok then
+    redis.call('ZADD', ready_key, score, member)
+    return 0
+end
+
+redis.call('HSET', meta_key,
+    'owner', owner,
+    'leased_at', now,
+    'lease_expires_at', now + ttl
+)
+return 1
+"""
+
+
+_CHECKIN_LUA = """
+local lock_key = KEYS[1]
+local ready_key = KEYS[2]
+local meta_key = KEYS[3]
+
+local member = ARGV[1]
+local owner = ARGV[2]
+local score = tonumber(ARGV[3])
+local now = tonumber(ARGV[4])
+
+local current = redis.call('GET', lock_key)
+if current and current ~= owner then
+    return 0
+end
+
+redis.call('DEL', lock_key)
+redis.call('ZADD', ready_key, score, member)
+redis.call('HSET', meta_key,
+    'owner', owner,
+    'last_release_at', now,
+    'next_available_at', score
+)
+return 1
+"""
+
+
+@dataclass
+class Lease:
+    key: str
+    ready_at: float
+
+
+class RedisLeaseManager:
+    def __init__(self, settings: TestingSettings, redis_client: Redis):
+        self._settings = settings
+        self._redis = redis_client
+        self._owner_id = f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4()}"
+        self._checkout_script = redis_client.register_script(_CHECKOUT_LUA)
+        self._checkin_script = redis_client.register_script(_CHECKIN_LUA)
+        self._rng = random.Random()
+
+    @property
+    def owner_id(self) -> str:
+        return self._owner_id
+
+    @property
+    def _ready_key(self) -> str:
+        return self._settings.redis.ready_zset
+
+    def checkout(self) -> Lease:
+        block = self._settings.redis.checkout_block_seconds
+        timeout = 0 if block is None else max(int(block), 0)
+        while True:
+            result = self._redis.bzpopmin(self._ready_key, timeout=timeout)
+            if result is None:
+                raise RuntimeError("No available credentials")
+
+            _, member, score = result
+            key = member.decode("utf-8")
+            ready_at = float(score)
+            now = time.time()
+            lock_key = f"{self._settings.redis.lock_prefix}{key}"
+            meta_key = f"{self._settings.redis.meta_prefix}{key}"
+            lease_ttl = int(self._settings.redis.lease_ttl)
+
+            success = self._checkout_script(
+                keys=[lock_key, self._ready_key, meta_key],
+                args=[key, self._owner_id, lease_ttl, ready_at, now],
+            )
+
+            if int(success) == 1:
+                return Lease(key=key, ready_at=ready_at)
+
+    def checkin(self, lease: Lease, cooldown_seconds: int) -> None:
+        now = time.time()
+        cooldown = max(int(cooldown_seconds), 0)
+        next_ready = now if cooldown == 0 else now + cooldown
+        next_ready += self._rng.random() * 0.5
+        lock_key = f"{self._settings.redis.lock_prefix}{lease.key}"
+        meta_key = f"{self._settings.redis.meta_prefix}{lease.key}"
+
+        result = self._checkin_script(
+            keys=[lock_key, self._ready_key, meta_key],
+            args=[lease.key, self._owner_id, next_ready, now],
+        )
+
+        if int(result) != 1:
+            raise RuntimeError(f"Failed to release credential {lease.key}")
 
 
 class Credentials(BaseModel):
@@ -49,6 +169,7 @@ class Credentials(BaseModel):
     session: str = Field()
 
     _client: TelegramClient | None = None
+    _lease: Lease | None = None
 
     @classmethod
     def from_base64(cls, test_settings: TestingSettings, key: str) -> "Credentials | None":
@@ -80,7 +201,8 @@ class Credentials(BaseModel):
             443,
         )
         await self._client.connect()
-        await self._client.sign_in(phone=self.phone_number)
+        if not await self._client.is_user_authorized():
+            await self._client.sign_in(phone=self.phone_number)
 
     async def test(self) -> int:
         """
@@ -106,64 +228,6 @@ class Credentials(BaseModel):
         return self._client
 
 
-def _checkout_key(test_settings: TestingSettings, redis_client: Redis) -> str | None:
-    """
-    Checkout a key from the Redis pool.
-
-    Args:
-        test_settings (TestingSettings): The testing settings.
-        redis_client (Redis): The Redis client.
-
-    Returns:
-        str | None: The checked out key or None if no key is available.
-    """
-    key = None
-    for _ in range(test_settings.redis.retries):
-        key_bytes = redis_client.rpoplpush(test_settings.redis.pool_list, test_settings.redis.in_use_list)
-
-        if key_bytes:
-            key = key_bytes.decode("utf-8")
-            if redis_client.exists(f"{test_settings.redis.prefix_flood}{key}"):
-                redis_client.lrem(test_settings.redis.in_use_list, 1, key)
-                redis_client.lpush(test_settings.redis.pool_list, key)
-                continue
-
-            lock_key = f"{test_settings.redis.prefix_lock}{key}"
-            if redis_client.set(lock_key, "1", nx=True, ex=test_settings.redis.lease_ttl):
-                break
-
-            redis_client.lrem(test_settings.redis.in_use_list, 1, key)
-            redis_client.lpush(test_settings.redis.pool_list, key)
-
-        time.sleep(test_settings.redis.retry_delay)
-
-    return key
-
-
-def _checkin_key(test_settings: TestingSettings, redis_client: Redis, key: str, cooldown_seconds: int = 0) -> None:
-    """
-    Returns a raw key string to the pool.
-
-    Args:
-        test_settings (TestingSettings): The testing settings.
-        redis_client (Redis): The Redis client.
-        key (str): The key to return.
-        cooldown_seconds (int): The cooldown period in seconds before the key can be checked out again
-
-    Returns:
-        None
-    """
-    if not key:
-        return
-
-    if cooldown_seconds > 0:
-        redis_client.set(f"{test_settings.redis.prefix_flood}{key}", "1", ex=cooldown_seconds)
-
-    redis_client.delete(f"{test_settings.redis.prefix_lock}{key}")
-    redis_client.lrem(test_settings.redis.in_use_list, 1, key)
-    redis_client.lpush(test_settings.redis.pool_list, key)
-
-
 @pytest.fixture
 async def credentials(test_settings, request, redis_client: Redis) -> AsyncGenerator[Credentials, Any]:
     """
@@ -173,27 +237,39 @@ async def credentials(test_settings, request, redis_client: Redis) -> AsyncGener
         Credentials: The credentials for the testing environment.
 
     """
-    cred = None
-    for _ in range(test_settings.validation_retries):
-        key = _checkout_key(test_settings, redis_client)
-        cred = Credentials.from_base64(test_settings, key)
+    manager = RedisLeaseManager(test_settings, redis_client)
+    lease: Lease | None = None
+    cred: Credentials | None = None
 
+    for _ in range(test_settings.validation_retries):
+        lease = manager.checkout()
+        cred = Credentials.from_base64(test_settings, lease.key)
+
+        if not cred:
+            manager.checkin(lease, 0)
+            lease = None
+            continue
+
+        cred._lease = lease
         await cred.connect()
         cooldown = await cred.test()
 
         if cooldown == 0:
             break
-        else:
-            _checkin_key(test_settings, redis_client, key, cooldown)
 
-    if not cred:
-        raise RuntimeError("No available API keys (all in use or cooling down)")
+        manager.checkin(lease, cooldown)
+        lease = None
+        cred = None
+
+    if not cred or not lease:
+        raise RuntimeError("No available API credentials")
 
     try:
         yield cred
     finally:
-        cooldown = await cred.test()
-        _checkin_key(test_settings, redis_client, cred.key, cooldown)
+        if cred._lease:
+            cooldown = await cred.test()
+            manager.checkin(cred._lease, cooldown)
 
 
 @pytest.fixture
