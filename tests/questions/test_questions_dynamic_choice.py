@@ -57,12 +57,13 @@ def questions_folder() -> dict:
 def config_file() -> dict:
     """Configure a local SQLite datasource named 'sname'."""
     return {
-        "kamihi.yaml": """\
-            datasources:
-              - name: sname
-                type: sqlite
-                path: sample_sqlite.db
-        """
+        "datasources": [
+            {
+                "name": "sname",
+                "type": "sqlite",
+                "path": "sample_sqlite.db",
+            }
+        ],
     }
 
 

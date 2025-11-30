@@ -6,8 +6,11 @@ License:
 
 """
 
+from typing import Any, Generator
+
 import pytest
 from pytest_docker_tools import container, fetch
+from pytest_docker_tools.wrappers import Container
 from pytest_lazy_fixtures import lf, lfc
 
 from tests.fixtures.docker_container import KamihiContainer
@@ -31,19 +34,38 @@ postgres_image = fetch(repository="postgres:latest")
 postgres_container = container(
     image="{postgres_image.id}",
     environment={"POSTGRES_USER": "kamihi", "POSTGRES_PASSWORD": "kamihi", "POSTGRES_DB": "kamihi"},
+    network="{kamihi_network.name}",
 )
+
+
+@pytest.fixture
+def postgres(postgres_container: Container) -> Generator[Container, Any, None]:
+    """Fixture that provides the PostgreSQL container."""
+    for log in postgres_container._container.logs(stream=True):
+        if b"database system is ready to accept connections" in log:
+            break
+    yield postgres_container
+
+
+@pytest.fixture
+def kamihi(kamihi_container: KamihiContainer, postgres: Container) -> Generator[Container, None, None]:
+    """Fixture that ensures the Kamihi container is started and ready with PostgreSQL."""
+    kamihi_container.db_migrate()
+    kamihi_container.db_upgrade()
+    kamihi_container.start()
+
+    yield kamihi_container
+
+    kamihi_container.stop()
 
 
 @pytest.mark.parametrize(
-    "db_url,pyproject_extra_dependencies",
+    "db_url",
     [
-        (
-            lfc("postgresql+psycopg2://kamihi:kamihi@{ip}:5432/kamihi".format, ip=lf("postgres_container.ips.primary")),
-            ["psycopg2-binary"],
-        )
+        lfc("postgresql+psycopg2://kamihi:kamihi@{ip}:5432/kamihi".format, ip=lf("postgres_container.ips.primary")),
     ],
 )
-def test_db_postgresql(db_url, pyproject_extra_dependencies, kamihi: KamihiContainer):
+def test_db_postgresql(db_url: str, kamihi: Container):
     """
     Test the system when using a PostgreSQL database.
 

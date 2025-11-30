@@ -22,6 +22,7 @@ async def test_role_add(kamihi: KamihiContainer, admin_page: Page):
     )
 
     await admin_page.get_by_role("link", name=" Roles").click()
+    await admin_page.reload()
     await expect(admin_page.locator('[id="\\31 "]')).to_contain_text("testrole")
 
 

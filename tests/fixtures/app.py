@@ -29,10 +29,10 @@ def user_custom_data():
 
 
 @pytest.fixture
-def user(kamihi: KamihiContainer, test_settings, user_custom_data) -> Generator[dict, None, None]:
+def user(kamihi: KamihiContainer, credentials, user_custom_data) -> Generator[dict, None, None]:
     """Fixture that creates a user in the database."""
     record = kamihi.run_command_and_wait_for_log(
-        f"kamihi user add {test_settings.user_id} --data '{json.dumps(user_custom_data)}'",
+        f"kamihi user add {credentials.user_id} --data '{json.dumps(user_custom_data)}'",
         level="SUCCESS",
         message="User added",
     )
@@ -41,7 +41,7 @@ def user(kamihi: KamihiContainer, test_settings, user_custom_data) -> Generator[
 
 
 @pytest.fixture
-def add_permission_for_user(kamihi: KamihiContainer, test_settings) -> Generator:
+def add_permission_for_user(kamihi: KamihiContainer) -> Generator:
     """Fixture that returns a function to add permissions to a user for an action in the database."""
 
     def _add_permission(user: int, action_name: str):
@@ -55,7 +55,7 @@ def add_permission_for_user(kamihi: KamihiContainer, test_settings) -> Generator
 
 
 @pytest.fixture
-def add_role(kamihi: KamihiContainer, test_settings) -> Generator:
+def add_role(kamihi: KamihiContainer) -> Generator:
     """Fixture that returns a function to add a role to a user in the database."""
 
     def _add_role(role_name: str):
@@ -69,7 +69,7 @@ def add_role(kamihi: KamihiContainer, test_settings) -> Generator:
 
 
 @pytest.fixture
-def assign_role_to_user(kamihi: KamihiContainer, test_settings) -> Generator:
+def assign_role_to_user(kamihi: KamihiContainer) -> Generator:
     """Fixture that returns a function to assign a role to a user in the database."""
 
     def _assign_role(user: int, role_name: str):

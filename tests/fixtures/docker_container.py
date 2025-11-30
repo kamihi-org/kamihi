@@ -9,19 +9,15 @@ License:
 import json
 import sqlite3
 import tempfile
+from pathlib import Path
 from typing import Any, Generator
 
 import docker.models
 import pytest
 from docker.types import CancellableStream
-from pytest_docker_tools import build, volume, fxtr, container
+from filelock import FileLock
+from pytest_docker_tools import build, volume, fxtr, container, network
 from pytest_docker_tools.wrappers import Container
-
-
-@pytest.fixture
-def db_url() -> str:
-    """Fixture to provide the database URL."""
-    return "sqlite:///./kamihi.db"
 
 
 class EndOfLogsException(Exception):
@@ -87,7 +83,11 @@ class KamihiContainer(Container):
         self.command_logs.append(f"Waiting for log: level={level}, message={message}, extra_values={extra_values}")
 
         for raw_line in stream:
-            for line in raw_line.decode().splitlines():
+            try:
+                l = raw_line.decode().splitlines()
+            except UnicodeDecodeError:
+                continue
+            for line in l:
                 line = line.strip()
                 self.command_logs.append(line)
 
@@ -111,6 +111,7 @@ class KamihiContainer(Container):
 
                     return log_entry
 
+        self.print_logs()
         raise EndOfLogsException(
             "End of logs reached without finding the expected log entry: "
             f"message={message}, level={level}, extra_values={extra_values}"
@@ -171,18 +172,6 @@ class KamihiContainer(Container):
         """
         return self.run_command_and_wait_for_log(command, message, parse_json=False)
 
-    def uv_sync(self, command: str = "uv sync") -> None:
-        """
-        Sync the Kamihi application in the container.
-
-        Args:
-            command (str): The command to sync the application. Defaults to "uv sync".
-        """
-        stream = self.run_command(command)
-        for line in stream:
-            line = line.decode().strip()
-            self.command_logs.append(line)
-
     def db_migrate(self, command: str = "kamihi db migrate") -> None:
         """
         Run database migrations in the Kamihi container.
@@ -241,26 +230,55 @@ class KamihiContainer(Container):
 
         return res
 
+    def print_logs(self) -> None:
+        """Print the collected command logs to standard output."""
+        print("Kamihi Container Command Logs:")
+        print("\n".join(self.command_logs))
+
 
 kamihi_image = build(path=".", dockerfile="tests/Dockerfile")
+
+
+@pytest.fixture(scope="session")
+def kamihi_image_id(tmp_path_factory, worker_id, request):
+    if worker_id == "master":
+        # not executing in with multiple workers, just produce the data and let
+        # pytest's fixture caching do its job
+        return request.getfixturevalue("kamihi_image").id
+
+    # get the temp directory shared by all workers
+    root_tmp_dir = tmp_path_factory.getbasetemp().parent
+
+    fn = root_tmp_dir / "data.json"
+    with FileLock(str(fn) + ".lock"):
+        if fn.is_file():
+            data = fn.read_text()
+        else:
+            data = request.getfixturevalue("kamihi_image").id
+            fn.write_text(data)
+    return data
+
+
 kamihi_volume = volume(initial_content=fxtr("app_folder"))
-uv_cache_volume = volume(scope="session")
+kamihi_network = network()
 kamihi_container = container(
-    image="{kamihi_image.id}",
+    image="{kamihi_image_id}",
     environment={
         "KAMIHI_TESTING": "True",
-        "KAMIHI_TOKEN": "{test_settings.bot_token}",
+        "KAMIHI_TOKEN": "{credentials.bot_token}",
         "KAMIHI_LOG__STDOUT_LEVEL": "TRACE",
         "KAMIHI_LOG__STDOUT_SERIALIZE": "True",
         "KAMIHI_LOG__FILE_ENABLE": "True",
         "KAMIHI_LOG__FILE_LEVEL": "TRACE",
         "KAMIHI_WEB__HOST": "0.0.0.0",
         "KAMIHI_DB__URL": "{db_url}",
+        "UV_PROJECT_ENVIRONMENT": "/venv",
     },
     volumes={
         "{kamihi_volume.name}": {"bind": "/app"},
-        "{uv_cache_volume.name}": {"bind": "/root/.cache/uv"},
+        f"{Path.cwd().absolute()}/tests/utils/pyproject.toml": {"bind": "/app/pyproject.toml", "mode": "ro"},
     },
+    network="{kamihi_network.name}",
     command="sleep infinity",
     wrapper_class=KamihiContainer,
 )
@@ -269,7 +287,6 @@ kamihi_container = container(
 @pytest.fixture
 def kamihi(kamihi_container: KamihiContainer, request) -> Generator[Container, None, None]:
     """Fixture that ensures the Kamihi container is started and ready."""
-    kamihi_container.uv_sync()
     kamihi_container.db_migrate()
     kamihi_container.db_upgrade()
     kamihi_container.start()
@@ -279,8 +296,22 @@ def kamihi(kamihi_container: KamihiContainer, request) -> Generator[Container, N
     kamihi_container.stop()
 
 
+def cleanup_report(request) -> None:
+    """
+    Retrieve the Docker cleanup report from the pytest configuration.
+
+    Args:
+        request: The pytest request object.
+    """
+    request.config._docker_cleanup_report = {
+        "containers": docker.from_env().containers.prune(),
+        "volumes": docker.from_env().volumes.prune({"label": "creator=pytest-docker-tools"}),
+        "images": docker.from_env().images.prune({"dangling": True}),
+    }
+
+
 @pytest.fixture(scope="session", autouse=True)
-def cleanup(request):
+def cleanup(request, worker_id, tmp_path_factory):
     """
     Fixture to clean up the host environment after tests.
 
@@ -288,8 +319,16 @@ def cleanup(request):
     """
     yield
 
-    request.config._docker_cleanup_report = {
-        "containers": docker.from_env().containers.prune(),
-        "volumes": docker.from_env().volumes.prune({"label": "creator=pytest-docker-tools"}),
-        "images": docker.from_env().images.prune({"dangling": True}),
-    }
+    if worker_id == "master":
+        cleanup_report(request)
+        return
+
+    root_tmp_dir = tmp_path_factory.getbasetemp().parent
+
+    fn = root_tmp_dir / "data"
+    with FileLock(str(fn) + ".lock"):
+        if fn.is_file():
+            fn.read_text()
+        else:
+            cleanup_report(request)
+            fn.write_text(json.dumps(request.config._docker_cleanup_report))

@@ -1,0 +1,14 @@
+[project]
+name = "kftp"
+version = "0.0.0"
+description = "kftp"
+requires-python = ">=3.12"
+dependencies = [
+    "kamihi[all]"
+]
+
+[tool.uv.sources]
+kamihi = { path = "/lib/kamihi" }
+
+[tool.alembic]
+script_location = "%(here)s/migrations"

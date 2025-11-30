@@ -126,10 +126,7 @@ async def test_first_page(user, add_permission_for_user, chat: Conversation, act
     "config_file",
     [
         {
-            "kamihi.yaml": """\
-                db:
-                    pages_expiration_days: 0.000001
-            """,
+            "db": {"pages_expiration_days": 0.000001},
         },
     ],
 )

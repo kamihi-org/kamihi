@@ -14,7 +14,7 @@ import pytest
 from pytest_docker_tools import fetch, volume, container
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def sample_postgres_password() -> str:
     """
     Fixture that provides a sample PostgreSQL password.
@@ -42,5 +42,5 @@ sample_postgres_container = container(
     volumes={
         "{sample_postgres_volume.name}": {"bind": "/docker-entrypoint-initdb.d"},
     },
-    scope="session",
+    network="{kamihi_network.name}",
 )

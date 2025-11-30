@@ -6,9 +6,37 @@ License:
 
 """
 
+from ipaddress import IPv4Address
+from typing import Any, Generator
+
 import pytest
+import redis
 from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource, YamlConfigSettingsSource
+from redis import Redis
+
+
+class RedisSettings(BaseSettings):
+    """
+    Settings for Redis connection.
+
+    Attributes:
+        host (str): The Redis host.
+        port (int): The Redis port.
+        password (str | None): The Redis password.
+
+    """
+
+    host: str = Field(default="localhost")
+    port: int = Field(default=6379)
+    password: str | None = Field(default=None)
+
+    ready_zset: str = Field(default="tg:ready")
+    lock_prefix: str = Field(default="tg:lock:")
+    meta_prefix: str = Field(default="tg:meta:")
+
+    lease_ttl: int = Field(default=600)
+    checkout_block_seconds: int = Field(default=5)
 
 
 class TestingSettings(BaseSettings):
@@ -16,29 +44,20 @@ class TestingSettings(BaseSettings):
     Settings for the testing environment.
 
     Attributes:
-        bot_token (str): The bot token for the Telegram bot.
-        bot_username (str): The username of the bot.
-        user_id (int): The user ID for testing.
-        tg_phone_number (str): The phone number for Telegram authentication.
-        tg_api_id (int): The API ID for Telegram authentication.
-        tg_api_hash (str): The API hash for Telegram authentication.
-        tg_session (str): The session string for Telegram authentication.
-        tg_dc_id (int): The data center ID for Telegram authentication.
-        tg_dc_ip (str): The data center IP address for Telegram authentication.
-        wait_time (int): The wait time between requests.
+        api_id (int): The API ID.
+        api_hash (str): The API hash.
+        dc_id (int): The data center ID.
+        dc_ip (str): The data center IP address.
+        redis (RedisSettings): Redis connection settings.
 
     """
 
-    bot_token: str = Field()
-    bot_username: str = Field()
-    user_id: int = Field()
-    tg_phone_number: str = Field()
-    tg_api_id: int = Field()
-    tg_api_hash: str = Field()
-    tg_session: str = Field()
-    tg_dc_id: int = Field()
-    tg_dc_ip: str = Field()
-    wait_time: float = Field(default=0.5)
+    api_id: int = Field()
+    api_hash: str = Field()
+    dc_id: int = Field()
+    dc_ip: IPv4Address = Field()
+    redis: RedisSettings = Field(default_factory=RedisSettings)
+    validation_retries: int = Field(default=5)
 
     model_config = SettingsConfigDict(
         env_prefix="KAMIHI_TESTING__",
@@ -47,12 +66,55 @@ class TestingSettings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
         env_nested_delimiter="__",
-        yaml_file="kamihi.yaml",
+        yaml_file="testing.yml",
     )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,  # skipcq: PYL-W0621
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        """
+        Customize the order of settings sources.
+
+        This method allows you to customize the order in which settings sources are
+        loaded. The order of sources is important because it determines which settings
+        take precedence when there are conflicts.
+        The order of sources is as follows:
+            1. Environment variables
+            2. .env file
+            3. YAML file
+            4. Initial settings
+
+        Args:
+            settings_cls: the settings class to customize sources for
+            init_settings: settings from class initialization
+            env_settings: settings from environment variables
+            dotenv_settings: settings from .env file
+            file_secret_settings: settings from file secrets
+
+        Returns:
+            tuple: A tuple containing the customized settings sources in the desired order.
+
+        """
+        return (
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            YamlConfigSettingsSource(
+                settings_cls,
+                yaml_file="testing.yml",
+            ),
+            file_secret_settings,
+        )
 
 
 @pytest.fixture(scope="session")
-def test_settings() -> TestingSettings:
+def test_settings(request, worker_id) -> Generator[TestingSettings, Any, None]:
     """
     Fixture to provide the testing settings.
 
@@ -60,4 +122,24 @@ def test_settings() -> TestingSettings:
         TestingSettings: The testing settings.
 
     """
-    return TestingSettings()
+    setts = TestingSettings()
+    yield setts
+
+
+@pytest.fixture(scope="session")
+def redis_client(test_settings) -> Generator[Redis, Any, None]:
+    """
+    Fixture to provide a Redis client for the testing environment.
+
+    Returns:
+        Redis: The Redis client for the testing environment.
+
+    """
+    r = redis.Redis(
+        host=test_settings.redis.host,
+        port=test_settings.redis.port,
+        password=test_settings.redis.password,
+        decode_responses=False,
+    )
+    yield r
+    r.close()
