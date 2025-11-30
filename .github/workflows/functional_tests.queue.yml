@@ -33,7 +33,7 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run pytest -x --retries 3
+          uv run pytest -x --retries 3 -n ${{ vars.TEST_WORKERS_COUNT }}
         env:
           KAMIHI_TESTING__API_ID: ${{ secrets.API_ID }}
           KAMIHI_TESTING__API_HASH: ${{ secrets.API_HASH }}
