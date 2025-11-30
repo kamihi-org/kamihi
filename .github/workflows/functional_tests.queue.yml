@@ -9,9 +9,6 @@ on:
       - main
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}
-
 jobs:
   functional_tests:
     name: Functional tests
@@ -38,12 +35,9 @@ jobs:
         run: |
           uv run pytest -x --retries 3
         env:
-          KAMIHI_TESTING__BOT_TOKEN: ${{ secrets.TOKEN }}
-          KAMIHI_TESTING__BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
-          KAMIHI_TESTING__USER_ID: ${{ secrets.USER_ID }}
-          KAMIHI_TESTING__TG_PHONE_NUMBER: ${{ secrets.TG_PHONE_NUMBER }}
-          KAMIHI_TESTING__TG_API_ID: ${{ secrets.TG_API_ID }}
-          KAMIHI_TESTING__TG_API_HASH: ${{ secrets.TG_API_HASH }}
-          KAMIHI_TESTING__TG_SESSION: ${{ secrets.TG_SESSION }}
-          KAMIHI_TESTING__TG_DC_ID: ${{ secrets.TG_DC_ID }}
-          KAMIHI_TESTING__TG_DC_IP: ${{ secrets.TG_DC_IP }}
+          KAMIHI_TESTING__API_ID: ${{ secrets.API_ID }}
+          KAMIHI_TESTING__API_HASH: ${{ secrets.API_HASH }}
+          KAMIHI_TESTING__DC_ID: ${{ secrets.DC_ID }}
+          KAMIHI_TESTING__DC_IP: ${{ secrets.DC_IP }}
+          KAMIHI_TESTING__REDIS__HOST: ${{ secrets.REDIS_HOST }}
+          KAMIHI_TESTING__REDIS__PASSWORD: ${{ secrets.REDIS_PASSWORD }}
