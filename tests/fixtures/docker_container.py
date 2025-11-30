@@ -263,7 +263,7 @@ kamihi_container = container(
     image="{kamihi_image_id}",
     environment={
         "KAMIHI_TESTING": "True",
-        "KAMIHI_TOKEN": "{test_settings.credentials.bot_token}",
+        "KAMIHI_TOKEN": "{credentials.bot_token}",
         "KAMIHI_LOG__STDOUT_LEVEL": "TRACE",
         "KAMIHI_LOG__STDOUT_SERIALIZE": "True",
         "KAMIHI_LOG__FILE_ENABLE": "True",

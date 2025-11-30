@@ -29,10 +29,10 @@ def user_custom_data():
 
 
 @pytest.fixture
-def user(kamihi: KamihiContainer, test_settings, user_custom_data) -> Generator[dict, None, None]:
+def user(kamihi: KamihiContainer, credentials, user_custom_data) -> Generator[dict, None, None]:
     """Fixture that creates a user in the database."""
     record = kamihi.run_command_and_wait_for_log(
-        f"kamihi user add {test_settings.credentials.user_id} --data '{json.dumps(user_custom_data)}'",
+        f"kamihi user add {credentials.user_id} --data '{json.dumps(user_custom_data)}'",
         level="SUCCESS",
         message="User added",
     )

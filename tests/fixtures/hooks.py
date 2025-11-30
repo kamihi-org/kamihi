@@ -24,15 +24,6 @@ def pytest_set_filtered_exceptions():
     return [FloodWaitError]
 
 
-def pytest_xdist_auto_num_workers(config):
-    """
-    Automatically determine the number of workers for xdist based on credentials available.
-    """
-    setts = TestingSettings()
-
-    return max(1, len(setts.credentials))
-
-
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_runtest_makereport(item: Item):
     outcome = yield
@@ -43,6 +34,11 @@ def pytest_runtest_makereport(item: Item):
         if kamihi_container:
             logs = kamihi_container.get_text("/app/kamihi.log")["kamihi.log"]
             rep.sections.append(("Command logs", logs))
+
+        credentials = item.funcargs.get("credentials")
+        if credentials:
+            session_data = f"Bot: {credentials.bot_username}"
+            rep.sections.append(("Session data", session_data))
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):

@@ -6,29 +6,39 @@ License:
 
 """
 from ipaddress import IPv4Address
+from typing import Any, Generator
 
 import pytest
-from pydantic import Field, BaseModel
-from pydantic_extra_types.phone_numbers import PhoneNumber
+import redis
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource, YamlConfigSettingsSource
+from redis import Redis
 
 
-class Credentials(BaseModel):
+class RedisSettings(BaseSettings):
     """
-    Credential set for the testing environment
+    Settings for Redis connection.
 
     Attributes:
-        session (str): The session string.
-        phone_number (str): The phone number.
-        user_id (int): The user ID.
-        bot_token (str): The bot token.
-        bot_username (str): The bot username.
+        host (str): The Redis host.
+        port (int): The Redis port.
+        password (str | None): The Redis password.
+
     """
-    phone_number: str = PhoneNumber()
-    user_id: int = Field()
-    bot_token: str = Field()
-    bot_username: str = Field()
-    session: str = Field()
+
+    host: str = Field(default="localhost")
+    port: int = Field(default=6379)
+    password: str | None = Field(default=None)
+
+    pool_list: str = Field(default="tg")
+    in_use_list: str = Field(default="tg_lock")
+
+    prefix_lock: str = Field(default="lock:")
+    prefix_flood: str = Field(default="flood:")
+
+    lease_ttl: int = Field(default=3600)
+    retries: int = Field(default=40)
+    retry_delay: float = Field(default=0.5)
 
 
 class TestingSettings(BaseSettings):
@@ -40,8 +50,7 @@ class TestingSettings(BaseSettings):
         api_hash (str): The API hash.
         dc_id (int): The data center ID.
         dc_ip (str): The data center IP address.
-        wait_time (float): The wait time between requests.
-        credentials (list[Credentials]): List of credential sets for testing.
+        redis (RedisSettings): Redis connection settings.
 
     """
 
@@ -49,8 +58,8 @@ class TestingSettings(BaseSettings):
     api_hash: str = Field()
     dc_id: int = Field()
     dc_ip: IPv4Address = Field()
-    wait_time: float = Field(default=0.5)
-    credentials: Credentials | list[Credentials] = Field(default_factory=list)
+    redis: RedisSettings = Field(default_factory=RedisSettings)
+    validation_retries: int = Field(default=5)
 
     model_config = SettingsConfigDict(
         env_prefix="KAMIHI_TESTING__",
@@ -107,7 +116,7 @@ class TestingSettings(BaseSettings):
 
 
 @pytest.fixture(scope="session")
-def test_settings(request, worker_id) -> TestingSettings:
+def test_settings(request, worker_id) -> Generator[TestingSettings, Any, None]:
     """
     Fixture to provide the testing settings.
 
@@ -115,10 +124,24 @@ def test_settings(request, worker_id) -> TestingSettings:
         TestingSettings: The testing settings.
 
     """
-    global_setts = TestingSettings()
     setts = TestingSettings()
-    if worker_id == "master":
-        setts.credentials = global_setts.credentials[0]
-    else:
-        setts.credentials = global_setts.credentials[int(worker_id.replace("gw", ""))]
-    return setts
+    yield setts
+
+
+@pytest.fixture(scope="session")
+def redis_client(test_settings) -> Generator[Redis, Any, None]:
+    """
+    Fixture to provide a Redis client for the testing environment.
+
+    Returns:
+        Redis: The Redis client for the testing environment.
+
+    """
+    r = redis.Redis(
+        host=test_settings.redis.host,
+        port=test_settings.redis.port,
+        password=test_settings.redis.password,
+        decode_responses=False
+    )
+    yield r
+    r.close()
