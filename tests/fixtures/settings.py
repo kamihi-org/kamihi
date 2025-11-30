@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 from ipaddress import IPv4Address
 from typing import Any, Generator
 
@@ -141,7 +142,7 @@ def redis_client(test_settings) -> Generator[Redis, Any, None]:
         host=test_settings.redis.host,
         port=test_settings.redis.port,
         password=test_settings.redis.password,
-        decode_responses=False
+        decode_responses=False,
     )
     yield r
     r.close()

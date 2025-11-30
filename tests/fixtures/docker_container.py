@@ -238,6 +238,7 @@ class KamihiContainer(Container):
 
 kamihi_image = build(path=".", dockerfile="tests/Dockerfile")
 
+
 @pytest.fixture(scope="session")
 def kamihi_image_id(tmp_path_factory, worker_id, request):
     if worker_id == "master":
@@ -256,6 +257,7 @@ def kamihi_image_id(tmp_path_factory, worker_id, request):
             data = request.getfixturevalue("kamihi_image").id
             fn.write_text(data)
     return data
+
 
 kamihi_volume = volume(initial_content=fxtr("app_folder"))
 kamihi_network = network()

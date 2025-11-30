@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 import asyncio
 import json
 
@@ -12,6 +13,7 @@ from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
 
 from ..fixtures.settings import TestingSettings
+
 
 async def main(setts: TestingSettings):
     phone_number = input("Phone number (with country code, no spaces): ")
@@ -39,16 +41,22 @@ async def main(setts: TestingSettings):
 
     me = await client.get_me()
 
-    print(json.dumps({
-        "phone_number": phone_number,
-        "user_id": me.id,
-        "bot_token": token,
-        "bot_username": bot_name,
-        "session": client.session.save(),
-    }, indent=4))
+    print(
+        json.dumps(
+            {
+                "phone_number": phone_number,
+                "user_id": me.id,
+                "bot_token": token,
+                "bot_username": bot_name,
+                "session": client.session.save(),
+            },
+            indent=4,
+        )
+    )
 
     await client.send_message(bot_name, "/start")
     await client.disconnect()
+
 
 if __name__ == "__main__":
     setts = TestingSettings()

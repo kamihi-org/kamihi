@@ -38,6 +38,7 @@ class Credentials(BaseModel):
         bot_token (str): The bot token.
         bot_username (str): The bot username.
     """
+
     settings: TestingSettings = Field(exclude=True)
     key: str = Field(exclude=True)
 
@@ -139,7 +140,9 @@ async def _checkout_key(test_settings: TestingSettings, redis_client: Redis) -> 
     return key
 
 
-async def _checkin_key(test_settings: TestingSettings, redis_client: Redis, key: str, cooldown_seconds: int = 0) -> None:
+async def _checkin_key(
+    test_settings: TestingSettings, redis_client: Redis, key: str, cooldown_seconds: int = 0
+) -> None:
     """
     Returns a raw key string to the pool.
 

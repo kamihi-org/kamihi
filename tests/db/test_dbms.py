@@ -5,6 +5,7 @@ License:
     MIT
 
 """
+
 from typing import Any, Generator
 
 import pytest
