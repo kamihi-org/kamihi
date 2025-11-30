@@ -302,9 +302,6 @@ def cleanup_report(request) -> None:
 
     Args:
         request: The pytest request object.
-
-    Returns:
-        dict | None: The Docker cleanup report if available, otherwise None.
     """
     request.config._docker_cleanup_report = {
         "containers": docker.from_env().containers.prune(),

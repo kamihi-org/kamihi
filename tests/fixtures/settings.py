@@ -39,7 +39,7 @@ class RedisSettings(BaseSettings):
 
     lease_ttl: int = Field(default=3600)
     retries: int = Field(default=40)
-    retry_delay: float = Field(default=0.5)
+    retry_delay: float = Field(default=1)
 
 
 class TestingSettings(BaseSettings):

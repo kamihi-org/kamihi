@@ -106,7 +106,7 @@ class Credentials(BaseModel):
         return self._client
 
 
-async def _checkout_key(test_settings: TestingSettings, redis_client: Redis) -> str | None:
+def _checkout_key(test_settings: TestingSettings, redis_client: Redis) -> str | None:
     """
     Checkout a key from the Redis pool.
 
@@ -124,23 +124,23 @@ async def _checkout_key(test_settings: TestingSettings, redis_client: Redis) -> 
         if key_bytes:
             key = key_bytes.decode("utf-8")
             if redis_client.exists(f"{test_settings.redis.prefix_flood}{key}"):
-                await redis_client.lrem(test_settings.redis.in_use_list, 1, key)
-                await redis_client.lpush(test_settings.redis.pool_list, key)
+                redis_client.lrem(test_settings.redis.in_use_list, 1, key)
+                redis_client.lpush(test_settings.redis.pool_list, key)
                 continue
 
             lock_key = f"{test_settings.redis.prefix_lock}{key}"
             if redis_client.set(lock_key, "1", nx=True, ex=test_settings.redis.lease_ttl):
                 break
 
-            await redis_client.lrem(test_settings.redis.in_use_list, 1, key)
-            await redis_client.lpush(test_settings.redis.pool_list, key)
+            redis_client.lrem(test_settings.redis.in_use_list, 1, key)
+            redis_client.lpush(test_settings.redis.pool_list, key)
 
         time.sleep(test_settings.redis.retry_delay)
 
     return key
 
 
-async def _checkin_key(
+def _checkin_key(
     test_settings: TestingSettings, redis_client: Redis, key: str, cooldown_seconds: int = 0
 ) -> None:
     """
@@ -159,7 +159,7 @@ async def _checkin_key(
         return
 
     if cooldown_seconds > 0:
-        await redis_client.set(f"{test_settings.redis.prefix_flood}{key}", "1", ex=cooldown_seconds)
+        redis_client.set(f"{test_settings.redis.prefix_flood}{key}", "1", ex=cooldown_seconds)
 
     redis_client.delete(f"{test_settings.redis.prefix_lock}{key}")
     redis_client.lrem(test_settings.redis.in_use_list, 1, key)
@@ -177,7 +177,7 @@ async def credentials(test_settings, request, redis_client: Redis) -> AsyncGener
     """
     cred = None
     for _ in range(test_settings.validation_retries):
-        key = await _checkout_key(test_settings, redis_client)
+        key = _checkout_key(test_settings, redis_client)
         cred = Credentials.from_base64(test_settings, key)
 
         await cred.connect()
@@ -186,7 +186,7 @@ async def credentials(test_settings, request, redis_client: Redis) -> AsyncGener
         if cooldown == 0:
             break
         else:
-            await _checkin_key(test_settings, redis_client, key, cooldown)
+            _checkin_key(test_settings, redis_client, key, cooldown)
 
     if not cred:
         raise RuntimeError("No available API keys (all in use or cooling down)")
@@ -195,7 +195,7 @@ async def credentials(test_settings, request, redis_client: Redis) -> AsyncGener
         yield cred
     finally:
         cooldown = await cred.test()
-        await _checkin_key(test_settings, redis_client, cred.key, cooldown)
+        _checkin_key(test_settings, redis_client, cred.key, cooldown)
 
 
 @pytest.fixture
